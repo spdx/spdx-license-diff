@@ -1,0 +1,15 @@
+.selection_bubble {
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid black;
+  background:white;
+}
+progress {
+  width: 100%;
+  text-align: center;
+}
+progress:after {
+  content: attr(value)"/"attr(max);
+}

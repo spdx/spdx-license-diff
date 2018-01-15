@@ -1,0 +1,47 @@
+{
+  "name": "__MSG_appName__",
+  "short_name": "__MSG_appShortName__",
+  "description": "__MSG_appDescription__",
+  "version": "0.0.0",
+  "manifest_version": 2,
+  "default_locale": "en",
+  "icons": {
+    "16": "images/spdx.png",
+    "128": "images/spdx.png"
+  },
+  "background": {
+    "scripts": [
+      "scripts/worker_proxy.js"
+      ,"scripts/background.js"
+    ]
+  },
+  "browser_action": {
+    "default_icon": {
+      "19": "images/spdx.png",
+      "38": "images/spdx.png"
+    }
+  },
+  "options_page": "pages/options.html",
+  "options_ui": {
+    "page": "pages/options.html",
+    "chrome_style": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "css": [
+        "styles/contentscript.css"
+      ],
+      "js": [
+        "scripts/worker_proxy.js"
+        ,"scripts/contentscript.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [ "pages/worker_proxy.html",  "license-list/*"],
+  "permissions": ["storage", "unlimitedStorage"]
+}
