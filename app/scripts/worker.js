@@ -48,11 +48,12 @@ function getSPDXlist(baseurl, selection) {
             var spdxid = value.replace(/\.template$/g, '');
             postMessage({"command": "license","spdxid": spdxid, "hash":hash});
             //var result = processVariables(raw); //strip out spdx variables
-            //var data = result.data  
-            var data = raw  
+            //var data = result.data
+            var data = raw
             var count = data.length
             var difference = Math.abs(count2 - count);
             var maxLength = Math.max(count, count2);
+            var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
             if (difference <= maxLength && difference < 1000) {
               var distance = Levenshtein.get(cleanText(data), cleanText(selection));
               var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
@@ -71,11 +72,13 @@ function getSPDXlist(baseurl, selection) {
                 percentage: 0,
                 //patterns: result.patterns
               }
+              console.log(spdxid + " - LCS: " + lcs + " length: " + lcs.length);
+
             }
             postMessage({"command": "next", "spdxid":spdxid});
             //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
             resolve(SPDXlist[spdxid])
-          } 
+          }
           x.send();
         })
 
@@ -106,7 +109,7 @@ function getSPDXlist(baseurl, selection) {
 };
 function processSelection(spdxid, data, selection) {
   var result = processVariables(data); //strip out spdx variables
-  var data = result.data  
+  var data = result.data
   var count = data.length
   var count2 = selection.length;
   var difference = Math.abs(count2 - count);
@@ -167,5 +170,43 @@ function processVariables(str) {
   }
   result.patterns = patterns;
   result.data = result.data.replace(/<<beginOptional;.*?>>/g, "").replace(/<<endOptional>>/g, "");
+  return result;
+}
+
+//https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Longest_common_substring#JavaScript
+function longestCommonSubstring(string1, string2){
+  // init max value
+  var longestCommonSubstring = 0;
+  // init 2D array with 0
+  var table = [],
+            len1 = string1.length,
+            len2 = string2.length,
+            result = "",
+            row, col;
+  for(row = 0; row <= len1; row++){
+    table[row] = [];
+    for(col = 0; col <= len2; col++){
+      table[row][col] = 0;
+    }
+  }
+  // fill table
+        var i, j;
+  for(i = 0; i < len1; i++){
+    for(j = 0; j < len2; j++){
+      if(string1[i] === string2[j]){
+        if(table[i][j] === 0){
+          table[i+1][j+1] = 1;
+        } else {
+          table[i+1][j+1] = table[i][j] + 1;
+        }
+        if(table[i+1][j+1] > longestCommonSubstring){
+          longestCommonSubstring = table[i+1][j+1];
+          result = string1.substring(i - longestCommonSubstring + 1,i + 1);
+        }
+      } else {
+        table[i+1][j+1] = 0;
+      }
+    }
+  }
   return result;
 }

@@ -1,7 +1,8 @@
 "use strict";
 // Enable chromereload by uncommenting this line:
-//import 'chromereload/devonly'
+import 'chromereload/devonly'
 
+//import './cc-by-sa.js'
 // content.js
 
 var selectedLicense = "";
@@ -23,16 +24,8 @@ chrome.runtime.onMessage.addListener(
       }
       if (selection.length > 0) {
         if (!$('#license_bubble').length) createBubble();
-        //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
-        var node = window.getSelection();
-        var $span= $("<span/>");
-        var newRange = document.createRange();
-        newRange.setStart(node.focusNode, 0);
-        newRange.insertNode($span[0]); // using 'range' here instead of newRange unselects or causes flicker on chrome/webkit
-
-        var posX = $span.offset().left;
-        var posY = $span.offset().top;
-        $span.remove();
+        var selectCoords = selectRangeCoords();
+        var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
       }
       var ms_start = (new Date()).getTime();
@@ -50,15 +43,15 @@ chrome.runtime.onMessage.addListener(
           case "store":
           progressbar.value++;
           var obj = {}
-          obj[event.data.spdxid] = { 
+          obj[event.data.spdxid] = {
               hash:event.data.hash,
               raw:event.data.raw,
-              processed:event.data.processed, 
+              processed:event.data.processed,
               patterns:event.data.patterns};
-          
-          chrome.storage.local.set(obj, 
+
+          chrome.storage.local.set(obj,
               function() {
-                console.log('Setting', obj);                  
+                console.log('Setting', obj);
               });
 
           break;
@@ -67,13 +60,13 @@ chrome.runtime.onMessage.addListener(
           var hash= event.data.hash;
           // chrome.storage.local.get(spdxid, function(result) {
           //       if (result[spdxid] && result[spdxid].hash != hash){
-          //         console.log('No match found', spdxid, hash, result);         
+          //         console.log('No match found', spdxid, hash, result);
           //         worker.postMessage({ 'command':'process', 'license':spdxid,'data':result[spdxid].processed, 'selection': selection});
-          // 
+          //
           //       }else {
           //         console.log('Found prior computed result', spdxid, hash, result);
-          // 
-          //     }         
+          //
+          //     }
           // });
           break;
           case "done":
@@ -90,22 +83,6 @@ chrome.runtime.onMessage.addListener(
     }
   }
 );
-//https://stackoverflow.com/questions/5379120/get-the-highlighted-selected-text
-function getSelectionText() {
-  var text = "";
-  var activeEl = document.activeElement;
-  var activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
-  if (
-    (activeElTagName == "textarea") || (activeElTagName == "input" &&
-    /^(?:text|search|password|tel|url)$/i.test(activeEl.type)) &&
-    (typeof activeEl.selectionStart == "number")
-  ) {
-    text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
-  } else if (window.getSelection) {
-    text = window.getSelection().toString();
-  }
-  return text;
-}
 
 // Add bubble to the top of the page.
 function createBubble(){
@@ -221,3 +198,33 @@ function renderBubble(mouseX, mouseY, selection) {
       scrollTop: $(licenses).offset().top},
       'fast');
     }
+    //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
+    function selectRangeCoords(){
+      var node = window.getSelection();
+      var $span= $("<span/>");
+      var newRange = document.createRange();
+      newRange.setStart(node.focusNode, 0);
+      newRange.insertNode($span[0]); // using 'range' here instead of newRange unselects or causes flicker on chrome/webkit
+
+      var posX = $span.offset().left;
+      var posY = $span.offset().top;
+      $span.remove();
+      return [posX, posY]
+      }
+
+      //https://stackoverflow.com/questions/5379120/get-the-highlighted-selected-text
+    function getSelectionText() {
+        var text = "";
+        var activeEl = document.activeElement;
+        var activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
+        if (
+          (activeElTagName == "textarea") || (activeElTagName == "input" &&
+          /^(?:text|search|password|tel|url)$/i.test(activeEl.type)) &&
+          (typeof activeEl.selectionStart == "number")
+        ) {
+          text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
+        } else if (window.getSelection) {
+          text = window.getSelection().toString();
+        }
+        return text;
+      }
