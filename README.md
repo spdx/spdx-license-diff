@@ -1,3 +1,4 @@
+# Built using https://github.com/HaNdTriX/generator-chrome-extension-kickstart
 # spdx-diff
 
 Diff selected text against SPDX licenses
