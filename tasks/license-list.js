@@ -4,8 +4,27 @@ import livereload from 'gulp-livereload'
 import args from './lib/args'
 var fs = require('fs');
 var exec = require('child_process').exec;
+var git = require('gulp-git');
+const directoryExists = require('directory-exists');
  
-gulp.task('license-list', () => {
+gulp.task('get-list', () => {
+  if (directoryExists.sync('./license-list')){
+    process.chdir('license-list')
+    git.pull('origin', 'master', function (err) {
+    if (err) throw err;
+  });
+    process.chdir('..')
+  }
+  else{
+    git.clone('https://github.com/spdx/license-list-data', {args: './license-list'}, function (err) {
+    if (err) throw err;
+  });
+  }
+  return
+})
+
+
+gulp.task('license-list', ['get-list'],() => {
   process.chdir('license-list/text')
   exec('ls *.txt > ../spdx.txt', function (err, stdout, stderr) {
     console.log(stdout);
