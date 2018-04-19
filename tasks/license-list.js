@@ -30,7 +30,7 @@ gulp.task('license-list', ['get-list'],() => {
     console.log(stdout);
     console.log(stderr);
   });
-  process.chdir('../..')
+  process.chdir('../../')
   return gulp.src(['license-list/spdx.txt','license-list/text/*.txt'])
     .pipe(gulp.dest(`dist/${args.vendor}/license-list`))
     .pipe(gulpif(args.watch, livereload()))
