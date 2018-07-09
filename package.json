@@ -25,14 +25,14 @@
   "devDependencies": {
     "babel-cli": "6.x.x",
     "babel-core": "6.x.x",
-    "babel-loader": "7.x.x",
+    "babel-loader": "^7.1.5",
     "babel-preset-env": "1.x.x",
     "chai": "4.x.x",
     "chromereload": "0.x.x",
     "debounce": "1.x.x",
     "del": "3.x.x",
     "directory-exists": "^2.0.0",
-    "gulp": "3.x.x",
+    "gulp": "^3.9.1",
     "gulp-bump": "2.x.x",
     "gulp-cache": "0.x.x",
     "gulp-clean-css": "^3.x.x",
@@ -61,6 +61,7 @@
     "diff-match-patch": "^1.0.0",
     "fast-levenshtein": "^2.0.6",
     "jquery": "^3.2.1",
-    "md5-jkmyers": "^0.0.1"
+    "md5-jkmyers": "^0.0.1",
+    "npm": "^6.1.0"
   }
 }
