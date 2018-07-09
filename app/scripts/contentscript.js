@@ -69,6 +69,24 @@ chrome.runtime.onMessage.addListener(
           //     }
           // });
           break;
+          case "savelicenselist":
+          var externallicenselist = event.data;
+          chrome.storage.local.get("licenselist", function(result) {
+                if (result){
+                  licenseList = result
+                  console.log('LicenseList found', result["licenseListVersion"]);
+                  if (result["licenseListVersion"] <= externallicenselist["licenseListVersion"])
+                    console.log('Newer LicenseList found', externallicenselist["licenseListVersion"]);
+                  else {
+                    worker.postMessage({ 'command':'setlicenselist', 'data':result});
+                    console.log('No new update found', externallicenselist["licenseListVersion"]);
+                  }
+                }else {
+                  console.log('No LicenseList found');
+
+              }
+          });
+          break;
           case "done":
           spdx = event.data.result;
           var ms_end = (new Date()).getTime();
@@ -159,6 +177,11 @@ function renderBubble(mouseX, mouseY, selection) {
     }
   }
   function processLicenses(sortable, showBest, processTime=0){
+    if (sortable && sortable.length == 0){
+      console.log("No results to display");
+      displayDiff(data, selection, processTime);
+      return
+    }
     var data = sortable[0][2];
     for (var i = 0; i < showBest; i++){
       var license = sortable[i][0];
@@ -184,6 +207,11 @@ function renderBubble(mouseX, mouseY, selection) {
     }
   }
   function displayDiff(data, selection, processTime=0){
+    if (!data){
+      var bubbleDOMText = $('#bubble_text')[0];
+      bubbleDOMText.innerHTML = 'No results to display';
+      return
+    }
     var dmp =  new DiffMatchPatch(); // options may be passed to constructor; see below
     dmp.Diff_Timeout=0;
 //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);

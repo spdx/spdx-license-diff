@@ -16,20 +16,35 @@ self.onmessage = function(event) {
   }
 };
 
-function getSPDXlist(baseurl, selection) {
+function getSPDXlist(baseurl, selection, remote=true) {
   var files = [];
   //var SPDXlist = {};
-  var url = baseurl + 'license-list/spdx.txt';
+  if (remote) {
+    var url = "https://spdx.org/licenses/licenses.json"
+  } else {
+    var url = baseurl + 'license-list/spdx.txt';
+  }
   var x = new XMLHttpRequest();
   x.open('GET', url);
   x.onload = function() {
-    var lines = x.responseText.split("\n");
-    postMessage({"command": "progressbarmax","value": lines.length});
-    for (var j = 0; j < lines.length; j++) {
-      var line = lines[j]
-      if (line.search(/\.txt/g) >= 0){
-        var license = line.substring(0, line.search(/\.txt/g));
+    if (remote){
+      var lines = JSON.parse(x.responseText);
+      postMessage({"command": "progressbarmax","value": lines.licenses.length});
+      postMessage({"command": "savelicenselist","value": lines});
+      for (var j = 0; j < lines.licenses.length; j++) {
+        var line = lines.licenses[j];
+        var license = line["detailsUrl"];
         files.push(license);
+      }
+    } else {
+      var lines = x.responseText.split("\n");
+      postMessage({"command": "progressbarmax","value": lines.length});
+      for (var j = 0; j < lines.length; j++) {
+        var line = lines[j]
+        if (line.search(/\.txt/g) >= 0){
+          var license = line.substring(0, line.search(/\.txt/g));
+          files.push(license);
+        }
       }
     }
 
@@ -38,14 +53,25 @@ function getSPDXlist(baseurl, selection) {
     promises = files.map(
       function(value){
         return new Promise(function(resolve, reject) {
-          url = baseurl + 'license-list/' + value + ".txt";
+          if (remote){
+            url = value;
+          }else{
+            url = baseurl + 'license-list/' + value + ".txt";
+          }
           x = new XMLHttpRequest();
           x.open ('GET', url);
           x.onload = function() {
             var md5 = require('md5-jkmyers')
-            var hash = md5(this.responseText);
-            var raw = this.responseText;
-            var spdxid = value.replace(/\.template$/g, '');
+            if (remote){
+              var response = JSON.parse(this.responseText);
+              var hash = md5(response["licenseText"]);
+              var raw = response["licenseText"];
+              var spdxid = response["licenseId"];
+            }else{
+              var hash = md5(this.responseText);
+              var raw = this.responseText;
+              var spdxid = value.replace(/\.template$/g, '');
+            }
             postMessage({"command": "license","spdxid": spdxid, "hash":hash});
             //var result = processVariables(raw); //strip out spdx variables
             //var data = result.data
