@@ -11,12 +11,132 @@ var showBest = 10;
 var selection = "";
 var maxDifference=500;
 var processTime = 0;
+var list;
+var lastupdate = null;
+var updating = false;
+var pendingcompare = false;
+var ms_start;
+//load worker
+var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
+
 createBubble();
+list = loadList();
+
+worker.onmessage = function(event) {
+  var progressbar = $('#progress_bubble')[0];
+  switch (event.data.command) {
+    case "progressbarmax":
+    progressbar.setAttribute('max',event.data.value);
+    progressbar.value = 0;
+    updateBubbleText(event.data.stage);
+    break;
+    case "next":
+    progressbar.value++;
+    break;
+    case "store":
+    progressbar.value++;
+    var obj = {}
+    obj[event.data.spdxid] = {
+        hash:event.data.hash,
+        raw:event.data.raw,
+        processed:event.data.processed,
+        patterns:event.data.patterns};
+
+    chrome.storage.local.set(obj,
+        function() {
+          console.log('Setting', obj);
+        });
+
+    break;
+    case "license":
+    var spdxid = event.data.spdxid;
+    var hash= event.data.hash;
+    // chrome.storage.local.get(spdxid, function(result) {
+    //       if (result[spdxid] && result[spdxid].hash != hash){
+    //         console.log('No match found', spdxid, hash, result);
+    //         worker.postMessage({ 'command':'process', 'license':spdxid,'data':result[spdxid].processed, 'selection': selection});
+    //
+    //       }else {
+    //         console.log('Found prior computed result', spdxid, hash, result);
+    //
+    //     }
+    // });
+    break;
+    case "savelicenselist":
+    var externallicenselist = event.data.value;
+    console.log('Trying to save list', externallicenselist);
+    chrome.storage.local.get(['list'], function(result) {
+          if (result.list && result.list["licenseListVersion"]){
+            var list = result.list;
+            console.log('Existing License list version', list["licenseListVersion"]);
+            if (list["licenseListVersion"] < externallicenselist["licenseListVersion"]){
+              console.log('Newer license list found', externallicenselist["licenseListVersion"]);
+              storeList(externallicenselist);
+            } else {
+              worker.postMessage({ 'command':'populatelicenselist', 'data':list});
+              console.log('No new update found; same version', externallicenselist["licenseListVersion"]);
+            }
+          }else {
+            console.log('No license list found');
+            storeList(externallicenselist);
+        }
+    });
+    break;
+    case "savelicense":
+    if (updating){
+      var externallicenselist = event.data;
+      var spdxid = event.data.spdxid
+      console.log('Saving license', event.data);
+      chrome.storage.local.get([spdxid], function(result) {
+            if (result[spdxid] && externallicenselist.data[spdxid]){
+              var license = result[spdxid];
+              console.log('Existing license', spdxid);
+            }else {
+              console.log('Saving new', spdxid);
+              var obj = {}
+              obj[spdxid] = externallicenselist.data;
+              chrome.storage.local.set(obj,
+                  function() {
+                    console.log('Storing', obj);
+                  });
+          }
+      });
+    } else {
+      console.log('Not supposed to update but received savelicense request; ignoring', event.data);
+    }
+    break;
+    case "updatedone":
+    var arr = event.data.result;
+    if (typeof list === "undefined")
+      var list = {};
+      list["license"] = {};
+    for (var i=0; i < arr.length; i++){
+      list["license"][arr[i]["licenseId"]] = arr[i]
+    }
+    updating = false;
+    if (pendingcompare)
+      if (typeof worker === "undefined")
+        worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
+      worker.postMessage({ 'command':"compare", 'selection': selection, 'list':list["license"]});
+      pendingcompare = false;
+    break;
+    case "done":
+    spdx = event.data.result;
+    var ms_end = (new Date()).getTime();
+    processTime = ms_end - ms_start;
+    console.log("processTime: " + processTime/1000 + ("s"));
+    processLicenses(event.data.result, showBest, processTime)
+    break;
+    default:
+
+  }
+}
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     if( request.message === "clicked_browser_action" ) {
-      if (spdx && getSelectionText() == selection){
-        processLicenses(spdx, showBest, processTime);
+      if (spdx && getSelectionText() == selection){ //diff previously done on selection
+        displayLicenses(spdx, showBest, processTime);
         return;
       } else {
         selection = getSelectionText();
@@ -28,76 +148,14 @@ chrome.runtime.onMessage.addListener(
         var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
       }
-      var ms_start = (new Date()).getTime();
-      var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
-      worker.postMessage({ 'url':chrome.extension.getURL(""), 'selection': selection});
-      worker.onmessage = function(event) {
-        var progressbar = $('#progress_bubble')[0];
-        switch (event.data.command) {
-          case "progressbarmax":
-          progressbar.setAttribute('max',event.data.value);
-          break;
-          case "next":
-          progressbar.value++;
-          break;
-          case "store":
-          progressbar.value++;
-          var obj = {}
-          obj[event.data.spdxid] = {
-              hash:event.data.hash,
-              raw:event.data.raw,
-              processed:event.data.processed,
-              patterns:event.data.patterns};
-
-          chrome.storage.local.set(obj,
-              function() {
-                console.log('Setting', obj);
-              });
-
-          break;
-          case "license":
-          var spdxid = event.data.spdxid;
-          var hash= event.data.hash;
-          // chrome.storage.local.get(spdxid, function(result) {
-          //       if (result[spdxid] && result[spdxid].hash != hash){
-          //         console.log('No match found', spdxid, hash, result);
-          //         worker.postMessage({ 'command':'process', 'license':spdxid,'data':result[spdxid].processed, 'selection': selection});
-          //
-          //       }else {
-          //         console.log('Found prior computed result', spdxid, hash, result);
-          //
-          //     }
-          // });
-          break;
-          case "savelicenselist":
-          var externallicenselist = event.data;
-          chrome.storage.local.get("licenselist", function(result) {
-                if (result){
-                  licenseList = result
-                  console.log('LicenseList found', result["licenseListVersion"]);
-                  if (result["licenseListVersion"] <= externallicenselist["licenseListVersion"])
-                    console.log('Newer LicenseList found', externallicenselist["licenseListVersion"]);
-                  else {
-                    worker.postMessage({ 'command':'setlicenselist', 'data':result});
-                    console.log('No new update found', externallicenselist["licenseListVersion"]);
-                  }
-                }else {
-                  console.log('No LicenseList found');
-
-              }
-          });
-          break;
-          case "done":
-          spdx = event.data.result;
-          var ms_end = (new Date()).getTime();
-          processTime = ms_end - ms_start;
-          console.log("processTime: " + processTime/1000 + ("s"));
-          processLicenses(event.data.result, showBest, processTime)
-          break;
-          default:
-
-        }
+      ms_start = (new Date()).getTime();
+      if (typeof list === "undefined"){
+        updateList()
+        pendingcompare = true;
+        console.log('Queing compare after update')
+        return;
       }
+      worker.postMessage({ 'command':"compare", 'selection': selection, 'list':list["license"]});
     }
   }
 );
@@ -134,13 +192,13 @@ document.addEventListener('mousedown', function (e) {
   }
 }, false);
 
+
 // Move that bubble to the appropriate location.
 function renderBubble(mouseX, mouseY, selection) {
   var progressbar = $('#progress_bubble')[0];
   progressbar.style.visibility = 'visible'
   progressbar.value = 1;
-  var bubbleDOMText = $('#bubble_text')[0];
-  bubbleDOMText.innerHTML = "Processing...";
+  updateBubbleText("Processing...");
   var bubbleDOM = $('#license_bubble')[0];
   bubbleDOM.style.top = mouseY + 'px';
   bubbleDOM.style.left = mouseX + 'px';
@@ -151,6 +209,10 @@ function renderBubble(mouseX, mouseY, selection) {
     },
     'fast');
   }
+  function updateBubbleText(text) {
+    var bubbleDOMText = $('#bubble_text')[0];
+    bubbleDOMText.innerHTML = text;
+}
   function addSelectFormFromArray(id, arr, number=arr.length) {
     if (form = document.getElementById(id))
     form.outerHTML="";
@@ -226,6 +288,51 @@ function renderBubble(mouseX, mouseY, selection) {
       scrollTop: $(licenses).offset().top},
       'fast');
     }
+    function storeList(externallicenselist){
+      var obj = {};
+      externallicenselist["lastupdate"] = Date.now()
+      obj = {
+          list:externallicenselist
+        };
+      chrome.storage.local.set(obj,
+          function() {
+            console.log('Storing cached copy of ', obj);
+          });
+      }
+      function loadList(){
+          chrome.storage.local.get(['list'], function(result) {
+            if (result.list && result.list["licenseListVersion"]){
+              list = result.list;
+              console.log('Loading License list version from storage', list["licenseListVersion"], list["lastupdate"]);
+              lastupdate = list["lastupdate"]
+              for (var j = 0; j < list.licenses.length; j++) {
+                var line = list.licenses[j];
+                var license = line["licenseId"];
+                list["license"] = {}
+                console.log('Attempting to load license from storage', license);
+                chrome.storage.local.get([license], function(result) {
+                  if (result){
+                    license = Object.keys(result)[0]
+                    console.log('Loading license from storage', license);
+                    list.license[license] = result[license];
+                  }else {
+                    console.log('No license found in storage', license);
+                  }
+                });
+              }
+              return list
+            }else {
+              console.log('No license list found in storage; updating');
+              updateList()
+            }
+          });
+
+        }
+        function updateList(){
+          updating = true;
+          worker.postMessage({ 'command':"updatelicenselist"});
+        }
+
     //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
     function selectRangeCoords(){
       var node = window.getSelection();

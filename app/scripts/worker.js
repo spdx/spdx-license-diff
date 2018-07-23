@@ -2,6 +2,7 @@
 
 var promises=[];
 var SPDXlist = {};
+var files = [];
 
 
 self.onmessage = function(event) {
@@ -10,15 +11,23 @@ self.onmessage = function(event) {
     //'license':spdxid,'hash':hash, 'selection': selection
     //processSelection(event.data["license"], event.data["data"], event.data["selection"]);
     break;
-    default:
+    case "updatelicenselist":
     getSPDXlist(event.data["url"], event.data["selection"]);
+    break;
+    case "compare":
+    files = event.data.list
+    compareSPDXlist(event.data["selection"], files);
+    //processSelection(event.data["license"], event.data["data"], event.data["selection"]);
+    break;
+    default:
+    //getSPDXlist(event.data["url"], event.data["selection"]);
 
   }
 };
-
+// load files array with list of files to download
 function getSPDXlist(baseurl, selection, remote=true) {
-  var files = [];
-  //var SPDXlist = {};
+  if (typeof files === "undefined")
+    var files = []
   if (remote) {
     var url = "https://spdx.org/licenses/licenses.json"
   } else {
@@ -29,16 +38,18 @@ function getSPDXlist(baseurl, selection, remote=true) {
   x.onload = function() {
     if (remote){
       var lines = JSON.parse(x.responseText);
-      postMessage({"command": "progressbarmax","value": lines.licenses.length});
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses"});
       postMessage({"command": "savelicenselist","value": lines});
+      console.log("Updating: ", lines);
       for (var j = 0; j < lines.licenses.length; j++) {
         var line = lines.licenses[j];
         var license = line["detailsUrl"];
+        license = license.replace("http:","https:")
         files.push(license);
       }
     } else {
       var lines = x.responseText.split("\n");
-      postMessage({"command": "progressbarmax","value": lines.length});
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses"});
       for (var j = 0; j < lines.length; j++) {
         var line = lines[j]
         if (line.search(/\.txt/g) >= 0){
@@ -47,92 +58,106 @@ function getSPDXlist(baseurl, selection, remote=true) {
         }
       }
     }
-
-    var count2 = selection.length;
-    console.log("Processing selection of " + count2 + " chars.");
-    promises = files.map(
-      function(value){
-        return new Promise(function(resolve, reject) {
-          if (remote){
-            url = value;
-          }else{
-            url = baseurl + 'license-list/' + value + ".txt";
-          }
-          x = new XMLHttpRequest();
-          x.open ('GET', url);
-          x.onload = function() {
-            var md5 = require('md5-jkmyers')
-            if (remote){
-              var response = JSON.parse(this.responseText);
-              var hash = md5(response["licenseText"]);
-              var raw = response["licenseText"];
-              var spdxid = response["licenseId"];
-            }else{
-              var hash = md5(this.responseText);
-              var raw = this.responseText;
-              var spdxid = value.replace(/\.template$/g, '');
-            }
-            postMessage({"command": "license","spdxid": spdxid, "hash":hash});
-            //var result = processVariables(raw); //strip out spdx variables
-            //var data = result.data
-            var data = raw
-            var count = data.length
-            var difference = Math.abs(count2 - count);
-            var maxLength = Math.max(count, count2);
-            var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
-            if (difference <= maxLength && difference < 1000) {
-              var distance = Levenshtein.get(cleanText(data), cleanText(selection));
-              var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
-              console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)");
-              SPDXlist[spdxid] = {
-              distance: distance,
-              text: data,
-              percentage: percentage,
-              //patterns: result.patterns
-              }
-            }else {
-              console.log(spdxid + " - Length Difference: " + difference);
-              SPDXlist[spdxid] = {
-                distance: difference,
-                text: data,
-                percentage: 0,
-                //patterns: result.patterns
-              }
-              console.log(spdxid + " - LCS: " + lcs + " length: " + lcs.length);
-
-            }
-            postMessage({"command": "next", "spdxid":spdxid});
-            //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-            resolve(SPDXlist[spdxid])
-          }
-          x.send();
-        })
-
-      });
-      Promise.all(promises)
-      .then(function(data){ //success
-        var sortable = [];
-        for (var license in SPDXlist) {
-          sortable.push([
-            license,
-            SPDXlist[license]['distance'],
-            SPDXlist[license]['text'],
-            SPDXlist[license]['percentage']
-          ]);
-        }
-        sortable.sort(function(a, b) {
-          return b[3] - a[3];
-        });
-        postMessage({"command": "done","result": sortable});
-      }
-
-    );
-  };
-
+    processSPDXlist(files);
+  }
   x.send();
-
-
 };
+// download licenses from files array
+function processSPDXlist(files, remote=true) {
+  promises = files.map(
+    function(value){
+      return new Promise(function(resolve, reject) {
+        if (remote){
+          var url = value;
+        }else{
+          var url = baseurl + 'license-list/' + value + ".txt";
+        }
+        var x = new XMLHttpRequest();
+        x.open ('GET', url);
+        x.onload = function() {
+          var md5 = require('md5-jkmyers')
+          if (remote){
+            var response = JSON.parse(this.responseText);
+            var hash = md5(response["licenseText"]);
+            var raw = response["licenseText"];
+            var spdxid = response["licenseId"];
+          }else{
+            var response = {};
+            var hash = md5(this.responseText);
+            var raw = this.responseText;
+            var spdxid = value.replace(/\.template$/g, '');
+            response["licenseText"] = raw;
+            response["licenseId"] = spdxid
+          }
+          postMessage({"command": "savelicense","spdxid": spdxid, "data":response});
+          postMessage({"command": "next", "spdxid":spdxid});
+          SPDXlist[spdxid] = response
+          //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
+          resolve(SPDXlist[spdxid])
+        }
+        x.send();
+      })
+
+    });
+    Promise.all(promises)
+    .then(function(data){ //success
+      console.log("License List Updated");
+      postMessage({"command": "updatedone", "result":data});
+    }
+
+  );
+};
+
+function compareSPDXlist(selection, licenses) {
+  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Comparing licenses"});
+  var count2 = selection.length;
+  console.log("Processing selection of " + count2 + " chars.");
+  for (var spdxid in licenses) {
+  var data = licenses[spdxid].licenseText
+  var count = data.length
+  var difference = Math.abs(count2 - count);
+  var maxLength = Math.max(count, count2);
+  var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
+  if (difference <= maxLength && difference < 1000) {
+    var distance = Levenshtein.get(cleanText(data), cleanText(selection));
+    var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
+    console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)");
+    SPDXlist[spdxid] = {
+      distance: distance,
+      text: data,
+      percentage: percentage,
+      //patterns: result.patterns
+    }
+  }else {
+    console.log(spdxid + " - Length Difference: " + difference);
+    SPDXlist[spdxid] = {
+      distance: difference,
+      text: data,
+      percentage: 0,
+      //patterns: result.patterns
+    }
+    console.log(spdxid + " - LCS: " + lcs + " length: " + lcs.length);
+
+  }
+  postMessage({"command": "next", "spdxid":spdxid});
+  //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
+  //resolve(SPDXlist[spdxid])
+}
+  var sortable = [];
+  for (var license in SPDXlist) {
+    sortable.push([
+      license,
+      SPDXlist[license]['distance'],
+      SPDXlist[license]['text'],
+      SPDXlist[license]['percentage']
+    ]);
+  }
+  sortable.sort(function(a, b) {
+    return b[3] - a[3];
+  });
+  postMessage({"command": "done","result": sortable});
+};
+
 function processSelection(spdxid, data, selection) {
   var result = processVariables(data); //strip out spdx variables
   var data = result.data
