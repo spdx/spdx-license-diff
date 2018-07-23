@@ -9,7 +9,6 @@ self.onmessage = function(event) {
   switch (event.data.command) {
     case "process":
     //'license':spdxid,'hash':hash, 'selection': selection
-    //processSelection(event.data["license"], event.data["data"], event.data["selection"]);
     break;
     case "updatelicenselist":
     getSPDXlist(event.data["url"], event.data["selection"]);
@@ -17,7 +16,6 @@ self.onmessage = function(event) {
     case "compare":
     files = event.data.list
     compareSPDXlist(event.data["selection"], files);
-    //processSelection(event.data["license"], event.data["data"], event.data["selection"]);
     break;
     default:
     //getSPDXlist(event.data["url"], event.data["selection"]);
@@ -115,13 +113,18 @@ function compareSPDXlist(selection, licenses) {
   for (var spdxid in licenses) {
   var data = licenses[spdxid].licenseText
   var count = data.length
+  var locre = data.match(/\r?\n/g)
+  var loc = (locre ? locre.length: 0);
+  var locre2 = selection.match(/\r?\n/g)
+  var loc2 = (locre2 ? locre2.length: 0);
   var difference = Math.abs(count2 - count);
+  var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
   var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
   if (difference <= maxLength && difference < 1000) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
-    console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)");
+    console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
     SPDXlist[spdxid] = {
       distance: distance,
       text: data,
@@ -129,7 +132,7 @@ function compareSPDXlist(selection, licenses) {
       //patterns: result.patterns
     }
   }else {
-    console.log(spdxid + " - Length Difference: " + difference);
+    console.log(spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
     SPDXlist[spdxid] = {
       distance: difference,
       text: data,
@@ -156,36 +159,6 @@ function compareSPDXlist(selection, licenses) {
     return b[3] - a[3];
   });
   postMessage({"command": "done","result": sortable});
-};
-
-function processSelection(spdxid, data, selection) {
-  var result = processVariables(data); //strip out spdx variables
-  var data = result.data
-  var count = data.length
-  var count2 = selection.length;
-  var difference = Math.abs(count2 - count);
-  var maxLength = Math.max(count, count2);
-  if (difference <= maxLength && difference < 1000) {
-    var distance = Levenshtein.get(cleanText(data), cleanText(selection));
-    var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
-    console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)");
-    SPDXlist[spdxid] = {
-      distance: distance,
-      text: data,
-      percentage: percentage,
-      patterns: result.patterns
-    }
-  }else {
-    console.log(spdxid + " - Length Difference: " + difference);
-    SPDXlist[spdxid] = {
-      distance: difference,
-      text: data,
-      percentage: 0,
-      patterns: result.patterns
-    }
-  }
-  postMessage({"command": "store", "spdxid":spdxid, "raw":data, "processed":result.data, "patterns": result.patterns});
-  //resolve(SPDXlist[spdxid])
 };
 
 function cleanText(str) {
