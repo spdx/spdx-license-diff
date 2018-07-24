@@ -16,14 +16,19 @@ var lastupdate = null;
 var updating = false;
 var pendingcompare = false;
 var ms_start;
+var maxworkers = 5;
+var runningworkers = 0;
 //load worker
-var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
+var workers = [];
+var workqueue = [];
+//var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
 
 createBubble();
 list = loadList();
 
-worker.onmessage = function(event) {
+function workeronmessage(event) {
   var progressbar = $('#progress_bubble')[0];
+  processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
     progressbar.setAttribute('max',event.data.value);
@@ -73,7 +78,7 @@ worker.onmessage = function(event) {
               console.log('Newer license list found', externallicenselist["licenseListVersion"]);
               storeList(externallicenselist);
             } else {
-              worker.postMessage({ 'command':'populatelicenselist', 'data':list});
+              dowork({ 'command':'populatelicenselist', 'data':list});
               console.log('No new update found; same version', externallicenselist["licenseListVersion"]);
             }
           }else {
@@ -115,9 +120,7 @@ worker.onmessage = function(event) {
     }
     updating = false;
     if (pendingcompare)
-      if (typeof worker === "undefined")
-        worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
-      worker.postMessage({ 'command':"compare", 'selection': selection, 'list':list["license"]});
+      dowork({ 'command':"compare", 'selection': selection, 'list':list["license"]});
       pendingcompare = false;
     break;
     case "done":
@@ -155,7 +158,7 @@ chrome.runtime.onMessage.addListener(
         console.log('Queing compare after update')
         return;
       }
-      worker.postMessage({ 'command':"compare", 'selection': selection, 'list':list["license"]});
+      dowork({ 'command':"compare", 'selection': selection, 'list':list["license"]});
     }
   }
 );
@@ -287,7 +290,47 @@ function renderBubble(mouseX, mouseY, selection) {
     $('html,body').animate({
       scrollTop: $(licenses).offset().top},
       'fast');
+  }
+  function spawnworkers(){
+    if (workers.length == maxworkers)
+      return
+    for (var i = 0; i < maxworkers; i++){
+      console.log("Spawning workers", maxworkers)
+      var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
+      worker.onmessage = workeronmessage;
+      workers[i]= [worker , false];
     }
+  }
+  //queue and start work
+  function processqueue(){
+    while (maxworkers >= runningworkers && workqueue.length){
+      while(workqueue.length){
+          var work = workqueue.shift();
+          dowork(work)
+      }
+    }
+  }
+  function dowork(message){
+    spawnworkers()
+    var offset = maxworkers - runningworkers
+    if (maxworkers >= runningworkers ){
+      for (var i = runningworkers; i < maxworkers + offset - 1; i++ % maxworkers){
+        if (!workers[i][1]) {// worker is available
+          message["id"] = i;
+          var worker = workers[i][0]
+          workers[i][1] = true
+          worker.postMessage(message)
+          runningworkers++
+          break
+        }else {
+          continue
+        }
+      }
+    }else{ // queue up work
+      workqueue.push(message)
+    }
+  }
+
     function storeList(externallicenselist){
       var obj = {};
       externallicenselist["lastupdate"] = Date.now()
@@ -329,8 +372,13 @@ function renderBubble(mouseX, mouseY, selection) {
 
         }
         function updateList(){
+          if (updating){
+            console.log("Ignoring redundant update request")
+            return
+          }else{
           updating = true;
-          worker.postMessage({ 'command':"updatelicenselist"});
+          dowork({ 'command':"updatelicenselist"});
+          }
         }
 
     //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
