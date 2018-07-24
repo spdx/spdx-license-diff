@@ -11,28 +11,31 @@ var showBest = 10;
 var selection = "";
 var maxDifference=500;
 var processTime = 0;
-var list;
+var list = {};
 var lastupdate = null;
 var updating = false;
 var pendingcompare = false;
 var ms_start;
-var maxworkers = 5;
+var maxworkers = 10;
 var runningworkers = 0;
 //load worker
 var workers = [];
 var workqueue = [];
+var unsorted = {};
 //var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
 
 createBubble();
-list = loadList();
+loadList();
 
 function workeronmessage(event) {
   var progressbar = $('#progress_bubble')[0];
   processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
-    progressbar.setAttribute('max',event.data.value);
-    progressbar.value = 0;
+    if(event.data.value > 0){
+      progressbar.setAttribute('max',event.data.value);
+      progressbar.value = 0;
+    }
     updateBubbleText(event.data.stage);
     break;
     case "next":
@@ -111,19 +114,38 @@ function workeronmessage(event) {
     }
     break;
     case "updatedone":
+    workers[event.data.id][1] = false
+    runningworkers--
     var arr = event.data.result;
     if (typeof list === "undefined")
-      var list = {};
       list["license"] = {};
     for (var i=0; i < arr.length; i++){
       list["license"][arr[i]["licenseId"]] = arr[i]
     }
     updating = false;
     if (pendingcompare)
-      dowork({ 'command':"compare", 'selection': selection, 'list':list["license"]});
+      var progressbar = $('#progress_bubble')[0];
+      progressbar.setAttribute('max',Object.keys(list["license"]).length);
+      for (var license in list["license"]){
+        dowork({'command':"compare", 'selection': selection, 'spdxid':license,'license':list["license"][license]});
+      }
       pendingcompare = false;
     break;
+    case "comparenext":
+    workers[event.data.id][1] = false
+    runningworkers--
+    progressbar.value++;
+    var result = event.data.result;
+    var spdxid = event.data.spdxid;
+    unsorted[spdxid] = result
+    if (Object.keys(unsorted).length >= Object.keys(list["license"]).length){
+      console.log("Requesting final sort", Object.keys(unsorted).length)
+      dowork({ 'command':"sortlicenses", 'licenses':unsorted});
+    }
+    break;
     case "done":
+    workers[event.data.id][1] = false
+    runningworkers--
     spdx = event.data.result;
     var ms_end = (new Date()).getTime();
     processTime = ms_end - ms_start;
@@ -158,7 +180,12 @@ chrome.runtime.onMessage.addListener(
         console.log('Queing compare after update')
         return;
       }
-      dowork({ 'command':"compare", 'selection': selection, 'list':list["license"]});
+      var progressbar = $('#progress_bubble')[0];
+      progressbar.setAttribute('max',Object.keys(list["license"]).length);
+      for (var license in list["license"]){
+        dowork({'command':"compare", 'selection': selection, 'spdxid':license,'license':list["license"][license]});
+      }
+
     }
   }
 );
@@ -294,8 +321,8 @@ function renderBubble(mouseX, mouseY, selection) {
   function spawnworkers(){
     if (workers.length == maxworkers)
       return
+    console.log("Spawning workers", maxworkers)
     for (var i = 0; i < maxworkers; i++){
-      console.log("Spawning workers", maxworkers)
       var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
       worker.onmessage = workeronmessage;
       workers[i]= [worker , false];
@@ -303,18 +330,16 @@ function renderBubble(mouseX, mouseY, selection) {
   }
   //queue and start work
   function processqueue(){
-    while (maxworkers >= runningworkers && workqueue.length){
-      while(workqueue.length){
-          var work = workqueue.shift();
-          dowork(work)
-      }
+    while (workqueue.length && maxworkers > runningworkers){
+        var work = workqueue.shift();
+        dowork(work)
     }
   }
   function dowork(message){
     spawnworkers()
     var offset = maxworkers - runningworkers
-    if (maxworkers >= runningworkers ){
-      for (var i = runningworkers; i < maxworkers + offset - 1; i++ % maxworkers){
+    if (maxworkers > runningworkers ){
+      for (var i = runningworkers % maxworkers; i < maxworkers + offset - 1; i = (i + 1) % maxworkers){
         if (!workers[i][1]) {// worker is available
           message["id"] = i;
           var worker = workers[i][0]
@@ -363,7 +388,6 @@ function renderBubble(mouseX, mouseY, selection) {
                   }
                 });
               }
-              return list
             }else {
               console.log('No license list found in storage; updating');
               updateList()
