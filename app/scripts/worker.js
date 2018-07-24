@@ -3,9 +3,10 @@
 var promises=[];
 var SPDXlist = {};
 var files = [];
-
+var id;
 
 self.onmessage = function(event) {
+  id = event.data.id
   switch (event.data.command) {
     case "process":
     //'license':spdxid,'hash':hash, 'selection': selection
@@ -14,9 +15,14 @@ self.onmessage = function(event) {
     getSPDXlist(event.data["url"], event.data["selection"]);
     break;
     case "compare":
-    files = event.data.list
-    compareSPDXlist(event.data["selection"], files);
+    var spdxid = event.data.spdxid
+    var license = event.data.license
+    comparelicense(event.data["selection"], spdxid, license);
     break;
+    case "sortlicenses":
+    sortlicenses(event.data.licenses);
+    break;
+
     default:
     //getSPDXlist(event.data["url"], event.data["selection"]);
 
@@ -36,9 +42,9 @@ function getSPDXlist(baseurl, selection, remote=true) {
   x.onload = function() {
     if (remote){
       var lines = JSON.parse(x.responseText);
-      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses"});
-      postMessage({"command": "savelicenselist","value": lines});
-      console.log("Updating: ", lines);
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id});
+      postMessage({"command": "savelicenselist","value": lines,"id":id});
+      console.log(id, "Updating: ", lines);
       for (var j = 0; j < lines.licenses.length; j++) {
         var line = lines.licenses[j];
         var license = line["detailsUrl"];
@@ -47,7 +53,7 @@ function getSPDXlist(baseurl, selection, remote=true) {
       }
     } else {
       var lines = x.responseText.split("\n");
-      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses"});
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id});
       for (var j = 0; j < lines.length; j++) {
         var line = lines[j]
         if (line.search(/\.txt/g) >= 0){
@@ -87,8 +93,8 @@ function processSPDXlist(files, remote=true) {
             response["licenseText"] = raw;
             response["licenseId"] = spdxid
           }
-          postMessage({"command": "savelicense","spdxid": spdxid, "data":response});
-          postMessage({"command": "next", "spdxid":spdxid});
+          postMessage({"command": "savelicense","spdxid": spdxid, "data":response,"id":id});
+          postMessage({"command": "next", "spdxid":spdxid,"id":id});
           SPDXlist[spdxid] = response
           //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
           resolve(SPDXlist[spdxid])
@@ -99,19 +105,19 @@ function processSPDXlist(files, remote=true) {
     });
     Promise.all(promises)
     .then(function(data){ //success
-      console.log("License List Updated");
-      postMessage({"command": "updatedone", "result":data});
+      console.log(id, "License List Updated");
+      postMessage({"command": "updatedone", "result":data,"id":id});
     }
 
   );
 };
 
-function compareSPDXlist(selection, licenses) {
-  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Comparing licenses"});
+function comparelicense(selection, spdxid, license) {
+  postMessage({"command": "progressbarmax","value": 0, "stage":"Comparing licenses","id":id});
+  var result = {}
   var count2 = selection.length;
-  console.log("Processing selection of " + count2 + " chars.");
-  for (var spdxid in licenses) {
-  var data = licenses[spdxid].licenseText
+  //console.log(id, "Processing selection of " + count2 + " chars.");
+  var data = license.licenseText
   var count = data.length
   var locre = data.match(/\r?\n/g)
   var loc = (locre ? locre.length: 0);
@@ -124,42 +130,45 @@ function compareSPDXlist(selection, licenses) {
   if (difference <= maxLength && difference < 1000) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
-    console.log(spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
-    SPDXlist[spdxid] = {
+    console.log(id, spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
+    result = {
       distance: distance,
       text: data,
       percentage: percentage,
       //patterns: result.patterns
     }
-  }else {
-    console.log(spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
-    SPDXlist[spdxid] = {
+  }else{
+    console.log(id, spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
+    result = {
       distance: difference,
       text: data,
       percentage: 0,
       //patterns: result.patterns
     }
-    console.log(spdxid + " - LCS: " + lcs + " length: " + lcs.length);
+    console.log(id, spdxid + " - LCS: " + lcs + " length: " + lcs.length);
 
   }
-  postMessage({"command": "next", "spdxid":spdxid});
+  postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id});
   //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-  //resolve(SPDXlist[spdxid])
-}
+};
+function sortlicenses(licenses) {
+  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id});
+  console.log(id, "Sorting " + Object.keys(licenses).length + " licenses.");
   var sortable = [];
-  for (var license in SPDXlist) {
+  for (var license in licenses) {
     sortable.push([
       license,
-      SPDXlist[license]['distance'],
-      SPDXlist[license]['text'],
-      SPDXlist[license]['percentage']
+      licenses[license]['distance'],
+      licenses[license]['text'],
+      licenses[license]['percentage']
     ]);
   }
   sortable.sort(function(a, b) {
     return b[3] - a[3];
   });
-  postMessage({"command": "done","result": sortable});
+  postMessage({"command": "done","result": sortable,"id":id});
 };
+
 
 function cleanText(str) {
   return str.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, ' ');
