@@ -22,6 +22,7 @@ var runningworkers = 0;
 var workers = [];
 var workqueue = [];
 var unsorted = {};
+var minpercentage = 25.0
 
 createBubble();
 loadList();
@@ -97,9 +98,9 @@ function workeronmessage(event) {
       var spdxid = event.data.spdxid
       console.log('Saving license', event.data);
       chrome.storage.local.get([spdxid], function(result) {
-            if (result[spdxid] && externallicenselist.data[spdxid]){
+            if (result[spdxid] && externallicenselist.data && _.isEqual(result[spdxid], externallicenselist.data)){
               var license = result[spdxid];
-              console.log('Existing license', spdxid);
+              console.log('Ignoring existing license', spdxid);
             }else {
               console.log('Saving new', spdxid);
               var obj = {}
@@ -238,7 +239,7 @@ function renderBubble(mouseX, mouseY, selection) {
     var bubbleDOMText = $('#bubble_text')[0];
     bubbleDOMText.innerHTML = text;
 }
-  function addSelectFormFromArray(id, arr, number=arr.length) {
+  function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
     if (form = document.getElementById(id))
     form.outerHTML="";
     if (!$('#license_form').length){
@@ -247,26 +248,25 @@ function renderBubble(mouseX, mouseY, selection) {
       var form = bubbleDOM.insertBefore(document.createElement('form'), bubbleDOMText);
       form.setAttribute('id',"license_form");
     }
-        form = document.getElementById("license_form");
-        var select = form.appendChild(document.createElement('select'));
-        select.id = id;
-        for (var i=0; i < arr.length && i < number; i++){
-          var value = arr[i][0];
-          var percentage = arr[i][3]
-          var text = value + " : " + arr[i][1] + " ("+ percentage +"%)";
-          if (percentage == 0){ //No match at all
-            break;
-          }
-          var option = select.appendChild(document.createElement("option"));
-          option.value = value;
-          option.text = text;
-
+    form = document.getElementById("license_form");
+    var select = form.appendChild(document.createElement('select'));
+    select.id = id;
+    for (var i=0; i < arr.length && i < number; i++){
+      var value = arr[i][0];
+      var percentage = arr[i][3]
+      var text = value + " : " + arr[i][1] + " differences ("+ percentage +"% match)";
+      if (percentage <= minimum){ //No match at all
+        break;
+      }
+      var option = select.appendChild(document.createElement("option"));
+      option.value = value;
+      option.text = text;
     }
   }
   function processLicenses(sortable, showBest, processTime=0){
-    if (sortable && sortable.length == 0){
+    if (sortable && (sortable.length == 0 || sortable[0][3] <= minpercentage)){
       console.log("No results to display");
-      displayDiff(data, selection, processTime);
+      displayDiff(null, selection, processTime);
       return
     }
     var data = sortable[0][2];
@@ -281,7 +281,7 @@ function renderBubble(mouseX, mouseY, selection) {
         console.log(license+ ": " + distance + " (" + percentage+ "%)");
       }
     }
-    addSelectFormFromArray("licenses", sortable, showBest)
+    addSelectFormFromArray("licenses", sortable, showBest, minpercentage)
     displayDiff(data, selection, processTime);
     var el = document.getElementById("licenses").addEventListener("change", function () {
       if (this.value != selectedLicense){
@@ -382,7 +382,8 @@ function renderBubble(mouseX, mouseY, selection) {
                   console.log('%s succesfully loaded from storage', license);
                   list.license[license] = result[license];
                 }else {
-                  console.log('%s not found in storage', license);
+                  console.log('%s not found in storage; requesting update', license);
+                  updateList()
                 }
               });
             }

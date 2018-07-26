@@ -153,7 +153,7 @@ function comparelicense(selection, spdxid, license) {
 };
 function sortlicenses(licenses) {
   postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id});
-  console.log(id, "Sorting " + Object.keys(licenses).length + " licenses.");
+  console.log(id, "Sorting " + Object.keys(licenses).length + " licenses");
   var sortable = [];
   for (var license in licenses) {
     sortable.push([
