@@ -162,6 +162,7 @@ function sortlicenses(licenses) {
       licenses[license]['text'],
       licenses[license]['percentage']
     ]);
+    postMessage({"command": "next", "spdxid":license,"id":id});
   }
   sortable.sort(function(a, b) {
     return b[3] - a[3];
