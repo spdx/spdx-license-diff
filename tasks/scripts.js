@@ -26,6 +26,10 @@ gulp.task('scripts', (cb) => {
           jQuery: 'jquery'
         }),
         new webpack.ProvidePlugin({
+          _: 'underscore',
+          underscore: 'underscore'
+        }),
+        new webpack.ProvidePlugin({
           Levenshtein: 'fast-levenshtein'
         }),
         new webpack.ProvidePlugin({
