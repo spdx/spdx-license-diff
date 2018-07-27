@@ -4,6 +4,7 @@ var promises=[];
 var SPDXlist = {};
 var files = [];
 var id;
+var dmp =  new DiffMatchPatch(); // options may be passed to constructor; see below
 
 self.onmessage = function(event) {
   id = event.data.id
@@ -21,6 +22,12 @@ self.onmessage = function(event) {
     break;
     case "sortlicenses":
     sortlicenses(event.data.licenses);
+    break;
+    case "generateDiff":
+    var spdxid = event.data.spdxid
+    var license = event.data.license
+    var record = event.data.record
+    generateDiff(event.data["selection"], spdxid, license, record);
     break;
 
     default:
@@ -167,9 +174,24 @@ function sortlicenses(licenses) {
   sortable.sort(function(a, b) {
     return b[3] - a[3];
   });
-  postMessage({"command": "done","result": sortable,"id":id});
+  postMessage({"command": "sortdone","result": sortable,"id":id});
 };
 
+function generateDiff(selection, spdxid, license, record) {
+  //postMessage({"command": "progressbarmax","value": 0, "stage":"Generating Diff","id":id});
+  var result = {}
+  var data = license
+  dmp.Diff_Timeout=0;
+//    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
+  var ms_start = (new Date()).getTime();
+  var textDiff = dmp.diff_main(data, selection); // produces diff array
+  dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
+  //dmp.diff_cleanupEfficiency(textDiff);
+  var ms_end = (new Date()).getTime();
+  result = { "html":dmp.diff_prettyHtml(textDiff), "time":(ms_end - ms_start)}
+  console.log("%s: %s diff:%o", id, spdxid, result);
+  postMessage({"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":id});
+};
 
 function cleanText(str) {
   return str.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, ' ');
