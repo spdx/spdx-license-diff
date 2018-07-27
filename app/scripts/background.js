@@ -1,6 +1,7 @@
 // Enable chromereload by uncommenting this line:
-//import 'chromereload/devonly'
-
+if(process.env.NODE_ENV === 'development'){
+  require('chromereload/devonly')
+}
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('previousVersion', details.previousVersion)
 })
