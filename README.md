@@ -1,22 +1,25 @@
-# Built using https://github.com/HaNdTriX/generator-chrome-extension-kickstart
 # spdx-diff
 
-Diff selected text against SPDX licenses
+Diff selected text against SPDX licenses. Creates a browser button in Chrome to compare selected text against spdx license list. <https://spdx.org/licenses/>
 
-## Installation
+Currently will autodownload the license list on load
 
-	$ npm install
+## Installation of Prerequisites
+
+	$ yarn install
 
 ## Usage
 
-Run `$ gulp --watch` and load the `dist`-directory into chrome.
+Run `$ gulp` and load the `dist`-directory into chrome.
+
+# Making edits
 
 ## Entryfiles (bundles)
 
-There are two kinds of entryfiles that create bundles.
+There are two kinds of entryfiles that create bundles when `gulp` is run.
 
-1. All js-files in the root of the `./app/scripts` directory
-2. All css-,scss- and less-files in the root of the `./app/styles` directory
+ 1. All js-files in the root of the `./app/scripts` directory
+ 2. All css-,scss- and less-files in the root of the `./app/styles` directory
 
 ## Tasks
 
@@ -69,9 +72,9 @@ if(process.env.NODE_ENV === 'development'){
   console.log('We are in development mode!');
 }
 ```
+# Credits
+ Built using <https://github.com/HaNdTriX/generator-chrome-extension-kickstart>
+ See `/oss-attribution/attribution.txt for third-party licenses
 
-
-
-
-
-
+# License
+GPL-3.0 (due to stackoverflow code, which I plan to refactor out to go more permissive)
