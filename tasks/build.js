@@ -11,6 +11,7 @@ gulp.task('build', gulpSequence(
     'license-list',
     'images',
     'fonts',
+    'ossattribution',
     'chromereload'
   ]
 ))

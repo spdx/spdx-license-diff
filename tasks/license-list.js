@@ -2,11 +2,10 @@ import gulp from 'gulp'
 import gulpif from 'gulp-if'
 import livereload from 'gulp-livereload'
 import args from './lib/args'
-var fs = require('fs');
 var exec = require('child_process').exec;
 var git = require('gulp-git');
 const directoryExists = require('directory-exists');
- 
+
 gulp.task('get-list', () => {
   if (directoryExists.sync('./license-list')){
     process.chdir('license-list')
@@ -35,5 +34,3 @@ gulp.task('license-list', ['get-list'],() => {
     .pipe(gulp.dest(`dist/${args.vendor}/license-list`))
     .pipe(gulpif(args.watch, livereload()))
 })
-
-
