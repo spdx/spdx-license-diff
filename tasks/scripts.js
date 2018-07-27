@@ -18,6 +18,8 @@ gulp.task('scripts', (cb) => {
     }))
     .pipe(named())
     .pipe(gulpWebpack({
+      optimization: { minimize: args.production ? true: false},
+      mode: ENV,
       devtool: args.sourcemaps ? 'inline-source-map' : false,
       watch: args.watch,
       plugins: [
@@ -42,9 +44,7 @@ gulp.task('scripts', (cb) => {
           'process.env.NODE_ENV': JSON.stringify(ENV),
           'process.env.VENDOR': JSON.stringify(args.vendor)
         })
-      ].concat(args.production ? [
-        new webpack.optimize.UglifyJsPlugin()
-      ] : []),
+      ],
       module: {
         rules: [{
           test: /\.js$/,
