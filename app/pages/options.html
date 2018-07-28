@@ -2,16 +2,58 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Options</title>
+  <title>spdx-diff Options</title>
   <link rel="stylesheet" type="text/css" href="../styles/options.css">
 </head>
 <body>
-
-  <label>
-    <input type="checkbox" name="examplOption" checked>
-    Example Option
-  </label>
-
+  <form id="options">
+<fieldset>
+  <h2>SPDX License List Options</h2>
+  <div>
+    <label for="updateFrequency">Check for list update interval</label>
+    <input id="updateFrequency" type="number" name="updateFrequency" step="1" min="1" max ="365" value="90"
+      title="Number of days before trying to update the SPDX license list from https://spdx.org. (1 is daily)" required>
+    <span class="validity"></span>
+  </div>
+  <div>
+    <div id="updatestatus"></div>
+    <button id="update">Manual Update</button>
+  </div>
+</fieldset>
+<fieldset>
+  <h2>Display Result Options</h2>
+  <div>
+    <label for="maxComparisons">Max results</label>
+    <input id="maxComparisons" type="number" name="maxComparisons" step="1" min="0" value="10"
+      title="Number of results to show. These must exceed which exceed minimum match percentage (0 is unlimited)" required>
+    <span class="validity"></span>
+  </div>
+  <div>
+    <label for="minpercentage">Minimum match percentage</label>
+    <input id="minpercentage" type="number" name="minpercentage" step="0.1" min="0" max="100" value="25"
+      title="Minimum percentage matches to display" required>
+    <span class="validity"></span>
+  </div>
+</fieldset>
+<fieldset>
+  <h2>Advanced Options</h2>
+  <div>
+    <label for="maxDifference">Maximum length difference</label>
+    <input id="maxDifference" type="number" name="maxDifference" step="100" min="0" max="100000" value="1000"
+      title="Maximum difference in length to attempt comparison (0 is unlimited; higher will be slower but more accurate)" required>
+    <span class="validity"></span>
+  </div>
+  <div>
+    <label for="maxWorkers">Max threads</label>
+    <input id="maxWorkers" type="number" name="maxWorkers" step="1" min="1" max="20" value="10"
+      title="Maximum number of worker threads to allow (higher is generally better but dependent on hardware)" required>
+    <span class="validity"></span>
+  </div>
+</fieldset>
+</form>
+  <div id="status"></div>
+  <button id="reset">Reset</button>
+  <button id="save">Save</button>
   <script src="../scripts/options.js"></script>
 </body>
 </html>

@@ -18,7 +18,8 @@ self.onmessage = function(event) {
     case "compare":
     var spdxid = event.data.spdxid
     var license = event.data.license
-    comparelicense(event.data["selection"], spdxid, license);
+    var maxLengthDifference = event.data.maxLengthDifference
+    comparelicense(event.data["selection"], spdxid, license, maxLengthDifference);
     break;
     case "sortlicenses":
     sortlicenses(event.data.licenses);
@@ -119,7 +120,7 @@ function processSPDXlist(files, remote=true) {
   );
 };
 
-function comparelicense(selection, spdxid, license) {
+function comparelicense(selection, spdxid, license, maxLengthDifference=1000) {
   postMessage({"command": "progressbarmax","value": 0, "stage":"Comparing licenses","id":id});
   var result = {}
   var count2 = selection.length;
@@ -134,7 +135,7 @@ function comparelicense(selection, spdxid, license) {
   var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
   var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
-  if (difference <= maxLength && difference < 1000) {
+  if (difference <= maxLength && difference < maxLengthDifference) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
     console.log(id, spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);

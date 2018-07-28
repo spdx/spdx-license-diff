@@ -9,27 +9,28 @@ if(process.env.NODE_ENV === 'development'){
 
 var selectedLicense = "";
 var spdx = null;
-var showBest = 10;
+//var showBest = 10;
 var selection = "";
 var lastselection = "";
-var maxDifference=500;
 var processTime = 0;
 var list = {};
 var lastupdate = null;
 var updating = false;
 var pendingcompare = false;
 var ms_start;
-var maxworkers = 10;
+//var maxworkers = 10;
 var runningworkers = 0;
 var workers = [];
 var workqueue = [];
 var unsorted = {};
-var minpercentage = 25.0;
+//var minpercentage = 25.0;
 var diffsdone = 0;
 var diffdisplayed = false;
+var options;
 
+restore_options();
 createBubble();
-loadList();
+
 
 function workeronmessage(event) {
   var progressbar = $('#progress_bubble')[0];
@@ -123,7 +124,7 @@ function workeronmessage(event) {
     workers[event.data.id][1] = false
     runningworkers--
     var arr = event.data.result;
-    if (typeof list === "undefined")
+    if (typeof list["license"] === "undefined")
       list["license"] = {};
     for (var i=0; i < arr.length; i++){
       list["license"][arr[i]["licenseId"]] = arr[i]
@@ -153,7 +154,7 @@ function workeronmessage(event) {
     var ms_end = (new Date()).getTime();
     processTime = ms_end - ms_start;
     console.log("processTime: " + processTime/1000 + ("s"));
-    processLicenses(showBest, processTime)
+    processLicenses(options.showBest, processTime)
     break;
     case "diffnext":
     workers[event.data.id][1] = false
@@ -190,7 +191,7 @@ chrome.runtime.onMessage.addListener(
         var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
         if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
-          processLicenses(showBest, processTime);
+          processLicenses(options.showBest, processTime);
           return;
         } else {
           lastselection = selection;
@@ -213,6 +214,11 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+chrome.storage.onChanged.addListener(function(changes, area) {
+    if (area == "sync" && "options" in changes) {
+        restore_options();
+    }
+});
 // Add bubble to the top of the page.
 function createBubble(){
   if ($('#license_bubble').length) return;
@@ -290,7 +296,7 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
   }
 }
 function processLicenses(showBest, processTime=0){
-  if (spdx && (spdx.length == 0 || spdx[0][3] <= minpercentage)){
+  if (spdx && (spdx.length == 0 || spdx[0][3] <= options.minpercentage)){
     console.log("No results to display");
     displayDiff(null, processTime);
     return
@@ -303,7 +309,7 @@ function processLicenses(showBest, processTime=0){
     if (i == 0) {
       selectedLicense = license;
       console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
-    } else if (percentage <= minpercentage) {
+    } else if (percentage <= options.minpercentage) {
       console.log(license+ ": " + distance + " (" + percentage+ "%)");
       break;
     } else {
@@ -311,7 +317,7 @@ function processLicenses(showBest, processTime=0){
     }
     dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
   }
-  addSelectFormFromArray("licenses", spdx, showBest, minpercentage)
+  addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
 }
 
 function displayDiff(html, time=processTime){
@@ -335,10 +341,10 @@ function displayDiff(html, time=processTime){
   }, false);
 }
 function spawnworkers(){
-  if (workers.length == maxworkers)
+  if (workers.length == options.maxworkers)
     return
-  console.log("Spawning %s workers", maxworkers)
-  for (var i = 0; i < maxworkers; i++){
+  console.log("Spawning %s workers", options.maxworkers)
+  for (var i = 0; i < options.maxworkers; i++){
     var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
     worker.onmessage = workeronmessage;
     workers[i]= [worker , false];
@@ -346,16 +352,16 @@ function spawnworkers(){
 }
 //queue and start work
 function processqueue(){
-  while (workqueue.length && maxworkers > runningworkers){
+  while (workqueue.length && options.maxworkers > runningworkers){
       var work = workqueue.shift();
       dowork(work)
   }
 }
 function dowork(message){
   spawnworkers()
-  var offset = maxworkers - runningworkers
-  if (maxworkers > runningworkers ){
-    for (var i = runningworkers % maxworkers; i < maxworkers + offset - 1; i = (i + 1) % maxworkers){
+  var offset = options.maxworkers - runningworkers
+  if (options.maxworkers > runningworkers ){
+    for (var i = runningworkers % options.maxworkers; i < options.maxworkers + offset - 1; i = (i + 1) % options.maxworkers){
       if (!workers[i][1]) {// worker is available
         message["id"] = i;
         var worker = workers[i][0]
@@ -387,24 +393,29 @@ function loadList(){
     chrome.storage.local.get(['list'], function(result) {
       if (result.list && result.list["licenseListVersion"]){
         list = result.list;
-        console.log('Loading License list version %s from storage with %s licenses last updated %s',
-          list["licenseListVersion"], list.licenses.length, Date(list["lastupdate"]));
         lastupdate = list["lastupdate"]
-        for (var j = 0; j < list.licenses.length; j++) {
-          var line = list.licenses[j];
-          var license = line["licenseId"];
-          list["license"] = {}
-          console.log('Attempting to load %s from storage', license);
-          chrome.storage.local.get([license], function(result) {
-            if (result){
-              license = Object.keys(result)[0]
-              console.log('%s succesfully loaded from storage', license);
-              list.license[license] = result[license];
-            }else {
-              console.log('%s not found in storage; requesting update', license);
-              updateList()
-            }
-          });
+        console.log('Loading License list version %s from storage with %s licenses last updated %s',
+          list["licenseListVersion"], list.licenses.length, Date(lastupdate));
+        if ((Date.now() - lastupdate) >= (options.updateFrequency * 86400000)){
+          console.log('Last update was over %s days ago; update required', options.updateFrequency);
+          updateList()
+        }else{
+          for (var j = 0; j < list.licenses.length; j++) {
+            var line = list.licenses[j];
+            var license = line["licenseId"];
+            list["license"] = {}
+            console.log('Attempting to load %s from storage', license);
+            chrome.storage.local.get([license], function(result) {
+              if (result){
+                license = Object.keys(result)[0]
+                console.log('%s succesfully loaded from storage', license);
+                list.license[license] = result[license];
+              }else {
+                console.log('%s not found in storage; requesting update', license);
+                updateList()
+              }
+            });
+          }
         }
       }else {
         console.log('No license list found in storage; requesting update');
@@ -416,7 +427,7 @@ function updateList(){
   if (updating){
     console.log("Ignoring redundant update request")
     return
-  }else{
+  }else {
   updating = true;
   dowork({ 'command':"updatelicenselist"});
   }
@@ -425,8 +436,15 @@ function compareSelection(selection){
   var progressbar = $('#progress_bubble')[0];
   progressbar.setAttribute('max',Object.keys(list["license"]).length);
   for (var license in list["license"]){
-    dowork({'command':"compare", 'selection': selection, 'spdxid':license,'license':list["license"][license]});
+    dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
   }
+}
+function restore_options() {
+  chrome.storage.sync.get(['options'], function(result) {
+    options = result.options;
+    //if (typeof list === "undefined" || _.isEmpty(list))
+      loadList();
+  });
 }
 //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
 function selectRangeCoords(){

@@ -6,7 +6,6 @@
   "manifest_version": 2,
   "default_locale": "en",
   "icons": {
-    "16": "images/spdx.png",
     "128": "images/spdx.png"
   },
   "background": {
@@ -17,13 +16,13 @@
   },
   "browser_action": {
     "default_icon": {
-      "19": "images/spdx.png",
-      "38": "images/spdx.png"
+      "32": "images/spdx.png"
     }
   },
   "options_page": "pages/options.html",
   "options_ui": {
     "page": "pages/options.html",
+    "open_in_tab": false,
     "chrome_style": true
   },
   "content_scripts": [
