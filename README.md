@@ -1,16 +1,21 @@
 # spdx-diff
 
-Diff selected text against SPDX licenses. Creates a browser button in Chrome to compare selected text against spdx license list. <https://spdx.org/licenses/>
+Diff selected text against SPDX licenses. Creates a browser button in Chrome to compare selected text against the SPDX [license list](https://spdx.org/licenses/).
 
-Currently will autodownload the license list on load
+![spdx-diff in action](app/images/spdx-diff.gif)
 
 ## Installation of Prerequisites
 
-	$ yarn install
+ 1. Install [node](https://nodejs.org/en/download/).
+ 2. Use yarn:`$ yarn install` or npm: `$ npm install`
 
 ## Usage
 
-Run `$ gulp` and load the `dist`-directory into chrome.
+ 1. Build
+  - Production: Run `$ gulp --production`
+  - Development: Run `$ gulp`
+ 2. load the `dist/chrome`-directory into chrome.
+![Extensions menu](https://developer.chrome.com/static/images/get_started/load_extension.png)
 
 # Making edits
 
@@ -73,8 +78,8 @@ if(process.env.NODE_ENV === 'development'){
 }
 ```
 # Credits
- Built using <https://github.com/HaNdTriX/generator-chrome-extension-kickstart>
- See `/oss-attribution/attribution.txt for third-party licenses
+- Scaffolding from  <https://github.com/HaNdTriX/generator-chrome-extension-kickstart>
+- See [third-party licenses](oss-attribution/attribution.txt) for production attribution
 
 # License
 GPL-3.0 (due to stackoverflow code, which I plan to refactor out to go more permissive)
