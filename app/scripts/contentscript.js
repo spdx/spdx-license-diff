@@ -34,21 +34,17 @@ createBubble();
 
 
 function workeronmessage(event) {
-  var progressbar = $('#progress_bubble')[0];
   processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
-    if(event.data.value > 0){
-      progressbar.setAttribute('max',event.data.value);
-      progressbar.value = 0;
-    }
+    updateProgressBar(event.data.value, null)
     updateBubbleText(event.data.stage);
     break;
     case "next":
-    progressbar.value++;
+    updateProgressBar(-1, -1)
     break;
     case "store":
-    progressbar.value++;
+    updateProgressBar(-1, -1)
     var obj = {}
     obj[event.data.spdxid] = {
         hash:event.data.hash,
@@ -138,7 +134,7 @@ function workeronmessage(event) {
     case "comparenext":
     workers[event.data.id][1] = false
     runningworkers--
-    progressbar.value++;
+    updateProgressBar(-1, -1)
     var result = event.data.result;
     var spdxid = event.data.spdxid;
     unsorted[spdxid] = result;
@@ -259,9 +255,8 @@ document.addEventListener('mousedown', function (e) {
 
 // Move that bubble to the appropriate location.
 function renderBubble(mouseX, mouseY, selection) {
+  updateProgressBar(-1, 1, true)
   var progressbar = $('#progress_bubble')[0];
-  progressbar.style.visibility = 'visible'
-  progressbar.value = 1;
   updateBubbleText("Processing...");
   var bubbleDOM = $('#license_bubble')[0];
   bubbleDOM.style.top = mouseY + 'px';
@@ -276,6 +271,22 @@ function renderBubble(mouseX, mouseY, selection) {
 function updateBubbleText(text) {
   var bubbleDOMText = $('#bubble_text')[0];
   bubbleDOMText.innerHTML = text;
+}
+// max will increase if > 0; value will be set if not null and >=0
+// else incremented by absolute value for negative numbers
+function updateProgressBar(max, value, visible=true) {
+  var progressbar = $('#progress_bubble')[0];
+  progressbar.style.visibility = visible ?'visible': 'hidden'
+  if (max > 0){
+    progressbar.setAttribute('max',max);
+  }
+  if (value !== null){
+    if (value >= 0) {
+      progressbar.value = value;
+    } else {
+      progressbar.value = progressbar.value + Math.abs(value)
+    }
+  }
 }
 function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
   if (form = document.getElementById(id))
@@ -333,9 +344,7 @@ function processLicenses(showBest, processTime=0){
 
 function displayDiff(html, time=processTime){
   diffdisplayed = true;
-  var progressbar = $('#progress_bubble')[0];
-  progressbar.setAttribute('max', spdx.length);
-  progressbar.value = spdx.length;
+  updateProgressBar(spdx.length, spdx.length)
   if (!html){
     updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
     return
@@ -447,8 +456,7 @@ function updateList(){
   }
 }
 function compareSelection(selection){
-  var progressbar = $('#progress_bubble')[0];
-  progressbar.setAttribute('max',Object.keys(list["license"]).length);
+  updateProgressBar(Object.keys(list["license"]).length, null)
   for (var license in list["license"]){
     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
   }
