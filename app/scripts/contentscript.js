@@ -44,6 +44,7 @@ function workeronmessage(event) {
     updateProgressBar(-1, -1)
     break;
     case "store":
+    //This path is intended to store a hash of a comparison. Complete
     updateProgressBar(-1, -1)
     var obj = {}
     obj[event.data.spdxid] = {
@@ -59,6 +60,7 @@ function workeronmessage(event) {
 
     break;
     case "license":
+    //This path is intended to determine if comparison already done. TODO: Complete
     var spdxid = event.data.spdxid;
     var hash= event.data.hash;
     // chrome.storage.local.get(spdxid, function(result) {
@@ -164,6 +166,7 @@ function workeronmessage(event) {
     var entry = spdx[record];
     entry.push(result)
     spdx[record].entry
+    var select = $("#licenses option[value='" + spdxid + "']").removeAttr("disabled")
     console.log("%s: Received diff for %s %s/%s", threadid, spdxid, diffsdone, diffsdue)
     if (diffdisplayed)
       return;
@@ -218,7 +221,8 @@ chrome.runtime.onMessage.addListener(
 
 chrome.storage.onChanged.addListener(function(changes, area) {
     if (area == "sync" && "options" in changes) {
-        restore_options();
+      console.log("Detected changed options; reloading")
+      restore_options();
     }
 });
 // Add bubble to the top of the page.
@@ -310,6 +314,8 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
     var option = select.appendChild(document.createElement("option"));
     option.value = value;
     option.text = text;
+    if (diffsdone ==0)
+      option.setAttribute("disabled","disabled")
   }
 }
 function processLicenses(showBest, processTime=0){
@@ -318,7 +324,7 @@ function processLicenses(showBest, processTime=0){
     displayDiff(null, processTime);
     return
   } else if (spdx && diffdisplayed) {
-    addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
+    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
     displayDiff(spdx[0][4].html, spdx[0][4].time);
   } else {
     for (var i = 0; i < showBest; i++){
@@ -338,7 +344,7 @@ function processLicenses(showBest, processTime=0){
       dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
       diffsdue++;
     }
-    addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
+    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
   }
 }
 
