@@ -11,10 +11,10 @@ Diff selected text against SPDX licenses. Creates a browser button in Chrome to 
 
 ## Usage
 
- 1. Build
+ 1. Build the extension
   - Production: Run `$ gulp --production`
   - Development: Run `$ gulp`
- 2. load the `dist/chrome`-directory into chrome.
+ 2. Load the `dist/chrome`-directory into chrome.
 ![Extensions menu](https://developer.chrome.com/static/images/get_started/load_extension.png)
 
 # Making edits
@@ -25,6 +25,8 @@ There are two kinds of entryfiles that create bundles when `gulp` is run.
 
  1. All js-files in the root of the `./app/scripts` directory
  2. All css-,scss- and less-files in the root of the `./app/styles` directory
+
+The main logic is in <app/scripts/contentscript.js> and <app/scripts/worker.js>.
 
 ## Tasks
 
