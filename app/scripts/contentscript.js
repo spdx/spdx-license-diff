@@ -25,6 +25,7 @@ var workqueue = [];
 var unsorted = {};
 //var minpercentage = 25.0;
 var diffsdone = 0;
+var diffsdue = 0;
 var diffdisplayed = false;
 var options;
 
@@ -157,24 +158,26 @@ function workeronmessage(event) {
     processLicenses(options.showBest, processTime)
     break;
     case "diffnext":
-    workers[event.data.id][1] = false
+    var threadid = event.data.id;
+    workers[threadid][1] = false
     runningworkers--
+    diffsdone++
     var result = event.data.result;
     var spdxid = event.data.spdxid;
     var record = event.data.record;
     var entry = spdx[record];
     entry.push(result)
     spdx[record].entry
+    console.log("%s: Received diff for %s %s/%s", threadid, spdxid, diffsdone, diffsdue)
     if (diffdisplayed)
       return;
-    if (diffsdone >= spdx.length){
+    if (diffsdone >= diffsdue){
       console.log("All diffs complete")
       displayDiff(spdx[0][4].html, spdx[0][4].time)
     } else if (spdx[0][4]){
       console.log("Best diff received; we can display")
       displayDiff(spdx[0][4].html, spdx[0][4].time)
     }
-    diffsdone++
     break;
     default:
 
@@ -198,6 +201,9 @@ chrome.runtime.onMessage.addListener(
           spdx = null;
           diffdisplayed = false;
           selectedLicense = "";
+          diffsdue = 0;
+          diffsdone = 0;
+          diffdisplayed = false;
         }
         ms_start = (new Date()).getTime();
         if (typeof list === "undefined"){
@@ -287,7 +293,7 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
     var value = arr[i][0];
     var percentage = arr[i][3]
     var text = value + " : " + arr[i][1] + " differences ("+ percentage +"% match)";
-    if (percentage <= minimum){ //No match at all
+    if (Number(percentage) <= Number(minimum)){ //No match at all
       break;
     }
     var option = select.appendChild(document.createElement("option"));
@@ -296,32 +302,40 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
   }
 }
 function processLicenses(showBest, processTime=0){
-  if (spdx && (spdx.length == 0 || spdx[0][3] <= options.minpercentage)){
+  if (spdx && (spdx.length == 0 || Number(spdx[0][3]) <= Number(options.minpercentage))){
     console.log("No results to display");
     displayDiff(null, processTime);
     return
-  }
-  for (var i = 0; i < showBest; i++){
-    var license = spdx[i][0];
-    var data = spdx[i][2];
-    var distance = spdx[i][1];
-    var percentage = spdx[i][3];
-    if (i == 0) {
-      selectedLicense = license;
-      console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
-    } else if (percentage <= options.minpercentage) {
-      console.log(license+ ": " + distance + " (" + percentage+ "%)");
-      break;
-    } else {
-      console.log(license+ ": " + distance + " (" + percentage+ "%)");
+  } else if (spdx && diffdisplayed) {
+    addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
+    displayDiff(spdx[0][4].html, spdx[0][4].time);
+  } else {
+    for (var i = 0; i < showBest; i++){
+      var license = spdx[i][0];
+      var data = spdx[i][2];
+      var distance = spdx[i][1];
+      var percentage = spdx[i][3];
+      if (i == 0) {
+        selectedLicense = license;
+        console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
+      } else if (Number(percentage) <= Number(options.minpercentage)) {
+        console.log(license+ ": " + distance + " (" + percentage+ "%)");
+        break;
+      } else {
+        console.log(license+ ": " + distance + " (" + percentage+ "%)");
+      }
+      dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
+      diffsdue++;
     }
-    dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
+    addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
   }
-  addSelectFormFromArray("licenses", spdx, options.showBest, options.minpercentage)
 }
 
 function displayDiff(html, time=processTime){
   diffdisplayed = true;
+  var progressbar = $('#progress_bubble')[0];
+  progressbar.setAttribute('max', spdx.length);
+  progressbar.value = spdx.length;
   if (!html){
     updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
     return

@@ -153,7 +153,7 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000) {
       percentage: 0,
       //patterns: result.patterns
     }
-    console.log(id, spdxid + " - LCS: " + lcs + " length: " + lcs.length);
+    //console.log(id, spdxid + " - LCS: " + lcs + " length: " + lcs.length);
 
   }
   postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id});
