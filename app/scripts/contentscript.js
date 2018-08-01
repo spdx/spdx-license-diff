@@ -435,7 +435,7 @@ function loadList(){
             list["license"] = {}
             console.log('Attempting to load %s from storage', license);
             chrome.storage.local.get([license], function(result) {
-              if (result){
+              if (result && ! _.isEmpty(result)){
                 license = Object.keys(result)[0]
                 console.log('%s succesfully loaded from storage', license);
                 list.license[license] = result[license];
@@ -470,8 +470,16 @@ function compareSelection(selection){
 function restore_options() {
   chrome.storage.sync.get(['options'], function(result) {
     options = result.options;
-    //if (typeof list === "undefined" || _.isEmpty(list))
-      loadList();
+    if (options === undefined) {
+      options = {
+        updateFrequency: 90,
+        showBest: 10,
+        minpercentage: 25,
+        maxLengthDifference: 1000,
+        maxworkers: 10
+      };
+    }
+    loadList();
   });
 }
 //https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
