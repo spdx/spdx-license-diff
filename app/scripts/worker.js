@@ -134,7 +134,6 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000) {
   var difference = Math.abs(count2 - count);
   var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
-  var lcs = "";//longestCommonSubstring(cleanText(data), cleanText(selection));
   if (difference <= maxLength && difference < maxLengthDifference) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
@@ -153,7 +152,6 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000) {
       percentage: 0,
       //patterns: result.patterns
     }
-    //console.log(id, spdxid + " - LCS: " + lcs + " length: " + lcs.length);
 
   }
   postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id});
@@ -227,43 +225,5 @@ function processVariables(str) {
   }
   result.patterns = patterns;
   result.data = result.data.replace(/<<beginOptional;.*?>>/g, "").replace(/<<endOptional>>/g, "");
-  return result;
-}
-
-//https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Longest_common_substring#JavaScript
-function longestCommonSubstring(string1, string2){
-  // init max value
-  var longestCommonSubstring = 0;
-  // init 2D array with 0
-  var table = [],
-            len1 = string1.length,
-            len2 = string2.length,
-            result = "",
-            row, col;
-  for(row = 0; row <= len1; row++){
-    table[row] = [];
-    for(col = 0; col <= len2; col++){
-      table[row][col] = 0;
-    }
-  }
-  // fill table
-        var i, j;
-  for(i = 0; i < len1; i++){
-    for(j = 0; j < len2; j++){
-      if(string1[i] === string2[j]){
-        if(table[i][j] === 0){
-          table[i+1][j+1] = 1;
-        } else {
-          table[i+1][j+1] = table[i][j] + 1;
-        }
-        if(table[i+1][j+1] > longestCommonSubstring){
-          longestCommonSubstring = table[i+1][j+1];
-          result = string1.substring(i - longestCommonSubstring + 1,i + 1);
-        }
-      } else {
-        table[i+1][j+1] = 0;
-      }
-    }
-  }
   return result;
 }
