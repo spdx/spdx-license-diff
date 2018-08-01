@@ -5,7 +5,6 @@ if(process.env.NODE_ENV === 'development'){
 }
 
 import { selectRangeCoords, getSelectionText} from './cc-by-sa.js'
-
 var selectedLicense = "";
 var spdx = null;
 //var showBest = 10;
@@ -28,10 +27,13 @@ var diffsdue = 0;
 var diffdisplayed = false;
 var options;
 
+//init functions
 restore_options();
 createBubble();
 
-
+// Event driven functions
+//This function processes webworker messages which it launches
+//through the workerqueue
 function workeronmessage(event) {
   processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
@@ -119,8 +121,7 @@ function workeronmessage(event) {
     }
     break;
     case "updatedone":
-    workers[event.data.id][1] = false
-    runningworkers--
+    workerdone(event.data.id)
     var arr = event.data.result;
     if (typeof list["license"] === "undefined")
       list["license"] = {};
@@ -133,8 +134,7 @@ function workeronmessage(event) {
       pendingcompare = false;
     break;
     case "comparenext":
-    workers[event.data.id][1] = false
-    runningworkers--
+    workerdone(event.data.id)
     updateProgressBar(-1, -1)
     var result = event.data.result;
     var spdxid = event.data.spdxid;
@@ -146,8 +146,7 @@ function workeronmessage(event) {
     }
     break;
     case "sortdone":
-    workers[event.data.id][1] = false
-    runningworkers--
+    workerdone(event.data.id)
     spdx = event.data.result;
     var ms_end = (new Date()).getTime();
     processTime = ms_end - ms_start;
@@ -156,8 +155,7 @@ function workeronmessage(event) {
     break;
     case "diffnext":
     var threadid = event.data.id;
-    workers[threadid][1] = false
-    runningworkers--
+    workerdone(threadid)
     diffsdone++
     var result = event.data.result;
     var spdxid = event.data.spdxid;
@@ -182,6 +180,7 @@ function workeronmessage(event) {
   }
 }
 
+//This function responds to the UI and background.js
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     if( request.message === "clicked_browser_action" ) {
@@ -218,12 +217,109 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
+//This function responds to changes to storage
 chrome.storage.onChanged.addListener(function(changes, area) {
     if (area == "sync" && "options" in changes) {
       console.log("Detected changed options; reloading")
       restore_options();
     }
 });
+
+// processing phase functions (these are called by the workeronmessage in order)
+//Compare selection against a fully populated license list (must be loaded in list)
+//This is the first phase to determine edit distance and return a sorted list
+// for display in spdx
+function compareSelection(selection){
+  updateProgressBar(Object.keys(list["license"]).length, null)
+  for (var license in list["license"]){
+    dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
+  }
+}
+
+// This will begin displaying diffs based off sorted list spdx
+function processLicenses(showBest, processTime=0){
+  if (spdx && (spdx.length == 0 || Number(spdx[0][3]) <= Number(options.minpercentage))){
+    console.log("No results to display");
+    displayDiff(null, processTime);
+    return
+  } else if (spdx && diffdisplayed) {
+    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
+    displayDiff(spdx[0][4].html, spdx[0][4].time);
+  } else {
+    for (var i = 0; i < showBest; i++){
+      var license = spdx[i][0];
+      var data = spdx[i][2];
+      var distance = spdx[i][1];
+      var percentage = spdx[i][3];
+      if (i == 0) {
+        selectedLicense = license;
+        console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
+      } else if (Number(percentage) <= Number(options.minpercentage)) {
+        console.log(license+ ": " + distance + " (" + percentage+ "%)");
+        break;
+      } else {
+        console.log(license+ ": " + distance + " (" + percentage+ "%)");
+      }
+      dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
+      diffsdue++;
+    }
+    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
+  }
+}
+
+//This is the actual diff display function, requires a populated spdx
+function displayDiff(html, time=processTime){
+  diffdisplayed = true;
+  updateProgressBar(spdx.length, spdx.length)
+  if (!html){
+    updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
+    return
+  }
+  var html = spdx[0][4].html;
+  var time = spdx[0][4].time
+  updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
+  var el = document.getElementById("licenses").addEventListener("change", function () {
+    if (this.value != selectedLicense){
+      selectedLicense = this.value;
+      html = spdx[this.options.selectedIndex][4].html;
+      time = spdx[this.options.selectedIndex][4].time;
+      updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
+    } else {
+
+    }
+  }, false);
+}
+
+//This function will create a select form with the sorted licenses in arr
+function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
+  if (form = document.getElementById(id))
+    form.outerHTML="";
+  if (!$('#license_form').length){
+    var bubbleDOM = $('#license_bubble')[0];
+    var bubbleDOMText = $('#bubble_text')[0];
+    var form = bubbleDOM.insertBefore(document.createElement('form'), bubbleDOMText);
+    form.setAttribute('id',"license_form");
+  }
+  form = document.getElementById("license_form");
+  var select = form.appendChild(document.createElement('select'));
+  select.id = id;
+  for (var i=0; i < arr.length && i < number; i++){
+    var value = arr[i][0];
+    var percentage = arr[i][3]
+    var text = value + " : " + arr[i][1] + " differences ("+ percentage +"% match)";
+    if (Number(percentage) <= Number(minimum)){ //No match at all
+      break;
+    }
+    var option = select.appendChild(document.createElement("option"));
+    option.value = value;
+    option.text = text;
+    if (diffsdone ==0)
+      option.setAttribute("disabled","disabled")
+  }
+}
+
+//Display helper functions for modifying the DOM
+
 // Add bubble to the top of the page.
 function createBubble(){
   if ($('#license_bubble').length) return;
@@ -255,7 +351,6 @@ document.addEventListener('mousedown', function (e) {
   }
 }, false);
 
-
 // Move that bubble to the appropriate location.
 function renderBubble(mouseX, mouseY, selection) {
   updateProgressBar(-1, 1, true)
@@ -271,10 +366,12 @@ function renderBubble(mouseX, mouseY, selection) {
     },
     'fast');
 }
+
 function updateBubbleText(text) {
   var bubbleDOMText = $('#bubble_text')[0];
   bubbleDOMText.innerHTML = text;
 }
+
 // max will increase if > 0; value will be set if not null and >=0
 // else incremented by absolute value for negative numbers
 function updateProgressBar(max, value, visible=true) {
@@ -291,121 +388,8 @@ function updateProgressBar(max, value, visible=true) {
     }
   }
 }
-function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
-  if (form = document.getElementById(id))
-    form.outerHTML="";
-  if (!$('#license_form').length){
-    var bubbleDOM = $('#license_bubble')[0];
-    var bubbleDOMText = $('#bubble_text')[0];
-    var form = bubbleDOM.insertBefore(document.createElement('form'), bubbleDOMText);
-    form.setAttribute('id',"license_form");
-  }
-  form = document.getElementById("license_form");
-  var select = form.appendChild(document.createElement('select'));
-  select.id = id;
-  for (var i=0; i < arr.length && i < number; i++){
-    var value = arr[i][0];
-    var percentage = arr[i][3]
-    var text = value + " : " + arr[i][1] + " differences ("+ percentage +"% match)";
-    if (Number(percentage) <= Number(minimum)){ //No match at all
-      break;
-    }
-    var option = select.appendChild(document.createElement("option"));
-    option.value = value;
-    option.text = text;
-    if (diffsdone ==0)
-      option.setAttribute("disabled","disabled")
-  }
-}
-function processLicenses(showBest, processTime=0){
-  if (spdx && (spdx.length == 0 || Number(spdx[0][3]) <= Number(options.minpercentage))){
-    console.log("No results to display");
-    displayDiff(null, processTime);
-    return
-  } else if (spdx && diffdisplayed) {
-    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
-    displayDiff(spdx[0][4].html, spdx[0][4].time);
-  } else {
-    for (var i = 0; i < showBest; i++){
-      var license = spdx[i][0];
-      var data = spdx[i][2];
-      var distance = spdx[i][1];
-      var percentage = spdx[i][3];
-      if (i == 0) {
-        selectedLicense = license;
-        console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
-      } else if (Number(percentage) <= Number(options.minpercentage)) {
-        console.log(license+ ": " + distance + " (" + percentage+ "%)");
-        break;
-      } else {
-        console.log(license+ ": " + distance + " (" + percentage+ "%)");
-      }
-      dowork({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
-      diffsdue++;
-    }
-    addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
-  }
-}
 
-function displayDiff(html, time=processTime){
-  diffdisplayed = true;
-  updateProgressBar(spdx.length, spdx.length)
-  if (!html){
-    updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
-    return
-  }
-  var html = spdx[0][4].html;
-  var time = spdx[0][4].time
-  updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
-  var el = document.getElementById("licenses").addEventListener("change", function () {
-    if (this.value != selectedLicense){
-      selectedLicense = this.value;
-      html = spdx[this.options.selectedIndex][4].html;
-      time = spdx[this.options.selectedIndex][4].time;
-      updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
-    } else {
-
-    }
-  }, false);
-}
-function spawnworkers(){
-  if (workers.length == options.maxworkers)
-    return
-  console.log("Spawning %s workers", options.maxworkers)
-  for (var i = 0; i < options.maxworkers; i++){
-    var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
-    worker.onmessage = workeronmessage;
-    workers[i]= [worker , false];
-  }
-}
-//queue and start work
-function processqueue(){
-  while (workqueue.length && options.maxworkers > runningworkers){
-      var work = workqueue.shift();
-      dowork(work)
-  }
-}
-function dowork(message){
-  spawnworkers()
-  var offset = options.maxworkers - runningworkers
-  if (options.maxworkers > runningworkers ){
-    for (var i = runningworkers % options.maxworkers; i < options.maxworkers + offset - 1; i = (i + 1) % options.maxworkers){
-      if (!workers[i][1]) {// worker is available
-        message["id"] = i;
-        var worker = workers[i][0]
-        workers[i][1] = true
-        worker.postMessage(message)
-        runningworkers++
-        break
-      }else {
-        continue
-      }
-    }
-  }else{ // queue up work
-    workqueue.push(message)
-  }
-}
-
+//storage functions
 function storeList(externallicenselist){
   var obj = {};
   externallicenselist["lastupdate"] = Date.now()
@@ -460,12 +444,7 @@ function updateList(){
   dowork({ 'command':"updatelicenselist"});
   }
 }
-function compareSelection(selection){
-  updateProgressBar(Object.keys(list["license"]).length, null)
-  for (var license in list["license"]){
-    dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
-  }
-}
+
 function restore_options() {
   chrome.storage.sync.get(['options'], function(result) {
     options = result.options;
@@ -480,4 +459,48 @@ function restore_options() {
     }
     loadList();
   });
+}
+
+// Workerqueue functions
+// These functions are for allowing multiple workers.
+function spawnworkers(){
+  if (workers.length == options.maxworkers)
+    return
+  console.log("Spawning %s workers", options.maxworkers)
+  for (var i = 0; i < options.maxworkers; i++){
+    var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
+    worker.onmessage = workeronmessage;
+    workers[i]= [worker , false];
+  }
+}
+//queue and start work
+function processqueue(){
+  while (workqueue.length && options.maxworkers > runningworkers){
+      var work = workqueue.shift();
+      dowork(work)
+  }
+}
+function dowork(message, ){
+  spawnworkers()
+  var offset = options.maxworkers - runningworkers
+  if (options.maxworkers > runningworkers ){
+    for (var i = runningworkers % options.maxworkers; i < options.maxworkers + offset - 1; i = (i + 1) % options.maxworkers){
+      if (!workers[i][1]) {// worker is available
+        message["id"] = i;
+        var worker = workers[i][0]
+        workers[i][1] = true
+        worker.postMessage(message)
+        runningworkers++
+        break
+      }else {
+        continue
+      }
+    }
+  }else{ // queue up work
+    workqueue.push(message)
+  }
+}
+function workerdone(id){
+  workers[id][1] = false
+  runningworkers--
 }
