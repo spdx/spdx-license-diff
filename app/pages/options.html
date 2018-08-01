@@ -8,7 +8,7 @@
 <body>
   <form id="options">
 <fieldset>
-  <h2>SPDX License List Options</h2>
+  <h2><a href='https://spdx.org/licenses/'>SPDX License List</a> Options</h2>
   <div>
     <label for="updateFrequency">Check for list update interval</label>
     <input id="updateFrequency" type="number" name="updateFrequency" step="1" min="1" max ="365" value="90"
@@ -16,8 +16,23 @@
     <span class="validity"></span>
   </div>
   <div>
-    <div id="updatestatus"></div>
-    <button id="update">Manual Update</button>
+    <table style="width:100%">
+      <tr>
+    <td>Loaded list:</td>
+    <td>
+    <div id="licenseversion"></div>
+  </td></tr>
+  <tr>
+    <td>Last update:</td>
+  <td><div id="updatestatus"></div></td>
+</tr>
+<tr>
+    <td>Storage used:</td>
+    <td><div id="storagestatus"></div></td>
+  </tr>
+  </table>
+    <button id="update">Update List</button>
+    <button id="clearstorage">Clear Storage</button>
   </div>
 </fieldset>
 <fieldset>
@@ -52,7 +67,7 @@
 </fieldset>
 </form>
   <div id="status"></div>
-  <button id="reset">Reset</button>
+  <button id="reset">Default settings</button>
   <button id="save">Save</button>
   <script src="../scripts/options.js"></script>
 </body>
