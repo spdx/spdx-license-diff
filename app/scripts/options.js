@@ -44,6 +44,42 @@ function reset() {
   var form = document.getElementById('options');
   form.reset();
 }
+function loadList(){
+    chrome.storage.local.get(['list'], function(result) {
+      var licenseversion = document.getElementById('licenseversion');
+      var status = document.getElementById('updatestatus');
+      if (result.list && result.list["licenseListVersion"]){
+        var list = result.list;
+        var lastupdate = list["lastupdate"]
+        var releaseDate = list["releaseDate"]
+        licenseversion.textContent = 'v.' + list["licenseListVersion"] +
+          ' ('+ releaseDate +') with '+ list.licenses.length + ' licenses'
+        status.textContent = Date(lastupdate).toLocaleString();
+      }else {
+        licenseversion.textContent = 'None'
+        status.textContent = 'Never';
+      }
+    });
+}
+function checkStorage(){
+    chrome.storage.local.getBytesInUse(null, function(result) {
+      var status = document.getElementById('storagestatus');
+      if (result){
+        status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB';
+      }else {
+        status.textContent = '0 MB';
+      }
+    });
+}
+function clearStorage(){
+    chrome.storage.local.clear(function(result) {
+      checkStorage();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', restore_options);
+document.addEventListener('DOMContentLoaded', loadList);
+document.addEventListener('DOMContentLoaded', checkStorage);
 document.getElementById('reset').addEventListener('click',reset);
 document.getElementById('save').addEventListener('click',save_options);
+document.getElementById('clearstorage').addEventListener('click',clearStorage);
