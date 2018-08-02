@@ -190,7 +190,10 @@ chrome.runtime.onMessage.addListener(
         var selectCoords = selectRangeCoords();
         var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
-        if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
+        if (updating) {
+          updateBubbleText('Update in progress; queuing compare');
+          pendingcompare = true;
+        } if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
           processLicenses(options.showBest, processTime);
           return;
         } else {
@@ -212,6 +215,7 @@ chrome.runtime.onMessage.addListener(
         compareSelection(selection)
       } else {
         updateBubbleText('No selection to compare; please select');
+        pendingcompare = false;
       }
     }
   }
@@ -441,7 +445,7 @@ function updateList(){
     return
   }else {
   updating = true;
-  dowork({ 'command':"updatelicenselist"});
+  dowork({ 'command':"updatelicenselist", 'url':chrome.extension.getURL(""), 'remote':true});
   }
 }
 
