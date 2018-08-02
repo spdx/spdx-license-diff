@@ -13,7 +13,7 @@ self.onmessage = function(event) {
     //'license':spdxid,'hash':hash, 'selection': selection
     break;
     case "updatelicenselist":
-    getSPDXlist(event.data["url"], event.data["selection"]);
+    getSPDXlist(event.data["url"], event.data["remote"]);
     break;
     case "compare":
     var spdxid = event.data.spdxid
@@ -37,9 +37,9 @@ self.onmessage = function(event) {
   }
 };
 // load files array with list of files to download
-function getSPDXlist(baseurl, selection, remote=true) {
+function getSPDXlist(baseurl, remote=true) {
   if (typeof files === "undefined")
-    var files = []
+    files = []
   if (remote) {
     var url = "https://spdx.org/licenses/licenses.json"
   } else {
@@ -102,6 +102,7 @@ function processSPDXlist(files, remote=true) {
             response["licenseId"] = spdxid
           }
           postMessage({"command": "savelicense","spdxid": spdxid, "data":response,"id":id});
+          postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
           postMessage({"command": "next", "spdxid":spdxid,"id":id});
           SPDXlist[spdxid] = response
           //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
