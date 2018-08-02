@@ -80,6 +80,8 @@ function clearStorage(){
 document.addEventListener('DOMContentLoaded', restore_options);
 document.addEventListener('DOMContentLoaded', loadList);
 document.addEventListener('DOMContentLoaded', checkStorage);
+chrome.storage.onChanged.addListener(loadList);
+chrome.storage.onChanged.addListener(checkStorage);
 document.getElementById('reset').addEventListener('click',reset);
 document.getElementById('save').addEventListener('click',save_options);
 document.getElementById('clearstorage').addEventListener('click',clearStorage);
