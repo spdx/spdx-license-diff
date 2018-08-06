@@ -61,6 +61,12 @@ function loadList(){
       }
     });
 }
+function updateList(){
+  chrome.storage.local.remove(['list'], function(result) {
+      chrome.runtime.sendMessage({ 'command':"updatelicenselist",
+        'url':chrome.extension.getURL(""), 'remote':true});
+  })
+}
 function checkStorage(){
     chrome.storage.local.getBytesInUse(null, function(result) {
       var status = document.getElementById('storagestatus');
@@ -83,5 +89,6 @@ document.addEventListener('DOMContentLoaded', checkStorage);
 chrome.storage.onChanged.addListener(loadList);
 chrome.storage.onChanged.addListener(checkStorage);
 document.getElementById('reset').addEventListener('click',reset);
+document.getElementById('update').addEventListener('click',updateList)
 document.getElementById('save').addEventListener('click',save_options);
 document.getElementById('clearstorage').addEventListener('click',clearStorage);
