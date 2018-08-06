@@ -10,8 +10,7 @@
   },
   "background": {
     "scripts": [
-      "scripts/worker_proxy.js"
-      ,"scripts/background.js"
+      "scripts/background.js"
     ]
   },
   "browser_action": {
@@ -22,8 +21,7 @@
   "options_page": "pages/options.html",
   "options_ui": {
     "page": "pages/options.html",
-    "open_in_tab": false,
-    "chrome_style": true
+    "open_in_tab": false
   },
   "content_scripts": [
     {
@@ -34,8 +32,7 @@
         "styles/contentscript.css"
       ],
       "js": [
-        "scripts/worker_proxy.js"
-        ,"scripts/contentscript.js"
+        "scripts/contentscript.js"
       ],
       "run_at": "document_end",
       "all_frames": false
