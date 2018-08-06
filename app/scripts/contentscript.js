@@ -32,42 +32,6 @@ restore_options();
 createBubble();
 
 // Event driven functions
-//This function processes webworker messages which it launches
-//through the workerqueue
-function workeronmessage(event) {
-  processqueue(); //Message received so see if queue can be cleared.
-  switch (event.data.command) {
-
-    case "updatedone":
-      workerdone(event.data.id)
-      var arr = event.data.result;
-      if (typeof list["license"] === "undefined")
-        list["license"] = {};
-      for (var i=0; i < arr.length; i++){
-        list["license"][arr[i]["licenseId"]] = arr[i]
-      }
-      updating = false;
-      if (pendingcompare)
-        compareSelection(selection)
-        pendingcompare = false;
-    break;
-    case "comparenext":
-      workerdone(event.data.id)
-      updateProgressBar(-1, -1)
-      var result = event.data.result;
-      var spdxid = event.data.spdxid;
-      unsorted[spdxid] = result;
-      if (Object.keys(unsorted).length >= Object.keys(list["license"]).length){
-        console.log("Requesting final sort", Object.keys(unsorted).length)
-        dowork({ 'command':"sortlicenses", 'licenses':unsorted});
-        unsorted = {};
-      }
-    break;
-
-    default:
-
-  }
-}
 
 //This function responds to the UI and background.js
 chrome.runtime.onMessage.addListener(
@@ -334,50 +298,6 @@ function storeList(externallicenselist){
         console.log('Storing cached copy of ', obj);
       });
 }
-// function loadList(){
-//     chrome.storage.local.get(['list'], function(result) {
-//       if (result.list && result.list["licenseListVersion"]){
-//         list = result.list;
-//         lastupdate = list["lastupdate"]
-//         console.log('Loading License list version %s from storage with %s licenses last updated %s',
-//           list["licenseListVersion"], list.licenses.length, Date(lastupdate));
-//         if ((Date.now() - lastupdate) >= (options.updateFrequency * 86400000)){
-//           console.log('Last update was over %s days ago; update required', options.updateFrequency);
-//           updateList()
-//         }else{
-//           for (var j = 0; j < list.licenses.length; j++) {
-//             var line = list.licenses[j];
-//             var license = line["licenseId"];
-//             list["license"] = {}
-//             console.log('Attempting to load %s from storage', license);
-//             chrome.storage.local.get([license], function(result) {
-//               if (result && ! _.isEmpty(result)){
-//                 license = Object.keys(result)[0]
-//                 console.log('%s succesfully loaded from storage', license);
-//                 list.license[license] = result[license];
-//               }else {
-//                 console.log('%s not found in storage; requesting update', license);
-//                 updateList()
-//               }
-//             });
-//           }
-//         }
-//       }else {
-//         console.log('No license list found in storage; requesting update');
-//         updateList()
-//       }
-//     });
-// }
-// function updateList(){
-//   if (updating){
-//     console.log("Ignoring redundant update request")
-//     return
-//   }else {
-//   updating = true;
-//   chrome.runtime.sendMessage({ 'command':"updatelicenselist", 'url':chrome.extension.getURL(""), 'remote':true});
-//   //dowork({ 'command':"updatelicenselist", 'url':chrome.extension.getURL(""), 'remote':true});
-//   }
-// }
 
 function restore_options() {
   chrome.storage.sync.get(['options'], function(result) {
@@ -393,47 +313,3 @@ function restore_options() {
     }
   });
 }
-
-// // Workerqueue functions
-// // These functions are for allowing multiple workers.
-// function spawnworkers(){
-//   if (workers.length == options.maxworkers)
-//     return
-//   console.log("Spawning %s workers", options.maxworkers)
-//   for (var i = 0; i < options.maxworkers; i++){
-//     var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
-//     worker.onmessage = workeronmessage;
-//     workers[i]= [worker , false];
-//   }
-// }
-// //queue and start work
-// function processqueue(){
-//   while (workqueue.length && options.maxworkers > runningworkers){
-//       var work = workqueue.shift();
-//       dowork(work)
-//   }
-// }
-// function dowork(message, ){
-//   spawnworkers()
-//   var offset = options.maxworkers - runningworkers
-//   if (options.maxworkers > runningworkers ){
-//     for (var i = runningworkers % options.maxworkers; i < options.maxworkers + offset - 1; i = (i + 1) % options.maxworkers){
-//       if (!workers[i][1]) {// worker is available
-//         message["id"] = i;
-//         var worker = workers[i][0]
-//         workers[i][1] = true
-//         worker.postMessage(message)
-//         runningworkers++
-//         break
-//       }else {
-//         continue
-//       }
-//     }
-//   }else{ // queue up work
-//     workqueue.push(message)
-//   }
-// }
-// function workerdone(id){
-//   workers[id][1] = false
-//   runningworkers--
-// }

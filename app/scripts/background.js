@@ -11,7 +11,7 @@ var runningworkers = 0;
 var workers = [];
 var workqueue = [];
 var pendingcompare = false;
-var activeTab = null
+var activeTabId = null
 var unsorted = {};
 var selection = "";
 
@@ -26,7 +26,7 @@ chrome.browserAction.setBadgeText({
 chrome.browserAction.onClicked.addListener(function(tab) {
   // Send a message to the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    activeTab = tabs[0];
+    var activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, {"command": "clicked_browser_action"});
   });
 });
@@ -50,6 +50,7 @@ chrome.runtime.onMessage.addListener(
       break;
       case "compareselection":
       selection = request.selection
+      activeTabId = sender.tab.id
       if (updating){
         pendingcompare = true
         console.log("Update pending; queing compare")
@@ -73,12 +74,12 @@ function workeronmessage(event) {
   processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
-    chrome.tabs.sendMessage(activeTab.id, event);
+    chrome.tabs.sendMessage(activeTabId, event.data);
     // updateProgressBar(event.data.value, null)
     // updateBubbleText(event.data.stage);
     break;
     case "next":
-    chrome.tabs.sendMessage(activeTab.id, event);
+    chrome.tabs.sendMessage(activeTabId, event.data);
     break;
     case "store":
     //This path is intended to store a hash of a comparison. Complete
@@ -174,7 +175,7 @@ function workeronmessage(event) {
     workerdone(threadid)
     var result = event.data.result;
     var spdxid = event.data.spdxid;
-    chrome.tabs.sendMessage(activeTab.id, {"command": "comparenext", "spdxid":spdxid, "result":result, "id":threadid});
+    chrome.tabs.sendMessage(activeTabId, {"command": "next", "spdxid":spdxid,"id":threadid});
     unsorted[spdxid] = result;
     if (Object.keys(unsorted).length >= Object.keys(list["license"]).length){
       console.log("Requesting final sort", Object.keys(unsorted).length)
@@ -186,7 +187,7 @@ function workeronmessage(event) {
     var threadid = event.data.id;
     workerdone(threadid)
     var spdx = event.data.result;
-    chrome.tabs.sendMessage(activeTab.id, {"command": "sortdone","result": spdx,"id":threadid});
+    chrome.tabs.sendMessage(activeTabId, {"command": "sortdone","result": spdx,"id":threadid});
     break;
     case "diffnext":
     var threadid = event.data.id;
@@ -194,7 +195,7 @@ function workeronmessage(event) {
     var result = event.data.result;
     var spdxid = event.data.spdxid;
     var record = event.data.record;
-    chrome.tabs.sendMessage(activeTab.id, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid});
+    chrome.tabs.sendMessage(activeTabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid});
     break;
     default:
 
@@ -261,10 +262,11 @@ function updateList(){
 //This is the first phase to determine edit distance and return a sorted list
 // for display in spdx
 function compareSelection(selection){
-  chrome.tabs.sendMessage(activeTab.id, {"message": "progressbarmax","value": Object.keys(list["license"]).length, "stage":"Comparing licenses"});
+  var total = Object.keys(list["license"]).length;
+  chrome.tabs.sendMessage(activeTabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses"});
   //updateProgressBar(Object.keys(list["license"]).length, null)
   for (var license in list["license"]){
-     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
+     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license],'total': total});
   }
 }
 

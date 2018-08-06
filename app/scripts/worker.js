@@ -19,7 +19,8 @@ self.onmessage = function(event) {
     var spdxid = event.data.spdxid
     var license = event.data.license
     var maxLengthDifference = event.data.maxLengthDifference
-    comparelicense(event.data["selection"], spdxid, license, maxLengthDifference);
+    var total = event.data.total;
+    comparelicense(event.data["selection"], spdxid, license, maxLengthDifference, total);
     break;
     case "sortlicenses":
     sortlicenses(event.data.licenses);
@@ -121,8 +122,8 @@ function processSPDXlist(files, remote=true) {
   );
 };
 
-function comparelicense(selection, spdxid, license, maxLengthDifference=1000) {
-  postMessage({"command": "progressbarmax","value": 0, "stage":"Comparing licenses","id":id});
+function comparelicense(selection, spdxid, license, maxLengthDifference=1000, total=0) {
+  postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id});
   var result = {}
   var count2 = selection.length;
   //console.log(id, "Processing selection of " + count2 + " chars.");
