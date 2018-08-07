@@ -193,7 +193,7 @@ function workeronmessage(event) {
     var result = event.data.result;
     var spdxid = event.data.spdxid;
     var record = event.data.record;
-    chrome.tabs.sendMessage(activeTabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid});
+    chrome.tabs.sendMessage(activeTabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid, "details":list.license[spdxid]});
     break;
     default:
 
