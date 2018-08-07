@@ -51,7 +51,7 @@ function getSPDXlist(baseurl, remote=true) {
   x.onload = function() {
     if (remote){
       var lines = JSON.parse(x.responseText);
-      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id});
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id, "reset":true});
       postMessage({"command": "savelicenselist","value": lines,"id":id});
       console.log(id, "Updating: ", lines);
       for (var j = 0; j < lines.licenses.length; j++) {
@@ -62,7 +62,7 @@ function getSPDXlist(baseurl, remote=true) {
       }
     } else {
       var lines = x.responseText.split("\n");
-      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id});
+      postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id, "reset":true});
       for (var j = 0; j < lines.length; j++) {
         var line = lines[j]
         if (line.search(/\.txt/g) >= 0){
@@ -103,7 +103,7 @@ function processSPDXlist(files, remote=true) {
             response["licenseId"] = spdxid
           }
           postMessage({"command": "savelicense","spdxid": spdxid, "data":response,"id":id});
-          postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
+          //postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
           postMessage({"command": "next", "spdxid":spdxid,"id":id});
           SPDXlist[spdxid] = response
           //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
@@ -123,7 +123,7 @@ function processSPDXlist(files, remote=true) {
 };
 
 function comparelicense(selection, spdxid, license, maxLengthDifference=1000, total=0) {
-  postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id});
+  postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id,"reset":true});
   var result = {}
   var count2 = selection.length;
   //console.log(id, "Processing selection of " + count2 + " chars.");
@@ -160,7 +160,7 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000, to
   //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
 };
 function sortlicenses(licenses) {
-  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id});
+  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id,"reset":true});
   console.log(id, "Sorting " + Object.keys(licenses).length + " licenses");
   var sortable = [];
   for (var license in licenses) {
@@ -179,7 +179,7 @@ function sortlicenses(licenses) {
 };
 
 function generateDiff(selection, spdxid, license, record) {
-  //postMessage({"command": "progressbarmax","value": 0, "stage":"Generating Diff","id":id});
+  //postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {}
   var data = license
   dmp.Diff_Timeout=0;
