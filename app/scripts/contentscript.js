@@ -7,21 +7,11 @@ if(process.env.NODE_ENV === 'development'){
 import { selectRangeCoords, getSelectionText} from './cc-by-sa.js'
 var selectedLicense = "";
 var spdx = null;
-//var showBest = 10;
 var selection = "";
 var lastselection = "";
 var processTime = 0;
-var list = {};
 var lastupdate = null;
-var updating = false;
-var pendingcompare = false;
 var ms_start;
-//var maxworkers = 10;
-var runningworkers = 0;
-var workers = [];
-var workqueue = [];
-var unsorted = {};
-//var minpercentage = 25.0;
 var diffsdone = 0;
 var diffsdue = 0;
 var diffdisplayed = false;
@@ -44,10 +34,7 @@ chrome.runtime.onMessage.addListener(
         var selectCoords = selectRangeCoords();
         var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
-        if (updating) {
-          updateBubbleText('Update in progress; queuing compare');
-          pendingcompare = true;
-        } if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
+        if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
           processLicenses(options.showBest, processTime);
           return;
         } else {
@@ -60,16 +47,9 @@ chrome.runtime.onMessage.addListener(
           diffdisplayed = false;
         }
         ms_start = (new Date()).getTime();
-        // if (typeof list === "undefined"){
-        //   updateList()
-        //   pendingcompare = true;
-        //   console.log('Queing compare after update')
-        //   return;
-        // }
         compareSelection(selection)
       } else {
         updateBubbleText('No selection to compare; please select');
-        pendingcompare = false;
       }
     break;
     case "progressbarmax":
@@ -125,12 +105,7 @@ chrome.storage.onChanged.addListener(function(changes, area) {
 //This is the first phase to determine edit distance and return a sorted list
 // for display in spdx
 function compareSelection(selection){
-  //updateProgressBar(Object.keys(list["license"]).length, null)
   chrome.runtime.sendMessage({ 'command':"compareselection", 'selection':selection});
-
-  // for (var license in list["license"]){
-  //   dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license]});
-  // }
 }
 
 // This will begin displaying diffs based off sorted list spdx
@@ -284,19 +259,6 @@ function updateProgressBar(max, value, visible=true) {
       progressbar.value = progressbar.value + Math.abs(value)
     }
   }
-}
-
-//storage functions
-function storeList(externallicenselist){
-  var obj = {};
-  externallicenselist["lastupdate"] = Date.now()
-  obj = {
-      list:externallicenselist
-    };
-  chrome.storage.local.set(obj,
-      function() {
-        console.log('Storing cached copy of ', obj);
-      });
 }
 
 function restore_options() {
