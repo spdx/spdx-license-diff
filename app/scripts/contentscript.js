@@ -73,19 +73,22 @@ chrome.runtime.onMessage.addListener(
       var result = request.result;
       var spdxid = request.spdxid;
       var record = request.record;
-      var entry = spdx[record];
-      entry.push(result)
-      spdx[record].entry
+      var details = request.details;
+      spdx[record]["html"] = result["html"]
+      spdx[record]["time"] = result["time"]
+      for (var k in details){
+        spdx[record][k] = details[k];
+      }
       var select = $("#licenses option[value='" + spdxid + "']").removeAttr("disabled")
       console.log("%s: Received diff for %s %s/%s", threadid, spdxid, diffsdone, diffsdue)
       if (diffdisplayed)
         return;
       if (diffsdone >= diffsdue){
         console.log("All diffs complete")
-        displayDiff(spdx[0][4].html, spdx[0][4].time)
-      } else if (spdx[0][4]){
+        displayDiff(spdx[0]["html"], spdx[0]["time"])
+      } else if (spdx[0]["html"]){
         console.log("Best diff received; we can display")
-        displayDiff(spdx[0][4].html, spdx[0][4].time)
+        displayDiff(spdx[0]["html"], spdx[0]["time"])
       }
     break;
     default:
@@ -111,21 +114,21 @@ function compareSelection(selection){
 
 // This will begin displaying diffs based off sorted list spdx
 function processLicenses(showBest, processTime=0){
-  if (spdx && (spdx.length == 0 || Number(spdx[0][3]) <= Number(options.minpercentage))){
+  if (spdx && (spdx.length == 0 || Number(spdx[0]["percentage"]) <= Number(options.minpercentage))){
     console.log("No results to display");
     displayDiff(null, processTime);
     updateProgressBar(spdx.length, spdx.length)
     return
   } else if (spdx && diffdisplayed) {
     addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
-    displayDiff(spdx[0][4].html, spdx[0][4].time);
+    displayDiff(spdx[0]["html"], spdx[0]["time"]);
   } else {
     updateBubbleText("Diffing results")
     for (var i = 0; i < showBest; i++){
-      var license = spdx[i][0];
-      var data = spdx[i][2];
-      var distance = spdx[i][1];
-      var percentage = spdx[i][3];
+      var license = spdx[i]["spdxid"];
+      var data = spdx[i]["difftext"];
+      var distance = spdx[i]["distance"];
+      var percentage = spdx[i]["percentage"];
       if (i == 0) {
         selectedLicense = license;
         console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
@@ -150,18 +153,18 @@ function displayDiff(html, time=processTime){
     updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
     return
   }
-  var html = spdx[0][4].html;
-  var time = spdx[0][4].time;
-  var spdxid = spdx[0][0];
+  var html = spdx[0]["html"];
+  var time = spdx[0]["time"];
+  var spdxid = spdx[0]["spdxid"];
   var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
   var timehtml = ' processed in '+(time+processTime)/ 1000+'s<br />'
   updateBubbleText(title + timehtml + html);
   var el = document.getElementById("licenses").addEventListener("change", function () {
     if (this.value != selectedLicense){
       selectedLicense = this.value;
-      spdxid = spdx[this.options.selectedIndex][0]
-      html = spdx[this.options.selectedIndex][4].html;
-      time = spdx[this.options.selectedIndex][4].time;
+      spdxid = spdx[this.options.selectedIndex]["spdxid"]
+      html = spdx[this.options.selectedIndex]["html"];
+      time = spdx[this.options.selectedIndex]["time"];
       title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
       timehtml = ' processed in '+(time+processTime)/ 1000+'s<br />'
       updateBubbleText(title + timehtml + html);
@@ -185,9 +188,9 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
   var select = form.appendChild(document.createElement('select'));
   select.id = id;
   for (var i=0; i < arr.length && i < number; i++){
-    var value = arr[i][0];
-    var percentage = arr[i][3]
-    var text = value + " : " + arr[i][1] + " differences ("+ percentage +"% match)";
+    var value = arr[i]["spdxid"];
+    var percentage = arr[i]["percentage"]
+    var text = value + " : " + arr[i]["distance"] + " differences ("+ percentage +"% match)";
     if (Number(percentage) <= Number(minimum)){ //No match at all
       break;
     }

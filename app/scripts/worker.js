@@ -164,16 +164,16 @@ function sortlicenses(licenses) {
   console.log(id, "Sorting " + Object.keys(licenses).length + " licenses");
   var sortable = [];
   for (var license in licenses) {
-    sortable.push([
-      license,
-      licenses[license]['distance'],
-      licenses[license]['text'],
-      licenses[license]['percentage']
-    ]);
+    sortable.push({
+      'spdxid' : license,
+      'distance':licenses[license]['distance'],
+      'difftext':licenses[license]['text'],
+      'percentage':licenses[license]['percentage']
+    });
     postMessage({"command": "next", "spdxid":license,"id":id});
   }
   sortable.sort(function(a, b) {
-    return b[3] - a[3];
+    return b["percentage"] - a["percentage"];
   });
   postMessage({"command": "sortdone","result": sortable,"id":id});
 };
