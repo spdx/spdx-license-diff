@@ -75,8 +75,6 @@ function workeronmessage(event) {
   switch (event.data.command) {
     case "progressbarmax":
     chrome.tabs.sendMessage(activeTabId, event.data);
-    // updateProgressBar(event.data.value, null)
-    // updateBubbleText(event.data.stage);
     break;
     case "next":
     chrome.tabs.sendMessage(activeTabId, event.data);
