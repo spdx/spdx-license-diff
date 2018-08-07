@@ -261,7 +261,7 @@ function updateList(){
 // for display in spdx
 function compareSelection(selection){
   var total = Object.keys(list["license"]).length;
-  chrome.tabs.sendMessage(activeTabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses"});
+  chrome.tabs.sendMessage(activeTabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses", "reset":true});
   //updateProgressBar(Object.keys(list["license"]).length, null)
   for (var license in list["license"]){
      dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license],'total': total});

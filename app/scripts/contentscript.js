@@ -53,7 +53,7 @@ chrome.runtime.onMessage.addListener(
       }
     break;
     case "progressbarmax":
-      updateProgressBar(request.value, null)
+      updateProgressBar(request.value, 0 ? request.reset : null)
       updateBubbleText(request.stage);
     break;
     case "next":
@@ -67,8 +67,9 @@ chrome.runtime.onMessage.addListener(
       processLicenses(options.showBest, processTime)
       break;
       case "diffnext":
-      var threadid = request.id;
+      updateProgressBar(-1, -1)
       diffsdone++
+      var threadid = request.id;
       var result = request.result;
       var spdxid = request.spdxid;
       var record = request.record;
@@ -113,11 +114,13 @@ function processLicenses(showBest, processTime=0){
   if (spdx && (spdx.length == 0 || Number(spdx[0][3]) <= Number(options.minpercentage))){
     console.log("No results to display");
     displayDiff(null, processTime);
+    updateProgressBar(spdx.length, spdx.length)
     return
   } else if (spdx && diffdisplayed) {
     addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
     displayDiff(spdx[0][4].html, spdx[0][4].time);
   } else {
+    updateBubbleText("Diffing results")
     for (var i = 0; i < showBest; i++){
       var license = spdx[i][0];
       var data = spdx[i][2];
@@ -135,6 +138,7 @@ function processLicenses(showBest, processTime=0){
       chrome.runtime.sendMessage({'command':"generateDiff", 'selection': selection, 'spdxid':license,'license':data, 'record':i});
       diffsdue++;
     }
+    updateProgressBar(diffsdue, 0)
     addSelectFormFromArray("licenses", spdx, showBest, options.minpercentage)
   }
 }
@@ -142,20 +146,25 @@ function processLicenses(showBest, processTime=0){
 //This is the actual diff display function, requires a populated spdx
 function displayDiff(html, time=processTime){
   diffdisplayed = true;
-  updateProgressBar(spdx.length, spdx.length)
   if (!html){
     updateBubbleText('Time: '+time/ 1000+' s<br />No results to display');
     return
   }
   var html = spdx[0][4].html;
-  var time = spdx[0][4].time
-  updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
+  var time = spdx[0][4].time;
+  var spdxid = spdx[0][0];
+  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
+  var timehtml = ' processed in '+(time+processTime)/ 1000+'s<br />'
+  updateBubbleText(title + timehtml + html);
   var el = document.getElementById("licenses").addEventListener("change", function () {
     if (this.value != selectedLicense){
       selectedLicense = this.value;
+      spdxid = spdx[this.options.selectedIndex][0]
       html = spdx[this.options.selectedIndex][4].html;
       time = spdx[this.options.selectedIndex][4].time;
-      updateBubbleText('Time: '+(time+processTime)/ 1000+'s<br />' + html);
+      title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
+      timehtml = ' processed in '+(time+processTime)/ 1000+'s<br />'
+      updateBubbleText(title + timehtml + html);
     } else {
 
     }
@@ -255,7 +264,7 @@ function updateProgressBar(max, value, visible=true) {
   if (value !== null){
     if (value >= 0) {
       progressbar.value = value;
-    } else {
+    } else if (progressbar.value < progressbar.getAttribute('max')){
       progressbar.value = progressbar.value + Math.abs(value)
     }
   }
