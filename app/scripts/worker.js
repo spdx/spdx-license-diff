@@ -20,16 +20,19 @@ self.onmessage = function(event) {
     var license = event.data.license
     var maxLengthDifference = event.data.maxLengthDifference
     var total = event.data.total;
-    comparelicense(event.data["selection"], spdxid, license, maxLengthDifference, total);
+    var tabId = event.data.tabId;
+    comparelicense(event.data["selection"], spdxid, license, tabId, maxLengthDifference, total);
     break;
     case "sortlicenses":
-    sortlicenses(event.data.licenses);
+    var tabId = event.data.tabId;
+    sortlicenses(event.data.licenses, tabId);
     break;
     case "generateDiff":
     var spdxid = event.data.spdxid
     var license = event.data.license
     var record = event.data.record
-    generateDiff(event.data["selection"], spdxid, license, record);
+    var tabId = event.data.tabId;
+    generateDiff(event.data["selection"], spdxid, license, record, tabId);
     break;
 
     default:
@@ -78,7 +81,7 @@ function getSPDXlist(baseurl, remote=true) {
 // download licenses from files array
 function processSPDXlist(files, remote=true) {
   promises = files.map(
-    function(value){
+    function(value, index){
       return new Promise(function(resolve, reject) {
         if (remote){
           var url = value;
@@ -103,8 +106,8 @@ function processSPDXlist(files, remote=true) {
             response["licenseId"] = spdxid
           }
           postMessage({"command": "savelicense","spdxid": spdxid, "data":response,"id":id});
-          //postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
-          postMessage({"command": "next", "spdxid":spdxid,"id":id});
+          postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
+          postMessage({"command": "progressbarvalue", "value": index, "spdxid":spdxid,"id":id});
           SPDXlist[spdxid] = response
           //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
           resolve(SPDXlist[spdxid])
@@ -122,8 +125,8 @@ function processSPDXlist(files, remote=true) {
   );
 };
 
-function comparelicense(selection, spdxid, license, maxLengthDifference=1000, total=0) {
-  postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id,"reset":true});
+function comparelicense(selection, spdxid, license, tabId, maxLengthDifference=1000, total=0) {
+  postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id,"reset":true,"tabId":tabId});
   var result = {}
   var count2 = selection.length;
   //console.log(id, "Processing selection of " + count2 + " chars.");
@@ -139,7 +142,7 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000, to
   if (difference <= maxLength && difference < maxLengthDifference) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
-    console.log(id, spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
+    console.log(tabId, id, spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
     result = {
       distance: distance,
       text: data,
@@ -147,7 +150,7 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000, to
       //patterns: result.patterns
     }
   }else{
-    console.log(id, spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
+    console.log(tabId, id, spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
     result = {
       distance: difference,
       text: data,
@@ -156,12 +159,12 @@ function comparelicense(selection, spdxid, license, maxLengthDifference=1000, to
     }
 
   }
-  postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id});
+  postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id, "tabId":tabId});
   //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
 };
-function sortlicenses(licenses) {
-  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id,"reset":true});
-  console.log(id, "Sorting " + Object.keys(licenses).length + " licenses");
+function sortlicenses(licenses, tabId) {
+  postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id,"reset":true, "tabId":tabId});
+  console.log(tabId, id, "Sorting " + Object.keys(licenses).length + " licenses");
   var sortable = [];
   for (var license in licenses) {
     sortable.push({
@@ -170,15 +173,15 @@ function sortlicenses(licenses) {
       'difftext':licenses[license]['text'],
       'percentage':licenses[license]['percentage']
     });
-    postMessage({"command": "next", "spdxid":license,"id":id});
+    postMessage({"command": "next", "spdxid":license,"id":id, "tabId":tabId});
   }
   sortable.sort(function(a, b) {
     return b["percentage"] - a["percentage"];
   });
-  postMessage({"command": "sortdone","result": sortable,"id":id});
+  postMessage({"command": "sortdone","result": sortable,"id":id, "tabId":tabId});
 };
 
-function generateDiff(selection, spdxid, license, record) {
+function generateDiff(selection, spdxid, license, record, tabId) {
   //postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {}
   var data = license
@@ -190,8 +193,8 @@ function generateDiff(selection, spdxid, license, record) {
   //dmp.diff_cleanupEfficiency(textDiff);
   var ms_end = (new Date()).getTime();
   result = { "html":dmp.diff_prettyHtml(textDiff), "time":(ms_end - ms_start)}
-  console.log("%s: %s diff:%o", id, spdxid, result);
-  postMessage({"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":id});
+  console.log("%s %s: %s diff:%o",tabId,id, spdxid, result);
+  postMessage({"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":id, "tabId":tabId});
 };
 
 function cleanText(str) {

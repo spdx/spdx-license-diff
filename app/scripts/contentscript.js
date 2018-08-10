@@ -56,6 +56,9 @@ chrome.runtime.onMessage.addListener(
       updateProgressBar(request.value, 0 ? request.reset : null)
       updateBubbleText(request.stage);
     break;
+    case "progressbarvalue":
+      updateProgressBar(-1, request.value)
+    break;
     case "next":
       updateProgressBar(-1, -1)
     break;
