@@ -11,6 +11,7 @@ var runningworkers = 0;
 var workers = [];
 var workqueue = [];
 var pendingcompare = false;
+var comparequeue = [];
 var activeTabId = null
 var unsorted = {};
 var selection = "";
@@ -53,12 +54,17 @@ chrome.runtime.onMessage.addListener(
       activeTabId = sender.tab.id
       if (updating){
         pendingcompare = true
-        console.log("Update pending; queing compare")
+        comparequeue.push({'selection':selection,'tabId':activeTabId});
+        console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
         break;
       }
-      compareSelection(selection)
+      console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
+      compareSelection(selection, activeTabId)
       break;
       case "generateDiff":
+      activeTabId = sender.tab.id
+      request["tabId"] = activeTabId;
+      console.log("tab %s: Generating diff:", activeTabId, request);
       dowork(request);
       break;
       default:
@@ -74,10 +80,32 @@ function workeronmessage(event) {
   processqueue(); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
-    chrome.tabs.sendMessage(activeTabId, event.data);
+    var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
+    if (pendingcompare){ //broadcast to all
+      for (var i=0; i < comparequeue.length; i++)
+        chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+    }else if (tabId !== undefined && tabId){
+      chrome.tabs.sendMessage(tabId, event.data);
+    }
+    break;
+    case "progressbarvalue":
+    var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
+    if (pendingcompare){ //broadcast to all
+      for (var i=0; i < comparequeue.length; i++)
+        chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+    }else if (tabId !== undefined && tabId){
+      chrome.tabs.sendMessage(tabId, event.data);
+    }
     break;
     case "next":
-    chrome.tabs.sendMessage(activeTabId, event.data);
+    var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
+    if (pendingcompare){ //broadcast to all
+      for (var i=0; i < comparequeue.length; i++)
+      chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+    }else if (tabId !== undefined && tabId){
+      chrome.tabs.sendMessage(tabId, event.data);
+    }
+
     break;
     case "store":
     //This path is intended to store a hash of a comparison. Complete
@@ -165,35 +193,44 @@ function workeronmessage(event) {
     }
     updating = false;
     if (pendingcompare)
-      compareSelection(selection)
+      while (comparequeue.length){
+          var compare = comparequeue.shift();
+          selection = compare["selection"];
+          var tabId = compare["tabId"];
+          console.log("Processing compare queue: compare for %s of selection length %s", tabId, selection.length);
+          compareSelection(selection, tabId)
+      }
       pendingcompare = false;
     break;
     case "comparenext":
     var threadid = event.data.id;
     workerdone(threadid)
+    var tabId = event.data.tabId;
     var result = event.data.result;
     var spdxid = event.data.spdxid;
-    chrome.tabs.sendMessage(activeTabId, {"command": "next", "spdxid":spdxid,"id":threadid});
-    unsorted[spdxid] = result;
-    if (Object.keys(unsorted).length >= Object.keys(list["license"]).length){
-      console.log("Requesting final sort", Object.keys(unsorted).length)
-      dowork({ 'command':"sortlicenses", 'licenses':unsorted});
-      unsorted = {};
+    chrome.tabs.sendMessage(tabId, {"command": "next", "spdxid":spdxid,"id":threadid});
+    unsorted[tabId][spdxid] = result;
+    if (Object.keys(unsorted[tabId]).length >= Object.keys(list["license"]).length){
+      console.log("Requesting final sort of %s for tab %s", Object.keys(unsorted[tabId]).length, tabId)
+      dowork({ 'command':"sortlicenses", 'licenses':unsorted[tabId], "tabId":tabId});
+      unsorted[tabId]={};
     }
     break;
     case "sortdone":
     var threadid = event.data.id;
     workerdone(threadid)
-    var spdx = event.data.result;
-    chrome.tabs.sendMessage(activeTabId, {"command": "sortdone","result": spdx,"id":threadid});
+    var tabId = event.data.tabId;
+    var result = event.data.result;
+    chrome.tabs.sendMessage(tabId, {"command": "sortdone","result": result,"id":threadid});
     break;
     case "diffnext":
     var threadid = event.data.id;
     workerdone(threadid)
+    var tabId = event.data.tabId;
     var result = event.data.result;
     var spdxid = event.data.spdxid;
     var record = event.data.record;
-    chrome.tabs.sendMessage(activeTabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid, "details":list.license[spdxid]});
+    chrome.tabs.sendMessage(tabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid, "details":list.license[spdxid]});
     break;
     default:
 
@@ -259,12 +296,13 @@ function updateList(){
 //Compare selection against a fully populated license list (must be loaded in list)
 //This is the first phase to determine edit distance and return a sorted list
 // for display in spdx
-function compareSelection(selection){
+function compareSelection(selection, tabId=activeTabId){
+  unsorted[tabId] = {}
   var total = Object.keys(list["license"]).length;
-  chrome.tabs.sendMessage(activeTabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses", "reset":true});
+  chrome.tabs.sendMessage(tabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses", "reset":true});
   //updateProgressBar(Object.keys(list["license"]).length, null)
   for (var license in list["license"]){
-     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license],'total': total});
+     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license],'total': total, 'tabId':tabId});
   }
 }
 
