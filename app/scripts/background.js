@@ -287,7 +287,7 @@ function loadList(){
         list = result.list;
         lastupdate = list["lastupdate"]
         console.log('Loading License list version %s from storage with %s licenses last updated %s',
-          list["licenseListVersion"], list.licenses.length, Date(lastupdate));
+          list["licenseListVersion"], list.licenses.length, new Date(lastupdate));
         if ((Date.now() - lastupdate) >= (options.updateFrequency * 86400000)){
           console.log('Last update was over %s days ago; update required', options.updateFrequency);
           updateList()
