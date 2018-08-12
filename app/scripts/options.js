@@ -19,7 +19,7 @@ function save_options() {
     maxLengthDifference: maxLengthDifference,
     maxworkers: maxworkers
   };
-  chrome.storage.sync.set({options:options}, function() {
+  chrome.storage.local.set({options:options}, function() {
     // Update status to let user know options were saved.
     var status = document.getElementById('status');
     status.textContent = 'Options saved.';
@@ -32,7 +32,7 @@ function save_options() {
 // Restores values using the preferences
 // stored in chrome.storage.
 function restore_options() {
-  chrome.storage.sync.get(['options'], function(result) {
+  chrome.storage.local.get(['options'], function(result) {
     document.getElementById('updateFrequency').value = result.options.updateFrequency;
     document.getElementById('maxComparisons').value = result.options.showBest;
     document.getElementById('minpercentage').value = result.options.minpercentage;
