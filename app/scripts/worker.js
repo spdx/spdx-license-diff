@@ -139,7 +139,7 @@ function comparelicense(selection, spdxid, license, tabId, maxLengthDifference=1
   var difference = Math.abs(count2 - count);
   var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
-  if (difference <= maxLength && difference < maxLengthDifference) {
+  if (difference <= maxLength && ((maxLengthDifference == 0 ) || (difference < maxLengthDifference))) {
     var distance = Levenshtein.get(cleanText(data), cleanText(selection));
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1);
     console.log(tabId, id, spdxid + " - Levenshtein Distance (clean): " + distance + " (" + percentage + "%)" + " Length Difference: " + difference + " LOC Diff:" + locdiff);
