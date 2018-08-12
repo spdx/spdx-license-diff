@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener(
         var posX = selectCoords[0], posY = selectCoords[1];
         renderBubble(posX, posY, selection);
         if (spdx && getSelectionText() == lastselection){ //diff previously done on selection
-          processLicenses(options.showBest, processTime);
+          processLicenses((options.showBest == 0)? spdx.length: options.showBest, processTime)
           return;
         } else {
           lastselection = selection;
@@ -67,9 +67,9 @@ chrome.runtime.onMessage.addListener(
       var ms_end = (new Date()).getTime();
       processTime = ms_end - ms_start;
       console.log("processTime: " + processTime/1000 + ("s"));
-      processLicenses(options.showBest, processTime)
-      break;
-      case "diffnext":
+      processLicenses((options.showBest == 0)? spdx.length: options.showBest, processTime)
+    break;
+    case "diffnext":
       updateProgressBar(-1, -1)
       diffsdone++
       var threadid = request.id;
@@ -117,6 +117,7 @@ function compareSelection(selection){
 
 // This will begin displaying diffs based off sorted list spdx
 function processLicenses(showBest, processTime=0){
+  console.log("Processing diffs for %s items exceeding %s% match", showBest, Number(options.minpercentage))
   if (spdx && (spdx.length == 0 || Number(spdx[0]["percentage"]) <= Number(options.minpercentage))){
     console.log("No results to display");
     displayDiff(null, processTime);
@@ -135,8 +136,7 @@ function processLicenses(showBest, processTime=0){
       if (i == 0) {
         selectedLicense = license;
         console.log("Best match of " + showBest + " : " + license + ": " + distance + " (" + percentage+ "%)");
-      } else if (Number(percentage) <= Number(options.minpercentage)) {
-        console.log(license+ ": " + distance + " (" + percentage+ "%)");
+      } else if (Number(percentage) < Number(options.minpercentage)) {
         break;
       } else {
         console.log(license+ ": " + distance + " (" + percentage+ "%)");
@@ -194,7 +194,7 @@ function addSelectFormFromArray(id, arr, number=arr.length, minimum=0) {
     var value = arr[i]["spdxid"];
     var percentage = arr[i]["percentage"]
     var text = value + " : " + arr[i]["distance"] + " differences ("+ percentage +"% match)";
-    if (Number(percentage) <= Number(minimum)){ //No match at all
+    if (Number(percentage) < Number(minimum)){ //No match at all
       break;
     }
     var option = select.appendChild(document.createElement("option"));
