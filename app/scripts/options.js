@@ -54,7 +54,7 @@ function loadList(){
         var releaseDate = list["releaseDate"]
         licenseversion.textContent = 'v.' + list["licenseListVersion"] +
           ' ('+ releaseDate +') with '+ list.licenses.length + ' licenses'
-        status.textContent = Date(lastupdate).toLocaleString();
+        status.textContent = new Date(lastupdate).toLocaleString();
       }else {
         licenseversion.textContent = 'None'
         status.textContent = 'Never';
