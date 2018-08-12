@@ -23,22 +23,7 @@
     "page": "pages/options.html",
     "open_in_tab": false
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "css": [
-        "styles/contentscript.css"
-      ],
-      "js": [
-        "scripts/contentscript.js"
-      ],
-      "run_at": "document_end",
-      "all_frames": false
-    }
-  ],
   "web_accessible_resources": [ "license-list/*"],
-  "permissions": ["storage", "unlimitedStorage"],
+  "permissions": ["storage", "unlimitedStorage", "activeTab"],
   "content_security_policy": "script-src 'self' https://spdx.org; object-src 'self'"
 }
