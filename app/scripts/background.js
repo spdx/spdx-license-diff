@@ -9,12 +9,15 @@ var lastupdate;
 var updating = false;
 var runningworkers = 0;
 var workers = [];
-var workqueue = [];
+var workqueue = {};
+var workqueuelength = 0;
 var pendingcompare = false;
 var comparequeue = [];
 var activeTabId = null
 var unsorted = {};
 var selection = "";
+var status = {}
+var diffcount = {}
 
 chrome.runtime.onInstalled.addListener((details) => {
   console.log('previousVersion', details.previousVersion)
@@ -34,6 +37,20 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
 chrome.runtime.onStartup.addListener(restore_options());
 
+chrome.tabs.onActivated.addListener(function(activeinfo) {
+  // Set the active tab
+  activeTabId = activeinfo.tabId;
+  //console.log("ActiveTabId changed", activeTabId)
+});
+chrome.windows.onFocusChanged.addListener(function(windowid) {
+  // Set the active tab
+  chrome.tabs.query({active: true, currentWindow: true}, function(queryinfo) {
+    if (queryinfo.length > 0)
+      activeTabId = queryinfo[0].id;
+    //console.log("ActiveTabId changed", activeTabId)
+  });
+});
+
 //This function responds to changes to storage
 chrome.storage.onChanged.addListener(function(changes, area) {
     if (area == "sync" && "options" in changes) {
@@ -46,6 +63,10 @@ chrome.storage.onChanged.addListener(function(changes, area) {
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     switch (request.command) {
+      case "focused":
+      activeTabId = sender.tab.id;
+      console.log ("activeTabId", activeTabId)
+      break;
       case "updatelicenselist":
       updateList()
       break;
@@ -56,15 +77,19 @@ chrome.runtime.onMessage.addListener(
         pendingcompare = true
         comparequeue.push({'selection':selection,'tabId':activeTabId});
         console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
+        status[activeTabId] = "Pending"
         break;
       }
       console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
+      status[activeTabId] = "Comparing"
       compareSelection(selection, activeTabId)
       break;
       case "generateDiff":
       activeTabId = sender.tab.id
       request["tabId"] = activeTabId;
       console.log("tab %s: Generating diff:", activeTabId, request);
+      status[activeTabId] = "Diffing"
+      diffcount[activeTabId] = diffcount[activeTabId] + 1
       dowork(request);
       break;
       default:
@@ -77,7 +102,9 @@ chrome.runtime.onMessage.addListener(
 // Workerqueue functions
 // These functions are for allowing multiple workers.
 function workeronmessage(event) {
-  processqueue(); //Message received so see if queue can be cleared.
+  processqueue((status[activeTabId] && status[activeTabId] != "Done"
+                && activeTabId)
+                ? activeTabId : 0); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
     var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
@@ -198,6 +225,7 @@ function workeronmessage(event) {
           selection = compare["selection"];
           var tabId = compare["tabId"];
           console.log("Processing compare queue: compare for %s of selection length %s", tabId, selection.length);
+          status[tabId] = "Comparing"
           compareSelection(selection, tabId)
       }
       pendingcompare = false;
@@ -212,8 +240,10 @@ function workeronmessage(event) {
     unsorted[tabId][spdxid] = result;
     if (Object.keys(unsorted[tabId]).length >= Object.keys(list["license"]).length){
       console.log("Requesting final sort of %s for tab %s", Object.keys(unsorted[tabId]).length, tabId)
+      status[tabId] = "Sorting"
       dowork({ 'command':"sortlicenses", 'licenses':unsorted[tabId], "tabId":tabId});
       unsorted[tabId]={};
+      diffcount[tabId] = 0
     }
     break;
     case "sortdone":
@@ -231,6 +261,9 @@ function workeronmessage(event) {
     var spdxid = event.data.spdxid;
     var record = event.data.record;
     chrome.tabs.sendMessage(tabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid, "details":list.license[spdxid]});
+    diffcount[tabId] = diffcount[tabId] - 1;
+    if (diffcount[tabId] = 0)
+      status[tabId] = "Done"
     break;
     default:
 
@@ -335,13 +368,27 @@ function spawnworkers(){
   }
 }
 //queue and start work
-function processqueue(){
-  while (workqueue.length && options.maxworkers > runningworkers){
-      var work = workqueue.shift();
+//priority defines a tabId to search for
+function processqueue(priority=0){
+  var work = null;
+  while (workqueuelength > 0 && options.maxworkers > runningworkers){
+    if ((priority > 0)
+        && (workqueue[priority])
+        && (work = workqueue[priority].shift())){
       dowork(work)
+      workqueuelength--;
+      console.log("Prioritizing tab %s work with %s items, total queue %s items", priority, workqueue[priority].length, workqueuelength)
+    }else{
+      for (var tabId in workqueue){
+        if(work = workqueue[tabId].shift()){
+          dowork(work)
+          workqueuelength--;
+        }
+      }
+    }
   }
 }
-function dowork(message, ){
+function dowork(message){
   spawnworkers()
   var offset = options.maxworkers - runningworkers
   if (options.maxworkers > runningworkers ){
@@ -358,9 +405,23 @@ function dowork(message, ){
       }
     }
   }else{ // queue up work
-    workqueue.push(message)
+    queuework(message)
   }
 }
+function queuework(message){
+  var tabId;
+  if (!message["tabId"]){
+    tabId = 0;
+  }else{
+    tabId = message["tabId"]
+  }
+  if (!workqueue[tabId]){
+    workqueue[tabId] = []
+  }
+  workqueue[tabId].push(message)
+  workqueuelength++;
+}
+
 function workerdone(id){
   workers[id][1] = false
   runningworkers--
