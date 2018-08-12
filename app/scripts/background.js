@@ -29,6 +29,9 @@ chrome.browserAction.setBadgeText({
 
 chrome.browserAction.onClicked.addListener(function(tab) {
   // Send a message to the active tab
+  chrome.tabs.executeScript({file: "scripts/contentscript.js"});
+  chrome.tabs.insertCSS({file:"styles/contentscript.css"});
+
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     var activeTab = tabs[0];
     chrome.tabs.sendMessage(activeTab.id, {"command": "clicked_browser_action"});
