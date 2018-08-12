@@ -38,7 +38,7 @@
       "all_frames": false
     }
   ],
-  "web_accessible_resources": [ "pages/worker_proxy.html",  "license-list/*"],
+  "web_accessible_resources": [ "license-list/*"],
   "permissions": ["storage", "unlimitedStorage"],
   "content_security_policy": "script-src 'self' https://spdx.org; object-src 'self'"
 }
