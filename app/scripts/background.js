@@ -29,12 +29,19 @@ chrome.browserAction.setBadgeText({
 
 chrome.browserAction.onClicked.addListener(function(tab) {
   // Send a message to the active tab
-  chrome.tabs.executeScript({file: "scripts/contentscript.js"});
-  chrome.tabs.insertCSS({file:"styles/contentscript.css"});
 
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    var activeTab = tabs[0];
-    chrome.tabs.sendMessage(activeTab.id, {"command": "clicked_browser_action"});
+  chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
+    var activeTab = tab[0];
+    activeTabId = activeTab.id
+    if (! status[activeTabId]){
+      chrome.tabs.insertCSS(activeTabId, {file:"styles/contentscript.css"});
+      chrome.tabs.executeScript(activeTabId,{file: "scripts/contentscript.js"},
+        function(result){
+          chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
+          });
+    }else{
+    chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
+    }
   });
 });
 
