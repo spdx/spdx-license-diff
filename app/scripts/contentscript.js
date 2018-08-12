@@ -101,7 +101,7 @@ chrome.runtime.onMessage.addListener(
 
 //This function responds to changes to storage
 chrome.storage.onChanged.addListener(function(changes, area) {
-    if (area == "sync" && "options" in changes) {
+    if (area == "local" && "options" in changes) {
       console.log("Detected changed options; reloading")
       restore_options();
     }
@@ -277,7 +277,7 @@ function updateProgressBar(max, value, visible=true) {
 }
 
 function restore_options() {
-  chrome.storage.sync.get(['options'], function(result) {
+  chrome.storage.local.get(['options'], function(result) {
     options = result.options;
     if (options === undefined) {
       options = {
