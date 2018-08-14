@@ -1,5 +1,5 @@
 // Enable chromereload by uncommenting this line:
-if(process.env.NODE_ENV === 'development'){
+if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
   require('chromereload/devonly')
 }
 
@@ -27,15 +27,15 @@ chrome.browserAction.setBadgeText({
   text: `Diff`
 })
 
-chrome.browserAction.onClicked.addListener(function(tab) {
-  // Send a message to the active tab
 
+function handleClick(tab) {
+  // Send a message to the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id
     if (! status[activeTabId]){
-      chrome.tabs.insertCSS(activeTabId, {file:"styles/contentscript.css"});
-      chrome.tabs.executeScript(activeTabId,{file: "scripts/contentscript.js"},
+      chrome.tabs.insertCSS(activeTabId, {file:"/styles/contentscript.css"});
+      chrome.tabs.executeScript(activeTabId,{file: "/scripts/contentscript.js"},
         function(result){
           chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
           });
@@ -43,72 +43,70 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
     }
   });
-});
+}
 
-chrome.runtime.onStartup.addListener(restore_options());
-
-chrome.tabs.onActivated.addListener(function(activeinfo) {
+function handleActivate(activeinfo) {
   // Set the active tab
   activeTabId = activeinfo.tabId;
   //console.log("ActiveTabId changed", activeTabId)
-});
-chrome.windows.onFocusChanged.addListener(function(windowid) {
+}
+
+function handleFocusChanged(windowid) {
   // Set the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(queryinfo) {
     if (queryinfo.length > 0)
       activeTabId = queryinfo[0].id;
     //console.log("ActiveTabId changed", activeTabId)
   });
-});
+}
 
 //This function responds to changes to storage
-chrome.storage.onChanged.addListener(function(changes, area) {
+function handleStorageChange(changes, area) {
     if (area == "local" && "options" in changes) {
       console.log("Detected changed options; reloading")
       restore_options();
     }
-});
+}
 
 //respond to content script
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    switch (request.command) {
-      case "focused":
-      activeTabId = sender.tab.id;
-      console.log ("activeTabId", activeTabId)
-      break;
-      case "updatelicenselist":
-      updateList()
-      break;
-      case "compareselection":
-      selection = request.selection
-      activeTabId = sender.tab.id
-      if (updating){
-        pendingcompare = true
-        comparequeue.push({'selection':selection,'tabId':activeTabId});
-        console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
-        status[activeTabId] = "Pending"
-        break;
-      }
-      console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
-      status[activeTabId] = "Comparing"
-      compareSelection(selection, activeTabId)
-      break;
-      case "generateDiff":
-      activeTabId = sender.tab.id
-      request["tabId"] = activeTabId;
-      console.log("tab %s: Generating diff:", activeTabId, request);
-      status[activeTabId] = "Diffing"
-      diffcount[activeTabId] = diffcount[activeTabId] + 1
-      dowork(request);
-      break;
-      default:
-      // console.log("Proxying to worker", request);
-      // chrome.tabs.sendMessage(activeTab.id, request);
+function handleMessage(request, sender, sendResponse) {
+  switch (request.command) {
+    case "focused":
+    activeTabId = sender.tab.id;
+    console.log ("activeTabId", activeTabId)
+    break;
+    case "updatelicenselist":
+    updateList()
+    break;
+    case "compareselection":
+    selection = request.selection
+    activeTabId = sender.tab.id
+    if (updating){
+      pendingcompare = true
+      comparequeue.push({'selection':selection,'tabId':activeTabId});
+      console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
+      status[activeTabId] = "Pending"
       break;
     }
+    console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
+    status[activeTabId] = "Comparing"
+    compareSelection(selection, activeTabId)
+    break;
+    case "generateDiff":
+    activeTabId = sender.tab.id
+    request["tabId"] = activeTabId;
+    console.log("tab %s: Generating diff:", activeTabId, request);
+    status[activeTabId] = "Diffing"
+    diffcount[activeTabId] = diffcount[activeTabId] + 1
+    dowork(request);
+    break;
+    default:
+    // console.log("Proxying to worker", request);
+    // chrome.tabs.sendMessage(activeTab.id, request);
+    break;
   }
-);
+}
+
 // Workerqueue functions
 // These functions are for allowing multiple workers.
 function workeronmessage(event) {
@@ -436,3 +434,16 @@ function workerdone(id){
   workers[id][1] = false
   runningworkers--
 }
+
+function init() {
+  console.log("Initializing spdx-diff")
+  chrome.runtime.onMessage.addListener(handleMessage);
+  chrome.browserAction.onClicked.addListener(handleClick);
+  chrome.tabs.onActivated.addListener(handleActivate);
+  chrome.windows.onFocusChanged.addListener(handleFocusChanged);
+  chrome.storage.onChanged.addListener(handleStorageChange);
+  restore_options();
+}
+
+chrome.runtime.onStartup.addListener(init);
+init();

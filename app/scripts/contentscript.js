@@ -1,6 +1,6 @@
 "use strict";
 // Enable chromereload by uncommenting this line:
-if(process.env.NODE_ENV === 'development'){
+if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
   require('chromereload/devonly')
 }
 
@@ -96,6 +96,7 @@ chrome.runtime.onMessage.addListener(
     break;
     default:
     break;
+    return true;
   }
 });
 
@@ -290,3 +291,6 @@ function restore_options() {
     }
   });
 }
+
+console.log("Spdx-diff ContentScript loaded")
+true;
