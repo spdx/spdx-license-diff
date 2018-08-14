@@ -1,6 +1,6 @@
 "use strict";
 // Enable chromereload by uncommenting this line:
-if(process.env.NODE_ENV === 'development'){
+if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
   require('chromereload/devonly')
 }
 

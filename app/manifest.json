@@ -23,6 +23,5 @@
     "open_in_tab": false
   },
   "web_accessible_resources": [ "license-list/*"],
-  "permissions": ["storage", "unlimitedStorage", "activeTab"],
-  "content_security_policy": "script-src 'self' https://spdx.org; object-src 'self'"
+  "permissions": ["storage", "unlimitedStorage", "activeTab", "*://spdx.org/*"]
 }
