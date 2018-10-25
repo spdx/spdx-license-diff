@@ -1,7 +1,8 @@
+/*jshint esversion: 6 */
 // Enable chromereload by uncommenting this line:
-if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
-  require('chromereload/devonly')
-}
+// if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
+//   require('chromereload/devonly');
+// }
 
 var list = {};
 var options;
@@ -13,26 +14,28 @@ var workqueue = {};
 var workqueuelength = 0;
 var pendingcompare = false;
 var comparequeue = [];
-var activeTabId = null
+var activeTabId = null;
 var unsorted = {};
 var selection = "";
-var status = {}
-var diffcount = {}
+var status = {};
+var diffcount = {};
+var licensesLoaded = 0;
+var pendingload = false;
 
 chrome.runtime.onInstalled.addListener((details) => {
-  console.log('previousVersion', details.previousVersion)
-})
+  console.log('previousVersion', details.previousVersion);
+});
 
 chrome.browserAction.setBadgeText({
   text: `Diff`
-})
+});
 
 
 function handleClick(tab) {
   // Send a message to the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
     var activeTab = tab[0];
-    activeTabId = activeTab.id
+    activeTabId = activeTab.id;
     if (! status[activeTabId]){
       chrome.tabs.insertCSS(activeTabId, {file:"/styles/contentscript.css"});
       chrome.tabs.executeScript(activeTabId,{file: "/scripts/contentscript.js"},
@@ -63,7 +66,7 @@ function handleFocusChanged(windowid) {
 //This function responds to changes to storage
 function handleStorageChange(changes, area) {
     if (area == "local" && "options" in changes) {
-      console.log("Detected changed options; reloading")
+      console.log("Detected changed options; reloading");
       restore_options();
     }
 }
@@ -73,31 +76,36 @@ function handleMessage(request, sender, sendResponse) {
   switch (request.command) {
     case "focused":
     activeTabId = sender.tab.id;
-    console.log ("activeTabId", activeTabId)
+    console.log ("activeTabId", activeTabId);
     break;
     case "updatelicenselist":
-    updateList()
+    updateList();
     break;
     case "compareselection":
-    selection = request.selection
-    activeTabId = sender.tab.id
-    if (updating){
-      pendingcompare = true
+    selection = request.selection;
+    activeTabId = sender.tab.id;
+    if (updating || licensesLoaded < list.licenses.length) {
+      pendingcompare = true;
       comparequeue.push({'selection':selection,'tabId':activeTabId});
-      console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
-      status[activeTabId] = "Pending"
+      status[activeTabId] = "Pending";
+      if (updating)
+        console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
+      else {
+        console.log("License load pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
+        loadList();
+      }
       break;
     }
     console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
-    status[activeTabId] = "Comparing"
-    compareSelection(selection, activeTabId)
+    status[activeTabId] = "Comparing";
+    compareSelection(selection, activeTabId);
     break;
     case "generateDiff":
-    activeTabId = sender.tab.id
-    request["tabId"] = activeTabId;
+    activeTabId = sender.tab.id;
+    request.tabId = activeTabId;
     console.log("tab %s: Generating diff:", activeTabId, request);
-    status[activeTabId] = "Diffing"
-    diffcount[activeTabId] = diffcount[activeTabId] + 1
+    status[activeTabId] = "Diffing";
+    diffcount[activeTabId] = diffcount[activeTabId] + 1;
     dowork(request);
     break;
     default:
@@ -110,42 +118,42 @@ function handleMessage(request, sender, sendResponse) {
 // Workerqueue functions
 // These functions are for allowing multiple workers.
 function workeronmessage(event) {
-  processqueue((status[activeTabId] && status[activeTabId] != "Done"
-                && activeTabId)
-                ? activeTabId : 0); //Message received so see if queue can be cleared.
+  processqueue((status[activeTabId] && status[activeTabId] != "Done" &&
+                  activeTabId) ?
+                  activeTabId : 0); //Message received so see if queue can be cleared.
   switch (event.data.command) {
     case "progressbarmax":
     var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
     if (pendingcompare){ //broadcast to all
       for (var i=0; i < comparequeue.length; i++)
-        chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+        chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
     }else if (tabId !== undefined && tabId){
       chrome.tabs.sendMessage(tabId, event.data);
     }
     break;
     case "progressbarvalue":
-    var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
+    tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
     if (pendingcompare){ //broadcast to all
-      for (var i=0; i < comparequeue.length; i++)
-        chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+      for (i=0; i < comparequeue.length; i++)
+        chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
     }else if (tabId !== undefined && tabId){
       chrome.tabs.sendMessage(tabId, event.data);
     }
     break;
     case "next":
-    var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
+    tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId;
     if (pendingcompare){ //broadcast to all
-      for (var i=0; i < comparequeue.length; i++)
-      chrome.tabs.sendMessage(comparequeue[i]["tabId"], event.data);
+      for (i=0; i < comparequeue.length; i++)
+      chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
     }else if (tabId !== undefined && tabId){
       chrome.tabs.sendMessage(tabId, event.data);
     }
 
     break;
     case "store":
-    //This path is intended to store a hash of a comparison. Complete
+    //This path is intended to store a hash of a comparison. TODO: Complete
     // updateProgressBar(-1, -1)
-    var obj = {}
+    var obj = {};
     obj[event.data.spdxid] = {
         hash:event.data.hash,
         raw:event.data.raw,
@@ -177,17 +185,20 @@ function workeronmessage(event) {
     var externallicenselist = event.data.value;
     console.log('Trying to save list', externallicenselist);
     chrome.storage.local.get(['list'], function(result) {
-          if (result.list && result.list["licenseListVersion"]){
+          if (result.list && result.list.licenseListVersion){
             var list = result.list;
-            console.log('Existing License list version %s with %s licenses', list["licenseListVersion"],
-                        Object.keys(list["licenses"]).length);
-            if (list["licenseListVersion"] < externallicenselist["licenseListVersion"]){
+            console.log('Existing License list version %s with %s licenses', list.licenseListVersion,
+                        Object.keys(list.licenses).length);
+            if (list.licenseListVersion < externallicenselist.licenseListVersion){
               console.log('Newer license list version %s found with %s licenses',
-                        externallicenselist["licenseListVersion"], Object.keys(externallicenselist["licenses"]).length);
+                        externallicenselist.licenseListVersion,
+                        Object.keys(externallicenselist.licenses).length);
               storeList(externallicenselist);
             } else {
               dowork({ 'command':'populatelicenselist', 'data':list});
-              console.log('No new update found; same version %s and %s licenses', externallicenselist["licenseListVersion"], Object.keys(externallicenselist["licenses"]).length);
+              console.log('No new update found; same version %s and %s licenses',
+                externallicenselist.licenseListVersion,
+                Object.keys(externallicenselist.licenses).length);
             }
           }else {
             console.log('No license list found');
@@ -197,8 +208,8 @@ function workeronmessage(event) {
     break;
     case "savelicense":
     if (updating){
-      var externallicenselist = event.data;
-      var spdxid = event.data.spdxid
+      externallicenselist = event.data;
+      spdxid = event.data.spdxid
       console.log('Saving license', event.data);
       chrome.storage.local.get([spdxid], function(result) {
             if (result[spdxid] && externallicenselist.data && _.isEqual(result[spdxid], externallicenselist.data)){
@@ -206,7 +217,7 @@ function workeronmessage(event) {
               console.log('Ignoring existing license', spdxid);
             }else {
               console.log('Saving new', spdxid);
-              var obj = {}
+              var obj = {};
               obj[spdxid] = externallicenselist.data;
               chrome.storage.local.set(obj,
                   function() {
@@ -219,59 +230,50 @@ function workeronmessage(event) {
     }
     break;
     case "updatedone":
-    workerdone(event.data.id)
+    workerdone(event.data.id);
     var arr = event.data.result;
-    if (typeof list["license"] === "undefined")
-      list["license"] = {};
+    if (typeof list.license === "undefined")
+      list.license = {};
     for (var i=0; i < arr.length; i++){
-      list["license"][arr[i]["licenseId"]] = arr[i]
+      list.license[arr[i].licenseId] = arr[i];
     }
     updating = false;
-    if (pendingcompare)
-      while (comparequeue.length){
-          var compare = comparequeue.shift();
-          selection = compare["selection"];
-          var tabId = compare["tabId"];
-          console.log("Processing compare queue: compare for %s of selection length %s", tabId, selection.length);
-          status[tabId] = "Comparing"
-          compareSelection(selection, tabId)
-      }
-      pendingcompare = false;
+    launchPendingCompares();
     break;
     case "comparenext":
     var threadid = event.data.id;
-    workerdone(threadid)
-    var tabId = event.data.tabId;
-    var result = event.data.result;
-    var spdxid = event.data.spdxid;
+    workerdone(threadid);
+    tabId = event.data.tabId;
+    result = event.data.result;
+    spdxid = event.data.spdxid;
     chrome.tabs.sendMessage(tabId, {"command": "next", "spdxid":spdxid,"id":threadid});
     unsorted[tabId][spdxid] = result;
-    if (Object.keys(unsorted[tabId]).length >= Object.keys(list["license"]).length){
-      console.log("Requesting final sort of %s for tab %s", Object.keys(unsorted[tabId]).length, tabId)
-      status[tabId] = "Sorting"
+    if (Object.keys(unsorted[tabId]).length >= Object.keys(list.license).length){
+      console.log("Requesting final sort of %s for tab %s", Object.keys(unsorted[tabId]).length, tabId);
+      status[tabId] = "Sorting";
       dowork({ 'command':"sortlicenses", 'licenses':unsorted[tabId], "tabId":tabId});
       unsorted[tabId]={};
-      diffcount[tabId] = 0
+      diffcount[tabId] = 0;
     }
     break;
     case "sortdone":
-    var threadid = event.data.id;
-    workerdone(threadid)
-    var tabId = event.data.tabId;
+    threadid = event.data.id;
+    workerdone(threadid);
+    tabId = event.data.tabId;
     var result = event.data.result;
     chrome.tabs.sendMessage(tabId, {"command": "sortdone","result": result,"id":threadid});
     break;
     case "diffnext":
-    var threadid = event.data.id;
-    workerdone(threadid)
-    var tabId = event.data.tabId;
-    var result = event.data.result;
-    var spdxid = event.data.spdxid;
+    threadid = event.data.id;
+    workerdone(threadid);
+    tabId = event.data.tabId;
+    result = event.data.result;
+    spdxid = event.data.spdxid;
     var record = event.data.record;
     chrome.tabs.sendMessage(tabId, {"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":threadid, "details":list.license[spdxid]});
     diffcount[tabId] = diffcount[tabId] - 1;
-    if (diffcount[tabId] = 0)
-      status[tabId] = "Done"
+    if (diffcount[tabId] == 0)
+      status[tabId] = "Done";
     break;
     default:
 
@@ -280,7 +282,7 @@ function workeronmessage(event) {
 //storage functions
 function storeList(externallicenselist){
   var obj = {};
-  externallicenselist["lastupdate"] = Date.now()
+  externallicenselist.lastupdate = Date.now();
   obj = {
       list:externallicenselist
     };
@@ -290,45 +292,58 @@ function storeList(externallicenselist){
       });
 }
 function loadList(){
+  if (pendingload){
+    console.log("Ignoring redundant loadList request");
+    return;
+  }else {
     chrome.storage.local.get(['list'], function(result) {
-      if (result.list && result.list["licenseListVersion"]){
+      if (result.list && result.list.licenseListVersion){
         list = result.list;
-        lastupdate = list["lastupdate"]
+        lastupdate = list.lastupdate;
         console.log('Loading License list version %s from storage with %s licenses last updated %s',
-          list["licenseListVersion"], list.licenses.length, new Date(lastupdate));
+          list.licenseListVersion, list.licenses.length, new Date(lastupdate));
         if ((Date.now() - lastupdate) >= (options.updateFrequency * 86400000)){
           console.log('Last update was over %s days ago; update required', options.updateFrequency);
-          updateList()
+          updateList();
         }else{
           for (var j = 0; j < list.licenses.length; j++) {
             var line = list.licenses[j];
-            var license = line["licenseId"];
-            list["license"] = {}
+            var license = line.licenseId;
+            list.license = {};
             console.log('Attempting to load %s from storage', license);
             chrome.storage.local.get([license], function(result) {
               if (result && ! _.isEmpty(result)){
-                license = Object.keys(result)[0]
-                console.log('%s succesfully loaded from storage', license);
+                license = Object.keys(result)[0];
                 list.license[license] = result[license];
+                licensesLoaded++;
+                console.log('%s succesfully loaded from storage %s/%s',
+                  license, licensesLoaded, list.licenses.length);
               }else {
                 console.log('%s not found in storage; requesting update', license);
-                updateList()
+                updateList();
+              }
+              if (list.licenses.length == licensesLoaded){
+                pendingload = false;
+                launchPendingCompares();
               }
             });
           }
         }
       }else {
+        pendingload = false;
         console.log('No license list found in storage; requesting update');
-        updateList()
+        updateList();
       }
     });
+  }
 }
 function updateList(){
   if (updating){
-    console.log("Ignoring redundant update request")
-    return
+    console.log("Ignoring redundant update request");
+    return;
   }else {
   updating = true;
+  licensesLoaded = 0;
   dowork({ 'command':"updatelicenselist", 'url':chrome.extension.getURL(""), 'remote':true});
   }
 }
@@ -338,13 +353,27 @@ function updateList(){
 //This is the first phase to determine edit distance and return a sorted list
 // for display in spdx
 function compareSelection(selection, tabId=activeTabId){
-  unsorted[tabId] = {}
-  var total = Object.keys(list["license"]).length;
+  unsorted[tabId] = {};
+  var total = Object.keys(list.license).length;
   chrome.tabs.sendMessage(tabId, {"message": "progressbarmax","value": total, "stage":"Comparing licenses", "reset":true});
   //updateProgressBar(Object.keys(list["license"]).length, null)
-  for (var license in list["license"]){
-     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list["license"][license],'total': total, 'tabId':tabId});
+  for (var license in list.license){
+     dowork({'command':"compare", 'selection': selection, 'maxLengthDifference':options.maxLengthDifference, 'spdxid':license,'license':list.license[license],'total': total, 'tabId':tabId});
   }
+}
+
+function launchPendingCompares(){
+  if (pendingcompare)
+    console.log('Processing pending %s compare items', comparequeue.length);
+    while (comparequeue.length){
+        var compare = comparequeue.shift();
+        selection = compare.selection;
+        var tabId = compare.tabId;
+        console.log("Processing compare queue: compare for %s of selection length %s", tabId, selection.length);
+        status[tabId] = "Comparing";
+        compareSelection(selection, tabId);
+    }
+    pendingcompare = false;
 }
 
 function restore_options() {
@@ -367,8 +396,8 @@ function restore_options() {
 // These functions are for allowing multiple workers.
 function spawnworkers(){
   if (workers.length == options.maxworkers)
-    return
-  console.log("Spawning %s workers", options.maxworkers)
+    return;
+  console.log("Spawning %s workers", options.maxworkers);
   for (var i = 0; i < options.maxworkers; i++){
     var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'));
     worker.onmessage = workeronmessage;
@@ -380,16 +409,16 @@ function spawnworkers(){
 function processqueue(priority=0){
   var work = null;
   while (workqueuelength > 0 && options.maxworkers > runningworkers){
-    if ((priority > 0)
-        && (workqueue[priority])
-        && (work = workqueue[priority].shift())){
-      dowork(work)
+    if ((priority > 0) &&
+        (workqueue[priority]) &&
+         (work = workqueue[priority].shift())){
+      dowork(work);
       workqueuelength--;
-      console.log("Prioritizing tab %s work with %s items, total queue %s items", priority, workqueue[priority].length, workqueuelength)
+      console.log("Prioritizing tab %s work with %s items, total queue %s items", priority, workqueue[priority].length, workqueuelength);
     }else{
       for (var tabId in workqueue){
         if(work = workqueue[tabId].shift()){
-          dowork(work)
+          dowork(work);
           workqueuelength--;
         }
       }
@@ -397,46 +426,46 @@ function processqueue(priority=0){
   }
 }
 function dowork(message){
-  spawnworkers()
-  var offset = options.maxworkers - runningworkers
+  spawnworkers();
+  var offset = options.maxworkers - runningworkers;
   if (options.maxworkers > runningworkers ){
     for (var i = runningworkers % options.maxworkers; i < options.maxworkers + offset - 1; i = (i + 1) % options.maxworkers){
       if (!workers[i][1]) {// worker is available
-        message["id"] = i;
-        var worker = workers[i][0]
-        workers[i][1] = true
-        worker.postMessage(message)
-        runningworkers++
-        break
+        message.id = i;
+        var worker = workers[i][0];
+        workers[i][1] = true;
+        worker.postMessage(message);
+        runningworkers++;
+        break;
       }else {
-        continue
+        continue;
       }
     }
   }else{ // queue up work
-    queuework(message)
+    queuework(message);
   }
 }
 function queuework(message){
   var tabId;
-  if (!message["tabId"]){
+  if (!message.tabId){
     tabId = 0;
   }else{
-    tabId = message["tabId"]
+    tabId = message.tabId;
   }
   if (!workqueue[tabId]){
-    workqueue[tabId] = []
+    workqueue[tabId] = [];
   }
-  workqueue[tabId].push(message)
+  workqueue[tabId].push(message);
   workqueuelength++;
 }
 
 function workerdone(id){
-  workers[id][1] = false
-  runningworkers--
+  workers[id][1] = false;
+  runningworkers--;
 }
 
 function init() {
-  console.log("Initializing spdx-diff")
+  console.log("Initializing spdx-diff");
   chrome.runtime.onMessage.addListener(handleMessage);
   chrome.browserAction.onClicked.addListener(handleClick);
   chrome.tabs.onActivated.addListener(handleActivate);
