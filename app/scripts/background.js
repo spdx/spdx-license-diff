@@ -466,13 +466,13 @@ function workerdone(id){
 
 function init() {
   console.log("Initializing spdx-diff");
-  chrome.runtime.onMessage.addListener(handleMessage);
-  chrome.browserAction.onClicked.addListener(handleClick);
-  chrome.tabs.onActivated.addListener(handleActivate);
-  chrome.windows.onFocusChanged.addListener(handleFocusChanged);
-  chrome.storage.onChanged.addListener(handleStorageChange);
   restore_options();
 }
 
 chrome.runtime.onStartup.addListener(init);
+chrome.runtime.onMessage.addListener(handleMessage);
+chrome.browserAction.onClicked.addListener(handleClick);
+chrome.tabs.onActivated.addListener(handleActivate);
+chrome.windows.onFocusChanged.addListener(handleFocusChanged);
+chrome.storage.onChanged.addListener(handleStorageChange);
 init();
