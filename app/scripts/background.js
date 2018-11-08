@@ -22,20 +22,16 @@ var diffcount = {};
 var licensesLoaded = 0;
 var pendingload = false;
 
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log('previousVersion', details.previousVersion);
-});
-
 chrome.browserAction.setBadgeText({
   text: `Diff`
 });
-
 
 function handleClick(tab) {
   // Send a message to the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id;
+    console.log("Click detected", status[activeTabId]);
     if (! status[activeTabId]){
       chrome.tabs.insertCSS(activeTabId, {file:"/styles/contentscript.css"});
       chrome.tabs.executeScript(activeTabId,{file: "/scripts/contentscript.js"},
@@ -209,7 +205,7 @@ function workeronmessage(event) {
     case "savelicense":
     if (updating){
       externallicenselist = event.data;
-      spdxid = event.data.spdxid
+      spdxid = event.data.spdxid;
       console.log('Saving license', event.data);
       chrome.storage.local.get([spdxid], function(result) {
             if (result[spdxid] && externallicenselist.data && _.isEqual(result[spdxid], externallicenselist.data)){
@@ -296,6 +292,8 @@ function loadList(){
     console.log("Ignoring redundant loadList request");
     return;
   }else {
+    pendingload = true;
+    console.log("Attempting to load list from storage");
     chrome.storage.local.get(['list'], function(result) {
       if (result.list && result.list.licenseListVersion){
         list = result.list;
@@ -469,10 +467,17 @@ function init() {
   restore_options();
 }
 
+init();
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onMessage.addListener(handleMessage);
 chrome.browserAction.onClicked.addListener(handleClick);
 chrome.tabs.onActivated.addListener(handleActivate);
 chrome.windows.onFocusChanged.addListener(handleFocusChanged);
 chrome.storage.onChanged.addListener(handleStorageChange);
-init();
+chrome.runtime.onSuspend.addListener(function() {
+  console.log("Unloading.");
+});
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  if (status[tabId]) //reset status so we will inject content script again
+    status[tabId] = null;
+});
