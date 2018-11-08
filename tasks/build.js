@@ -12,6 +12,7 @@ gulp.task('build', gulpSequence(
     'images',
     'fonts',
     'ossattribution',
+    'changelog',
     'chromereload'
   ]
 ))
