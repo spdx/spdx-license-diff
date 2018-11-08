@@ -2152,8 +2152,8 @@ dezalgo@^1.0.0:
     wrappy "1"
 
 diff-match-patch@^1.0.0:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/diff-match-patch/-/diff-match-patch-1.0.1.tgz#d5f880213d82fbc124d2b95111fb3c033dbad7fa"
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/diff-match-patch/-/diff-match-patch-1.0.4.tgz#6ac4b55237463761c4daf0dc603eb869124744b1"
 
 diffie-hellman@^5.0.0:
   version "5.0.3"
