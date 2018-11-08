@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.2 (07/11/2018)
+- [bump package version](https://github.com/alandtse/spdx-diff/commit/33529dfd54ee3725004a9e4ad7c9ece2a309b68f) - @alandtse
+- [Move addListeners to top level to resolve #3](https://github.com/alandtse/spdx-diff/commit/555da1c90c5d8b8ebca62639edcdc33f921575e6) - @alandtse
+
+---
+
 ## v0.0.1 (15/08/2018)
 - [Updating README to add Firefox instructions](https://github.com/alandtse/spdx-diff/commit/3085e495909da2f19423c9500b922c318ca28435) - @alandtse
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/18551e64520ce5abe13a11ad867fa6e70e32d2a3) - @alandtse
