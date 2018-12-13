@@ -1,7 +1,7 @@
 {
   "name": "spdx-diff",
   "private": true,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Diff selected text against SPDX licenses",
   "scripts": {
     "start": "yarn run dev:chrome",
