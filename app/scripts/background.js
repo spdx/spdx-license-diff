@@ -92,9 +92,13 @@ function handleMessage(request, sender, sendResponse) {
       }
       break;
     }
-    console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
-    status[activeTabId] = "Comparing";
-    compareSelection(selection, activeTabId);
+    if (status[activeTabId] != "Comparing"){
+      console.log("tab %s: Starting compare: %s", activeTabId, selection.substring(0,25));
+      status[activeTabId] = "Comparing";
+      compareSelection(selection, activeTabId);
+    } else {
+      console.log("tab %s: Ignoring redundant compare: %s", activeTabId, selection.substring(0,25));
+    }
     break;
     case "generateDiff":
     activeTabId = sender.tab.id;
