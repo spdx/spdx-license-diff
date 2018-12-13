@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.0.3 (08/11/2018)
+- [Add changelog generation using gren to tasks](https://github.com/alandtse/spdx-diff/commit/39de01e47974b7924eb812240309891e791cef41) - @alandtse
+- [Update changelog](https://github.com/alandtse/spdx-diff/commit/05a3799e188995c2f8cb1de09d6d84e4e0841155) - @alandtse
+- [Add gren changelog generation](https://github.com/alandtse/spdx-diff/commit/f07bb8d376e3ee53a00b34abd83652abdf80cb7b) - @alandtse
+- [Update diff-match-patch to 1.0.4](https://github.com/alandtse/spdx-diff/commit/28c50fd3b637f93581b257978bc4cd4db7eee6c4) - @alandtse
+
+---
+
 ## v0.0.2 (07/11/2018)
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/33529dfd54ee3725004a9e4ad7c9ece2a309b68f) - @alandtse
 - [Move addListeners to top level to resolve #3](https://github.com/alandtse/spdx-diff/commit/555da1c90c5d8b8ebca62639edcdc33f921575e6) - @alandtse
