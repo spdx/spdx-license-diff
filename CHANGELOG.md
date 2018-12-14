@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.4 (13/12/2018)
+- [bump package version](https://github.com/alandtse/spdx-diff/commit/ae87d1a52ac6c49b040702ab89f4bfed78f70a09) - @alandtse
+
+---
+
 ## v0.0.3 (08/11/2018)
 - [Add changelog generation using gren to tasks](https://github.com/alandtse/spdx-diff/commit/39de01e47974b7924eb812240309891e791cef41) - @alandtse
 - [Update changelog](https://github.com/alandtse/spdx-diff/commit/05a3799e188995c2f8cb1de09d6d84e4e0841155) - @alandtse
