@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.5 (13/12/2018)
+- [bump package version](https://github.com/alandtse/spdx-diff/commit/5f7960f5da6aa1349ff1db8d61ea84daed5fc47a) - @alandtse
+- [Add further checks to load list prior to compare](https://github.com/alandtse/spdx-diff/commit/4ef3a51cf2fa3c463ecc404da0d5fb3add5643eb) - @alandtse
+
+---
+
 ## v0.0.4 (13/12/2018)
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/ae87d1a52ac6c49b040702ab89f4bfed78f70a09) - @alandtse
 
@@ -13,7 +19,7 @@
 
 ---
 
-## v0.0.2 (07/11/2018)
+## v0.0.2 (26/10/2018)
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/33529dfd54ee3725004a9e4ad7c9ece2a309b68f) - @alandtse
 - [Move addListeners to top level to resolve #3](https://github.com/alandtse/spdx-diff/commit/555da1c90c5d8b8ebca62639edcdc33f921575e6) - @alandtse
 
