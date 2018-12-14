@@ -80,14 +80,14 @@ function handleMessage(request, sender, sendResponse) {
     case "compareselection":
     selection = request.selection;
     activeTabId = sender.tab.id;
-    if (updating || licensesLoaded < list.licenses.length) {
+    if (updating || list.licenses == undefined || licensesLoaded < list.licenses.length) {
       pendingcompare = true;
       comparequeue.push({'selection':selection,'tabId':activeTabId});
       status[activeTabId] = "Pending";
       if (updating)
         console.log("Update pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
       else {
-        console.log("License load pending; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
+        console.log("License load needed; queing compare for tab %s; %s queued", activeTabId, comparequeue.length);
         loadList();
       }
       break;
