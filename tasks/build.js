@@ -8,7 +8,6 @@ gulp.task('build', gulpSequence(
     'styles',
     'pages',
     'locales',
-    'license-list',
     'images',
     'fonts',
     'ossattribution',

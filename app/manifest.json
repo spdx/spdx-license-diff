@@ -22,6 +22,5 @@
     "page": "pages/options.html",
     "open_in_tab": false
   },
-  "web_accessible_resources": [ "license-list/*"],
   "permissions": ["storage", "unlimitedStorage", "activeTab", "*://spdx.org/*"]
 }
