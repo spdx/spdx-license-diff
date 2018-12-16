@@ -159,7 +159,7 @@ function displayDiff(html, time=processTime){
   html = spdx[0].html;
   time = spdx[0].time;
   var spdxid = spdx[0].spdxid;
-  var title = `<a href="https://spdx.org/licenses/${spdxid}.html">${spdxid}</a>`;
+  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`;
   var timehtml = ' processed in '+(time+processTime)/ 1000+'s<br />';
   updateBubbleText(title + timehtml + html);
   var el = document.getElementById("licenses").addEventListener("change", function () {
@@ -257,6 +257,9 @@ function renderBubble(mouseX, mouseY, selection) {
 
 function updateBubbleText(text) {
   var bubbleDOMText = $('#bubble_text')[0];
+  //convert html to xhtml
+  //concept from https://stackoverflow.com/a/12092919
+  text = new XMLSerializer().serializeToString(new DOMParser().parseFromString(text, 'text/html'));
   bubbleDOMText.innerHTML = text;
 }
 
