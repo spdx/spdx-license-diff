@@ -39,7 +39,7 @@ function handleClick(tab) {
           chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
           });
     }else{
-    chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
+        chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
     }
   });
 }
@@ -50,6 +50,11 @@ function handleActivate(activeinfo) {
   //console.log("ActiveTabId changed", activeTabId)
 }
 
+function handleUpdated(tabId, changeInfo, tabInfo) {
+  console.log(tabId + " updated.");
+  if (status[tabId]) //reset status so we will inject content script again
+    status[tabId] = null;
+}
 function handleFocusChanged(windowid) {
   // Set the active tab
   chrome.tabs.query({active: true, currentWindow: true}, function(queryinfo) {
@@ -481,7 +486,4 @@ chrome.storage.onChanged.addListener(handleStorageChange);
 chrome.runtime.onSuspend.addListener(function() {
   console.log("Unloading.");
 });
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  if (status[tabId]) //reset status so we will inject content script again
-    status[tabId] = null;
-});
+chrome.tabs.onUpdated.addListener(handleUpdated);
