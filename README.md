@@ -2,7 +2,7 @@
 
 Diff selected text against SPDX licenses. Creates a browser button in Chrome and Firefox to compare selected text against the SPDX [license list](https://spdx.org/licenses/).
 
-![spdx-diff in action](app/images/spdx-diff.gif)
+![spdx-diff in action](images/spdx-diff.gif)
 
 ## Installation of Prerequisites
 
