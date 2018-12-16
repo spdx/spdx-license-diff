@@ -28,6 +28,7 @@ chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     switch (request.command){
     case "clicked_browser_action":
+      sendResponse({status: "1"}); //send receipt confirmation
       selection = getSelectionText();
       if (selection.length > 0) {
         createBubble();
@@ -93,6 +94,10 @@ chrome.runtime.onMessage.addListener(
         console.log("Best diff received; we can display");
         displayDiff(spdx[0].html, spdx[0].time);
       }
+    break;
+    case "alive?":
+      console.log("Received ping request");
+      sendResponse({status: "1"});
     break;
     default:
     return true;

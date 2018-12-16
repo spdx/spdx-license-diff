@@ -33,25 +33,39 @@ function handleClick(tab) {
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
     if (! status[activeTabId]){
-      chrome.tabs.insertCSS(activeTabId, {file:"/styles/contentscript.css"});
-      chrome.tabs.executeScript(activeTabId,{file: "/scripts/contentscript.js"},
-        function(result){
-          chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
-          });
+      injectContentScript(activeTabId);
     }else{
-        chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"});
+        chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"}, messageResponse);
     }
   });
+}
+
+function injectContentScript(activeTabId){
+  chrome.tabs.insertCSS(activeTabId, {file:"/styles/contentscript.css"});
+  chrome.tabs.executeScript(activeTabId,{file: "/scripts/contentscript.js"},
+    function(result){
+      chrome.tabs.sendMessage(activeTabId, {"command": "clicked_browser_action"}, messageResponse);
+      });
+}
+function messageResponse(response) {
+  console.log("Processing message response from " + activeTabId, response);
+  if (!response) {
+    console.log(activeTabId + " failed to respond; assuming not injected in tab");
+    status[activeTabId] = null;
+  }
 }
 
 function handleActivate(activeinfo) {
   // Set the active tab
   activeTabId = activeinfo.tabId;
   //console.log("ActiveTabId changed", activeTabId)
+  if (status[activeTabId]){
+    chrome.tabs.sendMessage(activeTabId, {command: "alive?"}, messageResponse);
+  }
 }
 
 function handleUpdated(tabId, changeInfo, tabInfo) {
-  console.log(tabId + " updated.");
+  //console.log(tabId + " updated.");
   if (status[tabId]) //reset status so we will inject content script again
     status[tabId] = null;
 }
