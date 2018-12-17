@@ -188,7 +188,7 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   dmp.Diff_Timeout=0;
 //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
   var ms_start = (new Date()).getTime();
-  var textDiff = dmp.diff_main(data, selection); // produces diff array
+  var textDiff = dmp.diff_main(data, cleanText(selection, false)); // produces diff array
   dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
   //dmp.diff_cleanupEfficiency(textDiff);
   var ms_end = (new Date()).getTime();
@@ -197,8 +197,27 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   postMessage({"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":id, "tabId":tabId});
 };
 
-function cleanText(str) {
-  return str.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, ' ');
+function cleanText(str, removeNewLines = true) {
+  //this will replace unicode spaces, collapse spaces and then replace newlines
+  if (removeNewLines)
+    return collapseSpaces(removeLineNumbers(str)).replace(/(\r\n|\n|\r)/gm, ' ');
+  else
+    return collapseSpaces(removeLineNumbers(str));
+}
+
+function collapseSpaces(str) {
+  return str.replace(/\s+/g, ' ')
+}
+
+function removeLineNumbers(str, percentage=.8) {
+  //remove line numbering if we detect at least 80% of total lines of code
+  var locre = str.match(/\r?\n/g);
+  var loc = (locre ? locre.length: 0);
+  var linenumbersre = str.match(/((\n|^)\s*)\d+/g);
+  var linenumbercount = (linenumbersre ? linenumbersre.length: 0);
+  if (linenumbercount/loc > percentage) //TODO: Replace .8 with option
+    str = str.replace(/((\n|^)\s*)\d+/g, "$2");
+  return str;
 }
 function escapeRegex(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); //need to escape regex characters
