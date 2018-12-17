@@ -1,4 +1,4 @@
-"use strict";
+/*jshint esversion: 6 */
 
 var promises=[];
 var SPDXlist = {};
@@ -7,32 +7,32 @@ var id;
 var dmp =  new DiffMatchPatch(); // options may be passed to constructor; see below
 
 self.onmessage = function(event) {
-  id = event.data.id
+  id = event.data.id;
   switch (event.data.command) {
     case "process":
     //'license':spdxid,'hash':hash, 'selection': selection
     break;
     case "updatelicenselist":
-    getSPDXlist(event.data["url"], event.data["remote"]);
+    getSPDXlist(event.data.url, event.data.remote);
     break;
     case "compare":
-    var spdxid = event.data.spdxid
-    var license = event.data.license
-    var maxLengthDifference = event.data.maxLengthDifference
+    var spdxid = event.data.spdxid;
+    var license = event.data.license;
+    var maxLengthDifference = event.data.maxLengthDifference;
     var total = event.data.total;
     var tabId = event.data.tabId;
-    comparelicense(event.data["selection"], spdxid, license, tabId, maxLengthDifference, total);
+    comparelicense(event.data.selection, spdxid, license, tabId, maxLengthDifference, total);
     break;
     case "sortlicenses":
-    var tabId = event.data.tabId;
+    tabId = event.data.tabId;
     sortlicenses(event.data.licenses, tabId);
     break;
     case "generateDiff":
-    var spdxid = event.data.spdxid
-    var license = event.data.license
-    var record = event.data.record
-    var tabId = event.data.tabId;
-    generateDiff(event.data["selection"], spdxid, license, record, tabId);
+    spdxid = event.data.spdxid;
+    license = event.data.license;
+    var record = event.data.record;
+    tabId = event.data.tabId;
+    generateDiff(event.data.selection, spdxid, license, record, tabId);
     break;
 
     default:
@@ -43,31 +43,33 @@ self.onmessage = function(event) {
 // load files array with list of files to download
 function getSPDXlist(baseurl, remote=true) {
   if (typeof files === "undefined")
-    files = []
+    files = [];
+  var url = "";
   if (remote) {
-    var url = "https://spdx.org/licenses/licenses.json"
+    url = "https://spdx.org/licenses/licenses.json";
   } else {
-    var url = baseurl + 'license-list/spdx.txt';
+    url = baseurl + 'license-list/spdx.txt';
   }
   var x = new XMLHttpRequest();
   x.open('GET', url);
   x.onload = function() {
+    var lines = "";
     if (remote){
-      var lines = JSON.parse(x.responseText);
+      lines = JSON.parse(x.responseText);
       postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id, "reset":true});
       postMessage({"command": "savelicenselist","value": lines,"id":id});
       console.log(id, "Updating: ", lines);
       for (var j = 0; j < lines.licenses.length; j++) {
         var line = lines.licenses[j];
-        var license = line["detailsUrl"];
-        license = license.replace("http:","https:")
+        var license = line.detailsUrl;
+        license = license.replace("http:","https:");
         files.push(license);
       }
     } else {
-      var lines = x.responseText.split("\n");
+      lines = x.responseText.split("\n");
       postMessage({"command": "progressbarmax","value": lines.licenses.length, "stage":"Updating licenses","id":id, "reset":true});
       for (var j = 0; j < lines.length; j++) {
-        var line = lines[j]
+        var line = lines[j];
         if (line.search(/\.txt/g) >= 0){
           var license = line.substring(0, line.search(/\.txt/g));
           files.push(license);
@@ -75,46 +77,47 @@ function getSPDXlist(baseurl, remote=true) {
       }
     }
     processSPDXlist(files);
-  }
+  };
   x.send();
-};
+}
 // download licenses from files array
 function processSPDXlist(files, remote=true) {
   promises = files.map(
     function(value, index){
       return new Promise(function(resolve, reject) {
+        var url = "";
         if (remote){
-          var url = value;
+          url = value;
         }else{
-          var url = baseurl + 'license-list/' + value + ".txt";
+          url = baseurl + 'license-list/' + value + ".txt";
         }
         var x = new XMLHttpRequest();
         x.open ('GET', url);
         x.onload = function() {
-          var md5 = require('md5-jkmyers')
+          var md5 = require('md5-jkmyers');
+          var response, hash, raw, spdxid;
           if (remote){
-            var response = JSON.parse(this.responseText);
-            var hash = md5(response["licenseText"]);
-            var raw = response["licenseText"];
-            var spdxid = response["licenseId"];
+            response = JSON.parse(this.responseText);
+            hash = md5(response.licenseText);
+            raw = response.licenseText;
+            spdxid = response.licenseId;
           }else{
-            var response = {};
-            var hash = md5(this.responseText);
-            var raw = this.responseText;
-            var spdxid = value.replace(/\.template$/g, '');
-            response["licenseText"] = raw;
-            response["licenseId"] = spdxid
+            response = {};
+            hash = md5(this.responseText);
+            raw = this.responseText;
+            spdxid = value.replace(/\.template$/g, '');
+            response.licenseText = raw;
+            response.licenseId = spdxid;
           }
           postMessage({"command": "savelicense","spdxid": spdxid, "data":response,"id":id});
           postMessage({"command": "progressbarmax","value": files.length, "stage":"Updating licenses","id":id});
           postMessage({"command": "progressbarvalue", "value": index, "spdxid":spdxid,"id":id});
-          SPDXlist[spdxid] = response
+          SPDXlist[spdxid] = response;
           //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-          resolve(SPDXlist[spdxid])
-        }
+          resolve(SPDXlist[spdxid]);
+        };
         x.send();
-      })
-
+      });
     });
     Promise.all(promises)
     .then(function(data){ //success
@@ -123,18 +126,18 @@ function processSPDXlist(files, remote=true) {
     }
 
   );
-};
+}
 
 function comparelicense(selection, spdxid, license, tabId, maxLengthDifference=1000, total=0) {
   postMessage({"command": "progressbarmax","value": total, "stage":"Comparing licenses","id":id,"reset":true,"tabId":tabId});
-  var result = {}
+  var result = {};
   var count2 = selection.length;
   //console.log(id, "Processing selection of " + count2 + " chars.");
-  var data = license.licenseText
-  var count = data.length
-  var locre = data.match(/\r?\n/g)
+  var data = license.licenseText;
+  var count = data.length;
+  var locre = data.match(/\r?\n/g);
   var loc = (locre ? locre.length: 0);
-  var locre2 = selection.match(/\r?\n/g)
+  var locre2 = selection.match(/\r?\n/g);
   var loc2 = (locre2 ? locre2.length: 0);
   var difference = Math.abs(count2 - count);
   var locdiff = Math.abs(loc2 - loc);
@@ -148,7 +151,7 @@ function comparelicense(selection, spdxid, license, tabId, maxLengthDifference=1
       text: data,
       percentage: percentage,
       //patterns: result.patterns
-    }
+    };
   }else{
     console.log(tabId, id, spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff);
     result = {
@@ -156,12 +159,13 @@ function comparelicense(selection, spdxid, license, tabId, maxLengthDifference=1
       text: data,
       percentage: 0,
       //patterns: result.patterns
-    }
+    };
 
   }
   postMessage({"command": "comparenext", "spdxid":spdxid, "result":result, "id":id, "tabId":tabId});
   //postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-};
+}
+
 function sortlicenses(licenses, tabId) {
   postMessage({"command": "progressbarmax","value": Object.keys(licenses).length, "stage":"Sorting licenses","id":id,"reset":true, "tabId":tabId});
   console.log(tabId, id, "Sorting " + Object.keys(licenses).length + " licenses");
@@ -169,22 +173,22 @@ function sortlicenses(licenses, tabId) {
   for (var license in licenses) {
     sortable.push({
       'spdxid' : license,
-      'distance':licenses[license]['distance'],
-      'difftext':licenses[license]['text'],
-      'percentage':licenses[license]['percentage']
+      'distance':licenses[license].distance,
+      'difftext':licenses[license].text,
+      'percentage':licenses[license].percentage
     });
     postMessage({"command": "next", "spdxid":license,"id":id, "tabId":tabId});
   }
   sortable.sort(function(a, b) {
-    return b["percentage"] - a["percentage"];
+    return b.percentage - a.percentage;
   });
   postMessage({"command": "sortdone","result": sortable,"id":id, "tabId":tabId});
-};
+}
 
 function generateDiff(selection, spdxid, license, record, tabId) {
   //postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
-  var result = {}
-  var data = license
+  var result = {};
+  var data = license;
   dmp.Diff_Timeout=0;
 //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
   var ms_start = (new Date()).getTime();
@@ -192,10 +196,10 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
   //dmp.diff_cleanupEfficiency(textDiff);
   var ms_end = (new Date()).getTime();
-  result = { "html":dmp.diff_prettyHtml(textDiff), "time":(ms_end - ms_start)}
+  result = { "html":dmp.diff_prettyHtml(textDiff), "time":(ms_end - ms_start)};
   console.log("%s %s: %s diff:%o",tabId,id, spdxid, result);
   postMessage({"command": "diffnext", "spdxid":spdxid, "result":result, "record":record, "id":id, "tabId":tabId});
-};
+}
 
 function cleanText(str, removeNewLines = true) {
   //this will replace unicode spaces, collapse spaces and then replace newlines
@@ -206,10 +210,10 @@ function cleanText(str, removeNewLines = true) {
 }
 
 function collapseSpaces(str) {
-  return str.replace(/\s+/g, ' ')
+  return str.replace(/\s+/g, ' ');
 }
 
-function removeLineNumbers(str, percentage=.8) {
+function removeLineNumbers(str, percentage=0.8){
   //remove line numbering if we detect at least 80% of total lines of code
   var locre = str.match(/\r?\n/g);
   var loc = (locre ? locre.length: 0);
@@ -242,9 +246,9 @@ function processVariables(str) {
       variable[keyvalue[0]] = keyvalue[1];
     }
     //pattern2 = match[1] + "<<var;"+variable['match']+">>" + match[3];
-    pattern2 = escapeRegex(match[1]) +"(" +String(variable['match']) +"?)"+ escapeRegex(match[3]);
+    pattern2 = escapeRegex(match[1]) +"(" +String(variable.match) +"?)"+ escapeRegex(match[3]);
     patterns.push(pattern2);
-    result.data = result.data.replace(new RegExp(pattern2), match[1] + variable["original"] + match[3])
+    result.data = result.data.replace(new RegExp(pattern2), match[1] + variable.original + match[3]);
     pattern.lastIndex -= match[3].length;
   }
   result.patterns = patterns;
