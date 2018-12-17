@@ -1,6 +1,17 @@
 # Changelog
 
-## v0.0.5 (13/12/2018)
+## v0.0.6 (15/12/2018)
+- [bump package version](https://github.com/alandtse/spdx-diff/commit/764b548ec6b4a2b7bc9f56aaa3ba99fc18259258) - @alandtse
+- [Fix #8 by adding check for content script insertion success](https://github.com/alandtse/spdx-diff/commit/e73071dfce0a245c7b711d928cbc4aa89321768a) - @alandtse
+- [Refactor handleUpdate for tabs](https://github.com/alandtse/spdx-diff/commit/fcdbe90ba2dbe6ac7f0d0d6aacbd02fcd76fa659) - @alandtse
+- [Remove local license-list in build to reduce size](https://github.com/alandtse/spdx-diff/commit/892473340a23d6a81b6bc2a201edbe72cc9d9428) - @alandtse
+- [Move non-app images to root images folder](https://github.com/alandtse/spdx-diff/commit/1fe8e73a66ba08c64597c13a7877cf53864b5f22) - @alandtse
+- [Fix #6 by converting diff-match-patch html to xhtml](https://github.com/alandtse/spdx-diff/commit/f494833593768a722494f02e8bea3906a97505e9) - @alandtse
+
+---
+
+## v0.0.5 (14/12/2018)
+- [add changelog](https://github.com/alandtse/spdx-diff/commit/a2bf6815d8aeae4f1dbb9d126c82aeeb01098893) - @alandtse
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/5f7960f5da6aa1349ff1db8d61ea84daed5fc47a) - @alandtse
 - [Add further checks to load list prior to compare](https://github.com/alandtse/spdx-diff/commit/4ef3a51cf2fa3c463ecc404da0d5fb3add5643eb) - @alandtse
 
@@ -19,7 +30,7 @@
 
 ---
 
-## v0.0.2 (26/10/2018)
+## v0.0.2 (07/11/2018)
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/33529dfd54ee3725004a9e4ad7c9ece2a309b68f) - @alandtse
 - [Move addListeners to top level to resolve #3](https://github.com/alandtse/spdx-diff/commit/555da1c90c5d8b8ebca62639edcdc33f921575e6) - @alandtse
 
