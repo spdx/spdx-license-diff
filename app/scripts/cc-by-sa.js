@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: (GPL-3.0-or-later)
 // https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
 function selectRangeCoords () {
   var node = window.getSelection()

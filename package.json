@@ -1,5 +1,5 @@
 {
-  "name": "spdx-diff",
+  "name": "spdx-license-diff",
   "private": true,
   "version": "0.0.7",
   "description": "Diff selected text against SPDX licenses",

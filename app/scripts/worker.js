@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 var promises = []
 var SPDXlist = {}
 var files = []

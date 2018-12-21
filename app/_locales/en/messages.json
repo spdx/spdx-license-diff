@@ -1,6 +1,6 @@
 {
   "appName": {
-    "message": "spdx-diff",
+    "message": "SPDX License Diff",
     "description": "The name of the application"
   },
   "appShortName": {
@@ -12,7 +12,7 @@
     "description": "The description of the application"
   },
   "browserActionTitle": {
-    "message": "spdx-diff",
+    "message": "spdx-license-diff",
     "description": "The title of the browser action button"
   }
 }
