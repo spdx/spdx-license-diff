@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.0 (21/12/2018)
+- [bump package version](https://github.com/alandtse/spdx-license-diff/commit/adce24d35b3f7e4b287fc8104afeca76852987a3) - @alandtse
+- [Address #5 by changing name and other tasks](https://github.com/alandtse/spdx-license-diff/commit/582946059616a8102164719a4d00bcb7a94f60b3) - @alandtse
+- [Convert to eslint](https://github.com/alandtse/spdx-license-diff/commit/873f7f43e26e36b0c4982290698298c680c84c0b) - @alandtse
+
+---
+
 ## v0.0.7 (17/12/2018)
 - [bump package version](https://github.com/alandtse/spdx-diff/commit/7879544241faa77d03755c86dac79ae887c406ce) - @alandtse
 - [Add changelog](https://github.com/alandtse/spdx-diff/commit/7dafbfd1a38bb2429c28179627386fd73247f93d) - @alandtse
