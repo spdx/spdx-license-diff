@@ -14,11 +14,11 @@ function saveOptions () {
   var maxworkers = document.getElementById('maxWorkers').value
 
   var options = {
-    updateFrequency: updateFrequency,
-    showBest: showBest,
-    minpercentage: minpercentage,
-    maxLengthDifference: maxLengthDifference,
-    maxworkers: maxworkers
+    updateFrequency: parseInt(updateFrequency),
+    showBest: parseInt(showBest),
+    minpercentage: parseInt(minpercentage),
+    maxLengthDifference: parseInt(maxLengthDifference),
+    maxworkers: parseInt(maxworkers)
   }
   chrome.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
