@@ -405,7 +405,7 @@ function restoreOptions () {
 // Workerqueue functions
 // These functions are for allowing multiple workers.
 function spawnworkers () {
-  if (workers.length === options.maxworkers) { return }
+  if (workers.length >= options.maxworkers) { return }
   console.log('Spawning %s workers', options.maxworkers)
   for (var i = 0; i < options.maxworkers; i++) {
     var worker = new Worker(chrome.runtime.getURL('scripts/worker.js'))
