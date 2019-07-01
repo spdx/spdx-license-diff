@@ -475,7 +475,7 @@ function workerdone (id) {
 }
 
 function init () {
-  console.log('Initializing spdx-diff')
+  console.log('Initializing spdx-license-diff')
   restoreOptions()
 }
 
