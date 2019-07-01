@@ -12,13 +12,17 @@ function saveOptions () {
   var minpercentage = document.getElementById('minpercentage').value
   var maxLengthDifference = document.getElementById('maxDifference').value
   var maxworkers = document.getElementById('maxWorkers').value
+  var filters = {}
+  if (document.getElementById('deprecated').checked)
+    filters['deprecated'] = document.getElementById('deprecated').value
 
   var options = {
     updateFrequency: parseInt(updateFrequency),
     showBest: parseInt(showBest),
     minpercentage: parseInt(minpercentage),
     maxLengthDifference: parseInt(maxLengthDifference),
-    maxworkers: parseInt(maxworkers)
+    maxworkers: parseInt(maxworkers),
+    filters: filters
   }
   chrome.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
@@ -39,6 +43,7 @@ function restoreOptions () {
     document.getElementById('minpercentage').value = result.options.minpercentage
     document.getElementById('maxDifference').value = result.options.maxLengthDifference
     document.getElementById('maxWorkers').value = result.options.maxworkers
+    document.getElementById('deprecated').checked = result.options.filters.deprecated
   })
 }
 function reset () {

@@ -21,6 +21,9 @@ var status = {}
 var diffcount = {}
 var licensesLoaded = 0
 var pendingload = false
+var filtered = {}
+var total = 0
+var completedcompares = 0
 
 chrome.browserAction.setBadgeText({
   text: `Diff`
@@ -261,7 +264,8 @@ function workeronmessage (event) {
       spdxid = event.data.spdxid
       chrome.tabs.sendMessage(tabId, { 'command': 'next', 'spdxid': spdxid, 'id': threadid })
       unsorted[tabId][spdxid] = result
-      if (Object.keys(unsorted[tabId]).length >= Object.keys(list.license).length) {
+      completedcompares++
+      if (completedcompares >= total) {
         console.log('Requesting final sort of %s for tab %s', Object.keys(unsorted[tabId]).length, tabId)
         status[tabId] = 'Sorting'
         dowork({ 'command': 'sortlicenses', 'licenses': unsorted[tabId], 'tabId': tabId })
@@ -365,11 +369,31 @@ function updateList () {
 // for display in spdx
 function compareSelection (selection, tabId = activeTabId) {
   unsorted[tabId] = {}
-  var total = Object.keys(list.license).length
-  chrome.tabs.sendMessage(tabId, { 'message': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'reset': true })
-  // updateProgressBar(Object.keys(list["license"]).length, null)
+  if (filtered === undefined) {
+    filtered = {}
+  }
+  if (filtered[tabId] === undefined)
+    filtered[tabId] = {}
+  total = Object.keys(list.license).length
+  completedcompares = 0
   for (var license in list.license) {
+    for (var filter in options.filters) {
+      if (list.license[license][options.filters[filter]]){
+        if (filtered[tabId][filter] === undefined)
+          filtered[tabId][filter] = {}
+        filtered[tabId][filter][license] = list.license[license]
+        console.log('Filtering %s because its %s', license, filter)
+      }
+    }
+    if (filtered[tabId] === undefined ||
+        filtered[tabId][filter] === undefined ||
+        filtered[tabId][filter][license] === undefined)
+      unsorted[tabId][license] = list.license[license]
+  }
+  total = Object.keys(unsorted[tabId]).length
+   for (var license in unsorted[tabId]){
     dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId })
+    chrome.tabs.sendMessage(tabId, { 'message': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'reset': true })
   }
 }
 
