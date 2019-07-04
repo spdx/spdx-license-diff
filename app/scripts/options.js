@@ -5,6 +5,8 @@
 //   require('chromereload/devonly')
 // }
 
+import { filters, version, defaultoptions } from './const.js'
+
 // Saves options to chrome.storage
 function saveOptions () {
   var updateFrequency = document.getElementById('updateFrequency').value

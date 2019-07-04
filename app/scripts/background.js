@@ -4,6 +4,7 @@
 //   require('chromereload/devonly');
 // }
 
+import { version, defaultoptions } from './const.js'
 var list = {}
 var options
 var lastupdate
@@ -414,13 +415,7 @@ function restoreOptions () {
   chrome.storage.local.get(['options'], function (result) {
     options = result.options
     if (options === undefined) {
-      options = {
-        updateFrequency: 90,
-        showBest: 10,
-        minpercentage: 25,
-        maxLengthDifference: 1000,
-        maxworkers: 10
-      }
+      options = defaultoptions
     }
     loadList()
   })

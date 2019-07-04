@@ -5,6 +5,8 @@
 // }
 
 import { selectRangeCoords, getSelectionText } from './cc-by-sa.js'
+import { filters, version, defaultoptions  } from './const.js'
+
 var selectedLicense = ''
 var spdx = null
 var selection = ''
@@ -284,13 +286,7 @@ function restoreOptions () {
   chrome.storage.local.get(['options'], function (result) {
     options = result.options
     if (options === undefined) {
-      options = {
-        updateFrequency: 90,
-        showBest: 10,
-        minpercentage: 25,
-        maxLengthDifference: 1000,
-        maxworkers: 10
-      }
+      options = defaultoptions
     }
   })
 }
