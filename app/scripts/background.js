@@ -141,7 +141,7 @@ function handleMessage (request, sender, sendResponse) {
 function workeronmessage (event) {
   processqueue((status[activeTabId] && status[activeTabId] !== 'Done' &&
                   activeTabId)
-    ? activeTabId : 0) // Message received so see if queue can be cleared.
+                ? activeTabId : 0) // Message received so see if queue can be cleared.
   switch (event.data.command) {
     case 'progressbarmax':
       var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId
@@ -392,7 +392,7 @@ function compareSelection (selection, tabId = activeTabId) {
       unsorted[tabId][license] = list.license[license]
   }
   total = Object.keys(unsorted[tabId]).length
-   for (var license in unsorted[tabId]){
+  for (var license in unsorted[tabId]){
     dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId })
     chrome.tabs.sendMessage(tabId, { 'message': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'reset': true })
   }
