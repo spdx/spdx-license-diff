@@ -522,7 +522,7 @@ function workerdone (id) {
 }
 
 function init () {
-  console.log('Initializing spdx-license-diff')
+  console.log('Initializing spdx-license-diff ' + version)
   restoreOptions()
 }
 

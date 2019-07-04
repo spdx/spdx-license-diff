@@ -396,4 +396,4 @@ function restoreOptions () {
   })
 }
 
-console.log('Spdx-diff ContentScript loaded')
+console.log('Spdx-license-diff ' + version +  ' ContentScript injected')
