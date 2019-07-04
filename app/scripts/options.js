@@ -40,6 +40,9 @@ function saveOptions () {
 // stored in chrome.storage.
 function restoreOptions () {
   chrome.storage.local.get(['options'], function (result) {
+    if (result.options === undefined) {
+      result.options = defaultoptions
+    }
     document.getElementById('updateFrequency').value = result.options.updateFrequency
     document.getElementById('maxComparisons').value = result.options.showBest
     document.getElementById('minpercentage').value = result.options.minpercentage
@@ -61,8 +64,9 @@ function showFilters(form, result) {
     checkbox.type = "checkbox"
     checkbox.id = filter
     checkbox.value = filters[filter]
-    checkbox.checked = result.options.filters[filter]
-    checkbox.defaultChecked = defaultoptions[filter]
+    checkbox.defaultChecked = defaultoptions.filters[filter]
+    checkbox.checked = (result.options.filters !== undefined && result.options.filters[filter] !== undefined ?
+        result.options.filters[filter] : defaultoptions.filters[filter])
   }
 }
 

@@ -10,7 +10,10 @@ var defaultoptions = {
         minpercentage: 25,
         maxLengthDifference: 1500,
         maxworkers: 10,
-        deprecated: true
+        filters:
+          {
+          deprecated: "isDeprecatedLicenseId"
+          }
 }
 
 export { filters, version, defaultoptions }
