@@ -43,9 +43,27 @@ function restoreOptions () {
     document.getElementById('minpercentage').value = result.options.minpercentage
     document.getElementById('maxDifference').value = result.options.maxLengthDifference
     document.getElementById('maxWorkers').value = result.options.maxworkers
-    document.getElementById('deprecated').checked = result.options.filters.deprecated
+    showFilters(document.getElementById('exclude'), result)
+    //document.getElementById('deprecated').checked = result.options.filters.deprecated
   })
 }
+
+function showFilters(form, result) {
+  for (var filter in filters) {
+    if (document.getElementById(filter))
+      continue
+    var checkbox = form.appendChild(document.createElement('input'))
+    var label = checkbox.appendChild(document.createElement('label'))
+    label.htmlFor = filter
+    form.appendChild(document.createTextNode(filter.charAt(0).toUpperCase() + filter.slice(1)))
+    checkbox.type = "checkbox"
+    checkbox.id = filter
+    checkbox.value = filters[filter]
+    checkbox.checked = result.options.filters[filter]
+    checkbox.defaultChecked = defaultoptions[filter]
+  }
+}
+
 function reset () {
   var form = document.getElementById('options')
   form.reset()
