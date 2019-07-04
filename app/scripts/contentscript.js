@@ -9,14 +9,17 @@ import { filters, version, defaultoptions  } from './const.js'
 
 var selectedLicense = ''
 var spdx = null
+var rawspdx = null
 var selection = ''
 var lastselection = ''
 var processTime = 0
 var diffsdone = 0
 var diffsdue = 0
 var diffdisplayed = false
+var diffs = {}
 var options
 var msStart
+var selectedfilters
 
 // init functions
 restoreOptions()
@@ -36,20 +39,23 @@ chrome.runtime.onMessage.addListener(
           var selectCoords = selectRangeCoords()
           var posX = selectCoords[0]; var posY = selectCoords[1]
           renderBubble(posX, posY, selection)
-          if (spdx && getSelectionText() === lastselection) { // diff previously done on selection
+          if (spdx && selection === lastselection) { // diff previously done on selection
+            updateProgressBar(1, 1, false)
+            updateBubbleText('Done')
             processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
             return
           } else {
-            lastselection = selection
+            rawspdx = null
             spdx = null
             diffdisplayed = false
             selectedLicense = ''
             diffsdue = 0
             diffsdone = 0
-            diffdisplayed = false
+            diffs = {}
           }
           msStart = (new Date()).getTime()
           compareSelection(selection)
+          lastselection = selection
         } else {
           updateBubbleText('No selection to compare; please select')
         }
@@ -65,34 +71,37 @@ chrome.runtime.onMessage.addListener(
         updateProgressBar(-1, -1)
         break
       case 'sortdone':
-        spdx = request.result
+        rawspdx = request.result
         var msEnd = (new Date()).getTime()
         processTime = msEnd - msStart
         console.log('processTime: ' + processTime / 1000 + ('s'))
+        updateBubbleText('Sorting done')
         processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
         break
       case 'diffnext':
         updateProgressBar(-1, -1)
-        diffsdone++
         var threadid = request.id
         var result = request.result
         var spdxid = request.spdxid
         var record = request.record
         var details = request.details
-        spdx[record].html = result.html
-        spdx[record].time = result.time
-        for (var k in details) {
-          spdx[record][k] = details[k]
-        }
-        $("#licenses option[value='" + spdxid + "']").removeAttr('disabled')
+        diffs[spdxid] = result
+        diffsdone++
+        // for (var k in details) {
+        //   spdx[record][k] = details[k]
+        // }
+        if ($("#licenses option[value='" + spdxid + "']"))
+          $("#licenses option[value='" + spdxid + "']").removeAttr('disabled')
         console.log('%s: Received diff for %s %s/%s', threadid, spdxid, diffsdone, diffsdue)
         if (diffdisplayed) { return }
+        var bestspdxid = spdx[0].spdxid
         if (diffsdone >= diffsdue) {
-          console.log('All diffs complete')
-          displayDiff(spdx[0].html, spdx[0].time)
-        } else if (spdx[0].html) {
-          console.log('Best diff received; we can display')
-          displayDiff(spdx[0].html, spdx[0].time)
+          console.log('All diffs complete; showing %s', bestspdxid)
+          displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time)
+          updateBubbleText('Diffing done')
+        } else if (bestspdxid == spdxid) {
+          console.log('Best diff %s received; we can display', bestspdxid)
+          displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time)
         }
         break
       case 'alive?':
@@ -122,16 +131,21 @@ function compareSelection (selection) {
 
 // This will begin displaying diffs based off sorted list spdx
 function processLicenses (showBest, processTime = 0) {
+  spdx = filterSPDX(rawspdx)
   console.log('Processing diffs for %s items exceeding %s% match', showBest, Number(options.minpercentage))
   if (spdx && (spdx.length === 0 || Number(spdx[0].percentage) <= Number(options.minpercentage))) {
     console.log('No results to display')
     displayDiff(null, processTime)
     updateProgressBar(spdx.length, spdx.length)
-  } else if (spdx && diffdisplayed) {
     addSelectFormFromArray('licenses', spdx, showBest, options.minpercentage)
-    displayDiff(spdx[0].html, spdx[0].time)
+  } else if (spdx && diffdisplayed) {
+    updateProgressBar(1, 1, false)
+    addSelectFormFromArray('licenses', spdx, showBest, options.minpercentage)
+    var license = spdx[0].spdxid
+    if (diffs[license] !== undefined)
+      displayDiff(diffs[license].html, diffs[license].time)
   } else {
-    updateBubbleText('Diffing results')
+    diffsdue = 0
     for (var i = 0; i < showBest; i++) {
       var license = spdx[i].spdxid
       var data = spdx[i].difftext
@@ -145,12 +159,57 @@ function processLicenses (showBest, processTime = 0) {
       } else {
         console.log(license + ': ' + distance + ' (' + percentage + '%)')
       }
-      chrome.runtime.sendMessage({ 'command': 'generateDiff', 'selection': selection, 'spdxid': license, 'license': data, 'record': i })
-      diffsdue++
+      if (diffs[license] === undefined){
+        diffsdue++
+        chrome.runtime.sendMessage({ 'command': 'generateDiff', 'selection': selection, 'spdxid': license, 'license': data, 'record': i })
+        console.log("Generating diff for " + license + " total " +diffsdue)
+      }else {
+        console.log("Diff found for " + license )
+      }
     }
-    updateProgressBar(diffsdue, 0)
+    if (diffsdue > diffsdone) {
+        updateProgressBar(diffsdue, 0)
+        updateBubbleText("Diffing")
+    }
     addSelectFormFromArray('licenses', spdx, showBest, options.minpercentage)
+    var license = spdx[0].spdxid
+    if (diffs[license] !== undefined)
+      displayDiff(diffs[license].html, diffs[license].time)
   }
+  if (diffsdue == diffsdone) {
+    updateProgressBar(1, 1, false)
+    updateBubbleText('Done')
+  }
+}
+
+// This will filter the spdx
+function filterSPDX (rawspdx) {
+  var spdx = []
+  var filtered = 0
+  if (selectedfilters === undefined)
+    selectedfilters = options.filters
+  var showBest = (options.showBest === 0) ? rawspdx.length : options.showBest
+  for (var i = 0; i < showBest + filtered; i++) {
+    var license = rawspdx[i].spdxid
+    var data = rawspdx[i].difftext
+    var distance = rawspdx[i].distance
+    var percentage = rawspdx[i].percentage
+    var details = rawspdx[i].details
+    var skiplicense = false
+    for (var filter of Object.keys(selectedfilters)) {
+      if (details && details[selectedfilters[filter]]){
+        skiplicense = true
+        filtered++
+        console.log('Filtering %s because its %s: %s total', license, filter, filtered)
+        break
+      }
+    }
+    if (skiplicense){
+      continue
+    }
+    spdx.push(rawspdx[i])
+  }
+  return spdx
 }
 
 // This is the actual diff display function, requires a populated spdx
@@ -160,8 +219,6 @@ function displayDiff (html, time = processTime) {
     updateBubbleText('Time: ' + time / 1000 + ' s<br />No results to display')
     return
   }
-  html = spdx[0].html
-  time = spdx[0].time
   var spdxid = spdx[0].spdxid
   var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
   var timehtml = ' processed in ' + (time + processTime) / 1000 + 's<br />'
@@ -181,6 +238,53 @@ function displayDiff (html, time = processTime) {
   }, false)
 }
 
+// This wraps the diff display
+function prepDiff(spdxid, time, html, details) {
+  var hoverInfo = "tags: "
+  for (var filter in filters) {
+    if (details[filters[filter]])
+      hoverInfo += filter + " "
+  }
+  if (details.licenseComments)
+    hoverInfo += '&#10;comments: '+details.licenseComments
+  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`
+  var timehtml = ' processed in ' + (time + processTime) / 1000 + 's<br /><hr />'
+  return (title + timehtml + html)
+}
+
+// This shows available filters as checkboxes
+function showFilters(form) {
+  if (document.getElementById('filters'))
+    return
+  var div = form.appendChild(document.createElement('div'))
+  div.id = "filters"
+  var label = form.appendChild(document.createElement('label'))
+  label.appendChild(document.createTextNode("Exclude: "))
+  for (var filter in filters) {
+    var checkbox = form.appendChild(document.createElement('input'))
+    label = checkbox.appendChild(document.createElement('label'))
+    label.htmlFor = filter
+    form.appendChild(document.createTextNode(filter.charAt(0).toUpperCase() + filter.slice(1)))
+    checkbox.type = "checkbox"
+    checkbox.id = filter
+    checkbox.value = filters[filter]
+    checkbox.checked = options.filters[filter]
+    checkbox.addEventListener('change', function () {
+      console.log('%s changed to %s', this, this.checked)
+      if (this.checked)
+        selectedfilters[this.id] = this.value
+      else {
+        delete selectedfilters[this.id]
+      }
+      diffdisplayed = false
+      processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
+      // chrome.runtime.sendMessage({ 'command': 'resort', 'filter': selectedfilters })
+      // msStart = (new Date()).getTime() + processTime
+    }, false)
+  }
+  form.appendChild(document.createElement('br'))
+}
+
 // This function will create a select form with the sorted licenses in arr
 function addSelectFormFromArray (id, arr, number = arr.length, minimum = 0) {
   var form = document.getElementById(id)
@@ -192,6 +296,7 @@ function addSelectFormFromArray (id, arr, number = arr.length, minimum = 0) {
     form.setAttribute('id', 'license_form')
   }
   form = document.getElementById('license_form')
+  showFilters(form)
   var select = form.appendChild(document.createElement('select'))
   select.id = id
   for (var i = 0; i < arr.length && i < number; i++) {
@@ -204,7 +309,7 @@ function addSelectFormFromArray (id, arr, number = arr.length, minimum = 0) {
     var option = select.appendChild(document.createElement('option'))
     option.value = value
     option.text = text
-    if (diffsdone === 0) { option.setAttribute('disabled', 'disabled') }
+    if (diffs[value] === undefined) { option.setAttribute('disabled', 'disabled') }
   }
 }
 

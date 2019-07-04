@@ -266,11 +266,11 @@ function workeronmessage (event) {
       chrome.tabs.sendMessage(tabId, { 'command': 'next', 'spdxid': spdxid, 'id': threadid })
       unsorted[tabId][spdxid] = result
       completedcompares++
-      if (completedcompares >= total) {
+      if (completedcompares >= Object.keys(unsorted[tabId]).length) {
         console.log('Requesting final sort of %s for tab %s', Object.keys(unsorted[tabId]).length, tabId)
         status[tabId] = 'Sorting'
         dowork({ 'command': 'sortlicenses', 'licenses': unsorted[tabId], 'tabId': tabId })
-        unsorted[tabId] = {}
+        // unsorted[tabId] = {}
         diffcount[tabId] = 0
       }
       break
@@ -290,7 +290,36 @@ function workeronmessage (event) {
       var record = event.data.record
       chrome.tabs.sendMessage(tabId, { 'command': 'diffnext', 'spdxid': spdxid, 'result': result, 'record': record, 'id': threadid, 'details': list.license[spdxid] })
       diffcount[tabId] = diffcount[tabId] - 1
-      if (diffcount[tabId] === 0) { status[tabId] = 'Done' }
+      if (diffcount[tabId] === 0) {
+        status[tabId] = 'Done'
+        for (var filter of Object.keys(filtered[tabId])) {
+          for (var license in filtered[tabId][filter]){
+            status[tabId] = 'Background comparing'
+            console.log('Background compare for %s', license)
+            dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId, 'background':true })
+          }
+        }
+      }
+      break
+    case 'backgroundcomparenext':
+      var threadid = event.data.id
+      workerdone(threadid)
+      tabId = event.data.tabId
+      var result = event.data.result
+      spdxid = event.data.spdxid
+      chrome.tabs.sendMessage(tabId, { 'command': 'next', 'spdxid': spdxid, 'id': threadid })
+      if (filtered[tabId]["results"] === undefined)
+        filtered[tabId]["results"] = {}
+      filtered[tabId]["results"][spdxid] = result
+      unsorted[tabId][spdxid] = result
+      completedcompares++
+      if (completedcompares == Object.keys(list.license).length) {
+        console.log('Done with background compare of %s for tab %s', Object.keys(filtered[tabId]["results"]).length, tabId)
+        status[tabId] = 'Done'
+        dowork({ 'command': 'sortlicenses', 'licenses': unsorted[tabId], 'tabId': tabId })
+        //unsorted[tabId] = {}
+        diffcount[tabId] = 0
+      }
       break
     default:
   }
@@ -373,8 +402,7 @@ function compareSelection (selection, tabId = activeTabId) {
   if (filtered === undefined) {
     filtered = {}
   }
-  if (filtered[tabId] === undefined)
-    filtered[tabId] = {}
+  filtered[tabId] = {}
   total = Object.keys(list.license).length
   completedcompares = 0
   for (var license in list.license) {
@@ -382,8 +410,8 @@ function compareSelection (selection, tabId = activeTabId) {
       if (list.license[license][options.filters[filter]]){
         if (filtered[tabId][filter] === undefined)
           filtered[tabId][filter] = {}
-        filtered[tabId][filter][license] = list.license[license]
-        console.log('Filtering %s because its %s', license, filter)
+        filtered[tabId][filter][license] = true
+        console.log('Deferring %s because its %s', license, filter)
       }
     }
     if (filtered[tabId] === undefined ||
