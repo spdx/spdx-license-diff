@@ -84,7 +84,7 @@ chrome.runtime.onMessage.addListener(
         var result = request.result
         var spdxid = request.spdxid
         var record = request.record
-        var details = request.details
+        // var details = request.details
         diffs[spdxid] = result
         diffsdone++
         // for (var k in details) {

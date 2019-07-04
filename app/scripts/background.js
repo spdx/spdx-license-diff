@@ -288,7 +288,7 @@ function workeronmessage (event) {
       result = event.data.result
       spdxid = event.data.spdxid
       var record = event.data.record
-      chrome.tabs.sendMessage(tabId, { 'command': 'diffnext', 'spdxid': spdxid, 'result': result, 'record': record, 'id': threadid, 'details': list.license[spdxid] })
+      chrome.tabs.sendMessage(tabId, { 'command': 'diffnext', 'spdxid': spdxid, 'result': result, 'record': record, 'id': threadid })
       diffcount[tabId] = diffcount[tabId] - 1
       if (diffcount[tabId] === 0) {
         status[tabId] = 'Done'
