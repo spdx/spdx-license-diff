@@ -216,22 +216,20 @@ function filterSPDX (rawspdx) {
 function displayDiff (html, time = processTime) {
   diffdisplayed = true
   if (!html) {
-    updateBubbleText('Time: ' + time / 1000 + ' s<br />No results to display')
+    updateBubbleText('Time: ' + time / 1000 + ' s<br /><hr />No results to display', '#result_text')
     return
   }
   var spdxid = spdx[0].spdxid
-  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
-  var timehtml = ' processed in ' + (time + processTime) / 1000 + 's<br />'
-  updateBubbleText(title + timehtml + html)
+  var details = spdx[0].details
+  updateBubbleText(prepDiff(spdxid, time, html, details), '#result_text')
   document.getElementById('licenses').addEventListener('change', function () {
     if (this.value !== selectedLicense) {
       selectedLicense = this.value
       spdxid = spdx[this.options.selectedIndex].spdxid
-      html = spdx[this.options.selectedIndex].html
-      time = spdx[this.options.selectedIndex].time
-      title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank">${spdxid}</a>`
-      timehtml = ' processed in ' + (time + processTime) / 1000 + 's<br />'
-      updateBubbleText(title + timehtml + html)
+      html = diffs[spdxid].html
+      time = diffs[spdxid].time
+      details = spdx[this.options.selectedIndex].details
+      updateBubbleText(prepDiff(spdxid, time, html, details), '#result_text')
     } else {
 
     }
@@ -291,7 +289,7 @@ function addSelectFormFromArray (id, arr, number = arr.length, minimum = 0) {
   if (form) { form.outerHTML = '' }
   if (!$('#license_form').length) {
     var bubbleDOM = $('#license_bubble')[0]
-    var bubbleDOMText = $('#bubble_text')[0]
+    var bubbleDOMText = $('#result_text')[0]
     form = bubbleDOM.insertBefore(document.createElement('form'), bubbleDOMText)
     form.setAttribute('id', 'license_form')
   }
@@ -330,6 +328,9 @@ function createBubble () {
   var bubbleDOMText = document.createElement('div')
   bubbleDOMText.setAttribute('id', 'bubble_text')
   bubbleDOM.appendChild(bubbleDOMText)
+  var resultText = document.createElement('div')
+  resultText.setAttribute('id', 'result_text')
+  bubbleDOM.appendChild(resultText)
 }
 // Close the bubble when we click on the screen.
 document.addEventListener('mousedown', function (e) {
@@ -362,8 +363,8 @@ function renderBubble (mouseX, mouseY, selection) {
     'fast')
 }
 
-function updateBubbleText (text) {
-  var bubbleDOMText = $('#bubble_text')[0]
+function updateBubbleText (text, target = '#bubble_text') {
+  var bubbleDOMText = $(target)[0]
   // convert html to xhtml
   // concept from https://stackoverflow.com/a/12092919
   text = new XMLSerializer().serializeToString(new DOMParser().parseFromString(text, 'text/html'))
