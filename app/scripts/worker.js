@@ -20,7 +20,8 @@ self.onmessage = function (event) {
       var maxLengthDifference = event.data.maxLengthDifference
       var total = event.data.total
       var tabId = event.data.tabId
-      comparelicense(event.data.selection, spdxid, license, tabId, maxLengthDifference, total)
+      var background = event.data.background
+      comparelicense(event.data.selection, spdxid, license, tabId, maxLengthDifference, total, background)
       break
     case 'sortlicenses':
       tabId = event.data.tabId
@@ -125,8 +126,9 @@ function processSPDXlist (files, remote = true, baseurl) {
     )
 }
 
-function comparelicense (selection, spdxid, license, tabId, maxLengthDifference = 1000, total = 0) {
-  postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'id': id, 'reset': true, 'tabId': tabId })
+function comparelicense (selection, spdxid, license, tabId, maxLengthDifference = 1000, total = 0, background=false) {
+  if (!background)
+    postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'id': id, 'reset': true, 'tabId': tabId })
   var result = {}
   var count2 = selection.length
   // console.log(id, "Processing selection of " + count2 + " chars.");
@@ -146,7 +148,8 @@ function comparelicense (selection, spdxid, license, tabId, maxLengthDifference 
     result = {
       distance: distance,
       text: data,
-      percentage: percentage
+      percentage: percentage,
+      details: license
       // patterns: result.patterns
     }
   } else {
@@ -154,11 +157,16 @@ function comparelicense (selection, spdxid, license, tabId, maxLengthDifference 
     result = {
       distance: difference,
       text: data,
-      percentage: 0
+      percentage: 0,
+      details: null // details is unneeded since these will always be end of the list
       // patterns: result.patterns
     }
   }
-  postMessage({ 'command': 'comparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId })
+  if (!background)
+    postMessage({ 'command': 'comparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId })
+  else {
+    postMessage({ 'command': 'backgroundcomparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId })
+  }
   // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
 }
 
@@ -171,7 +179,8 @@ function sortlicenses (licenses, tabId) {
       'spdxid': license,
       'distance': licenses[license].distance,
       'difftext': licenses[license].text,
-      'percentage': licenses[license].percentage
+      'percentage': licenses[license].percentage,
+      'details': licenses[license].details
     })
     postMessage({ 'command': 'next', 'spdxid': license, 'id': id, 'tabId': tabId })
   }

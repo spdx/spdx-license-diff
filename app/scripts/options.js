@@ -5,6 +5,8 @@
 //   require('chromereload/devonly')
 // }
 
+import { filters, version, defaultoptions } from './const.js'
+
 // Saves options to chrome.storage
 function saveOptions () {
   var updateFrequency = document.getElementById('updateFrequency').value
@@ -12,13 +14,17 @@ function saveOptions () {
   var minpercentage = document.getElementById('minpercentage').value
   var maxLengthDifference = document.getElementById('maxDifference').value
   var maxworkers = document.getElementById('maxWorkers').value
+  var filters = {}
+  if (document.getElementById('deprecated').checked)
+    filters['deprecated'] = document.getElementById('deprecated').value
 
   var options = {
     updateFrequency: parseInt(updateFrequency),
     showBest: parseInt(showBest),
     minpercentage: parseInt(minpercentage),
     maxLengthDifference: parseInt(maxLengthDifference),
-    maxworkers: parseInt(maxworkers)
+    maxworkers: parseInt(maxworkers),
+    filters: filters
   }
   chrome.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
@@ -34,13 +40,36 @@ function saveOptions () {
 // stored in chrome.storage.
 function restoreOptions () {
   chrome.storage.local.get(['options'], function (result) {
+    if (result.options === undefined) {
+      result.options = defaultoptions
+    }
     document.getElementById('updateFrequency').value = result.options.updateFrequency
     document.getElementById('maxComparisons').value = result.options.showBest
     document.getElementById('minpercentage').value = result.options.minpercentage
     document.getElementById('maxDifference').value = result.options.maxLengthDifference
     document.getElementById('maxWorkers').value = result.options.maxworkers
+    showFilters(document.getElementById('exclude'), result)
+    //document.getElementById('deprecated').checked = result.options.filters.deprecated
   })
 }
+
+function showFilters(form, result) {
+  for (var filter in filters) {
+    if (document.getElementById(filter))
+      continue
+    var checkbox = form.appendChild(document.createElement('input'))
+    var label = checkbox.appendChild(document.createElement('label'))
+    label.htmlFor = filter
+    form.appendChild(document.createTextNode(filter.charAt(0).toUpperCase() + filter.slice(1)))
+    checkbox.type = "checkbox"
+    checkbox.id = filter
+    checkbox.value = filters[filter]
+    checkbox.defaultChecked = defaultoptions.filters[filter]
+    checkbox.checked = (result.options.filters !== undefined && result.options.filters[filter] !== undefined ?
+        result.options.filters[filter] : defaultoptions.filters[filter])
+  }
+}
+
 function reset () {
   var form = document.getElementById('options')
   form.reset()
@@ -70,14 +99,28 @@ function updateList () {
   })
 }
 function checkStorage () {
-  chrome.storage.local.getBytesInUse(null, function (result) {
-    var status = document.getElementById('storagestatus')
-    if (result) {
-      status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
-    } else {
-      status.textContent = '0 MB'
-    }
-  })
+  var status = document.getElementById('storagestatus')
+  try {
+    chrome.storage.local.getBytesInUse(null, function (result) {
+      if (result) {
+        status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
+      } else {
+        status.textContent = '0 MB'
+      }
+    })
+  } catch (err) {
+    // Necessary since Firefox doesn't support getBytesInUse
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
+    browser.storage.local.get(function(items) {
+      var result = JSON.stringify(items).length
+      if (result) {
+        status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
+      } else {
+        status.textContent = '0 MB'
+      }
+    })
+  }
+
 }
 function clearStorage () {
   chrome.storage.local.clear(function (result) {

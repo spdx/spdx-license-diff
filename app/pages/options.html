@@ -2,13 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>spdx-diff Options</title>
+  <title>spdx-license-diff Options</title>
   <link rel="stylesheet" type="text/css" href="../styles/options.css">
 </head>
 <body>
   <form id="options">
 <fieldset>
-  <h2><a href='https://spdx.org/licenses/'>SPDX License List</a> Options</h2>
+  <legend><a href='https://spdx.org/licenses/'>SPDX License List</a> Options</legend>
   <div>
     <label for="updateFrequency">Check for list update interval</label>
     <input id="updateFrequency" type="number" name="updateFrequency" step="1" min="1" max ="365" value="90"
@@ -36,7 +36,7 @@
   </div>
 </fieldset>
 <fieldset>
-  <h2>Display Result Options</h2>
+  <legend>Display Result Options</legend>
   <div>
     <label for="maxComparisons">Max results</label>
     <input id="maxComparisons" type="number" name="maxComparisons" step="1" min="0" value="10"
@@ -49,12 +49,17 @@
       title="Minimum percentage matches to display" required>
     <span class="validity"></span>
   </div>
+  <div>
+    <fieldset id="exclude">
+      <legend>Exclude</legend>
+    </fieldset>
+  </div>
 </fieldset>
 <fieldset>
-  <h2>Advanced Options</h2>
+  <legend>Advanced Options</legend>
   <div>
     <label for="maxDifference">Maximum length difference</label>
-    <input id="maxDifference" type="number" name="maxDifference" step="100" min="0" max="100000" value="1000"
+    <input id="maxDifference" type="number" name="maxDifference" step="100" min="0" max="100000" value="1500"
       title="Maximum difference in length to attempt comparison (0 is unlimited; higher will be slower but more accurate)" required>
     <span class="validity"></span>
   </div>
