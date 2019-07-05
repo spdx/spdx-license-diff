@@ -99,14 +99,28 @@ function updateList () {
   })
 }
 function checkStorage () {
-  chrome.storage.local.getBytesInUse(null, function (result) {
-    var status = document.getElementById('storagestatus')
-    if (result) {
-      status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
-    } else {
-      status.textContent = '0 MB'
-    }
-  })
+  var status = document.getElementById('storagestatus')
+  try {
+    chrome.storage.local.getBytesInUse(null, function (result) {
+      if (result) {
+        status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
+      } else {
+        status.textContent = '0 MB'
+      }
+    })
+  } catch (err) {
+    // Necessary since Firefox doesn't support getBytesInUse
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
+    browser.storage.local.get(function(items) {
+      var result = JSON.stringify(items).length
+      if (result) {
+        status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
+      } else {
+        status.textContent = '0 MB'
+      }
+    })
+  }
+
 }
 function clearStorage () {
   chrome.storage.local.clear(function (result) {
