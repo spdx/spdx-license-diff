@@ -3,7 +3,7 @@ var filters = {
   OSIApproved: "isOsiApproved",
   FSFLibre: "isFsfLibre"
 }
-var version = "0.1.1"
+var version = "0.2.0"
 var defaultoptions = {
         updateFrequency: 90,
         showBest: 10,
