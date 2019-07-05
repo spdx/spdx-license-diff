@@ -107,7 +107,9 @@ function handleMessage (request, sender, sendResponse) {
         pendingcompare = true
         comparequeue.push({ 'selection': selection, 'tabId': activeTabId })
         status[activeTabId] = 'Pending'
-        if (updating) { console.log('Update pending; queing compare for tab %s; %s queued', activeTabId, comparequeue.length) } else {
+        if (updating) {
+          console.log('Update pending; queing compare for tab %s; %s queued', activeTabId, comparequeue.length)
+        } else {
           console.log('License load needed; queing compare for tab %s; %s queued', activeTabId, comparequeue.length)
           loadList()
         }
@@ -141,7 +143,9 @@ function handleMessage (request, sender, sendResponse) {
 function workeronmessage (event) {
   processqueue((status[activeTabId] && status[activeTabId] !== 'Done' &&
                   activeTabId)
-                ? activeTabId : 0) // Message received so see if queue can be cleared.
+    ? activeTabId : 0) // Message received so see if queue can be cleared.
+  var result
+  var threadid
   switch (event.data.command) {
     case 'progressbarmax':
       var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId
@@ -258,10 +262,10 @@ function workeronmessage (event) {
       launchPendingCompares()
       break
     case 'comparenext':
-      var threadid = event.data.id
+      threadid = event.data.id
       workerdone(threadid)
       tabId = event.data.tabId
-      var result = event.data.result
+      result = event.data.result
       spdxid = event.data.spdxid
       chrome.tabs.sendMessage(tabId, { 'command': 'next', 'spdxid': spdxid, 'id': threadid })
       unsorted[tabId][spdxid] = result
@@ -293,31 +297,30 @@ function workeronmessage (event) {
       if (diffcount[tabId] === 0) {
         status[tabId] = 'Done'
         for (var filter of Object.keys(filtered[tabId])) {
-          for (var license in filtered[tabId][filter]){
+          for (var license in filtered[tabId][filter]) {
             status[tabId] = 'Background comparing'
             console.log('Background compare for %s', license)
-            dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId, 'background':true })
+            dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId, 'background': true })
           }
         }
       }
       break
     case 'backgroundcomparenext':
-      var threadid = event.data.id
+      threadid = event.data.id
       workerdone(threadid)
       tabId = event.data.tabId
-      var result = event.data.result
+      result = event.data.result
       spdxid = event.data.spdxid
       chrome.tabs.sendMessage(tabId, { 'command': 'next', 'spdxid': spdxid, 'id': threadid })
-      if (filtered[tabId]["results"] === undefined)
-        filtered[tabId]["results"] = {}
-      filtered[tabId]["results"][spdxid] = result
+      if (filtered[tabId]['results'] === undefined) { filtered[tabId]['results'] = {} }
+      filtered[tabId]['results'][spdxid] = result
       unsorted[tabId][spdxid] = result
       completedcompares++
-      if (completedcompares == Object.keys(list.license).length) {
-        console.log('Done with background compare of %s for tab %s', Object.keys(filtered[tabId]["results"]).length, tabId)
+      if (completedcompares === Object.keys(list.license).length) {
+        console.log('Done with background compare of %s for tab %s', Object.keys(filtered[tabId]['results']).length, tabId)
         status[tabId] = 'Done'
         dowork({ 'command': 'sortlicenses', 'licenses': unsorted[tabId], 'tabId': tabId })
-        //unsorted[tabId] = {}
+        // unsorted[tabId] = {}
         diffcount[tabId] = 0
       }
       break
@@ -407,20 +410,18 @@ function compareSelection (selection, tabId = activeTabId) {
   completedcompares = 0
   for (var license in list.license) {
     for (var filter in options.filters) {
-      if (list.license[license][options.filters[filter]]){
-        if (filtered[tabId][filter] === undefined)
-          filtered[tabId][filter] = {}
+      if (list.license[license][options.filters[filter]]) {
+        if (filtered[tabId][filter] === undefined) { filtered[tabId][filter] = {} }
         filtered[tabId][filter][license] = true
         console.log('Deferring %s because its %s', license, filter)
       }
     }
     if (filtered[tabId] === undefined ||
         filtered[tabId][filter] === undefined ||
-        filtered[tabId][filter][license] === undefined)
-      unsorted[tabId][license] = list.license[license]
+        filtered[tabId][filter][license] === undefined) { unsorted[tabId][license] = list.license[license] }
   }
   total = Object.keys(unsorted[tabId]).length
-  for (var license in unsorted[tabId]){
+  for (license in unsorted[tabId]) {
     dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId })
     chrome.tabs.sendMessage(tabId, { 'message': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'reset': true })
   }

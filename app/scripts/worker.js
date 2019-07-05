@@ -126,9 +126,8 @@ function processSPDXlist (files, remote = true, baseurl) {
     )
 }
 
-function comparelicense (selection, spdxid, license, tabId, maxLengthDifference = 1000, total = 0, background=false) {
-  if (!background)
-    postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'id': id, 'reset': true, 'tabId': tabId })
+function comparelicense (selection, spdxid, license, tabId, maxLengthDifference = 1000, total = 0, background = false) {
+  if (!background) { postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'id': id, 'reset': true, 'tabId': tabId }) }
   var result = {}
   var count2 = selection.length
   // console.log(id, "Processing selection of " + count2 + " chars.");
@@ -162,9 +161,7 @@ function comparelicense (selection, spdxid, license, tabId, maxLengthDifference 
       // patterns: result.patterns
     }
   }
-  if (!background)
-    postMessage({ 'command': 'comparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId })
-  else {
+  if (!background) { postMessage({ 'command': 'comparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId }) } else {
     postMessage({ 'command': 'backgroundcomparenext', 'spdxid': spdxid, 'result': result, 'id': id, 'tabId': tabId })
   }
   // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
@@ -227,9 +224,10 @@ function removeLineNumbers (str, percentage = 0.8) {
   return str
 }
 function escapeRegex (str) {
+  // eslint-disable-next-line no-useless-escape
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&') // need to escape regex characters
 }
-function processVariables (str) {
+function processVariables (str) { // eslint-disable-line no-unused-vars
   var pattern = /(^|(?:\s*(?!<<)\S+(?!<<)\s*){0,3}?)<<var;(.+?)>>($|(?:\s*(?!<<)\S+(?!<<)\s*){0,3})/g // Capture up to six words before and after
   // to use this pattern match[1] must be match[2]
   // var pattern = /<<var;(.*?)>>/g; // Do a literal match
