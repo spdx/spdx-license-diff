@@ -5,7 +5,7 @@
 //   require('chromereload/devonly')
 // }
 
-import { filters, version, defaultoptions } from './const.js'
+import { filters, defaultoptions } from './const.js'
 
 // Saves options to chrome.storage
 function saveOptions () {
@@ -15,8 +15,7 @@ function saveOptions () {
   var maxLengthDifference = document.getElementById('maxDifference').value
   var maxworkers = document.getElementById('maxWorkers').value
   var filters = {}
-  if (document.getElementById('deprecated').checked)
-    filters['deprecated'] = document.getElementById('deprecated').value
+  if (document.getElementById('deprecated').checked) { filters['deprecated'] = document.getElementById('deprecated').value }
 
   var options = {
     updateFrequency: parseInt(updateFrequency),
@@ -49,24 +48,23 @@ function restoreOptions () {
     document.getElementById('maxDifference').value = result.options.maxLengthDifference
     document.getElementById('maxWorkers').value = result.options.maxworkers
     showFilters(document.getElementById('exclude'), result)
-    //document.getElementById('deprecated').checked = result.options.filters.deprecated
+    // document.getElementById('deprecated').checked = result.options.filters.deprecated
   })
 }
 
-function showFilters(form, result) {
+function showFilters (form, result) {
   for (var filter in filters) {
-    if (document.getElementById(filter))
-      continue
+    if (document.getElementById(filter)) { continue }
     var checkbox = form.appendChild(document.createElement('input'))
     var label = checkbox.appendChild(document.createElement('label'))
     label.htmlFor = filter
     form.appendChild(document.createTextNode(filter.charAt(0).toUpperCase() + filter.slice(1)))
-    checkbox.type = "checkbox"
+    checkbox.type = 'checkbox'
     checkbox.id = filter
     checkbox.value = filters[filter]
     checkbox.defaultChecked = defaultoptions.filters[filter]
-    checkbox.checked = (result.options.filters !== undefined && result.options.filters[filter] !== undefined ?
-        result.options.filters[filter] : defaultoptions.filters[filter])
+    checkbox.checked = (result.options.filters !== undefined && result.options.filters[filter] !== undefined
+      ? result.options.filters[filter] : defaultoptions.filters[filter])
   }
 }
 
@@ -111,7 +109,7 @@ function checkStorage () {
   } catch (err) {
     // Necessary since Firefox doesn't support getBytesInUse
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
-    browser.storage.local.get(function(items) {
+    browser.storage.local.get(function (items) {
       var result = JSON.stringify(items).length
       if (result) {
         status.textContent = (result / 1024 / 1024).toFixed(2) + ' MB'
@@ -120,7 +118,6 @@ function checkStorage () {
       }
     })
   }
-
 }
 function clearStorage () {
   chrome.storage.local.clear(function (result) {
