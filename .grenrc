@@ -1,5 +1,7 @@
 {
     "dataSource": "commits",
+    "username": "spdx",
+    "repo": "spdx-license-diff",
     "prefix": "",
     "onlyMilestones": false,
     "groupBy": "label",
