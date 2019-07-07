@@ -3,7 +3,7 @@ var filters = {
   OSIApproved: 'isOsiApproved',
   FSFLibre: 'isFsfLibre'
 }
-var version = '0.2.0'
+var version = browser.runtime.getManifest().version
 var defaultoptions = {
   updateFrequency: 90,
   showBest: 10,
