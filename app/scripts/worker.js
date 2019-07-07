@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 import DiffMatchPatch from 'diff-match-patch'
-import Levenshtein from 'fast-levenshtein'
+import Levenshtein from 'js-levenshtein'
 
 var promises = []
 var SPDXlist = {}
@@ -144,7 +144,7 @@ function comparelicense (selection, spdxid, license, tabId, maxLengthDifference 
   var locdiff = Math.abs(loc2 - loc)
   var maxLength = Math.max(count, count2)
   if (difference <= maxLength && ((maxLengthDifference === 0) || (difference < maxLengthDifference))) {
-    var distance = Levenshtein.get(cleanText(data), cleanText(selection))
+    var distance = Levenshtein(cleanText(data), cleanText(selection))
     var percentage = ((maxLength - distance) / maxLength * 100).toFixed(1)
     console.log(tabId, id, spdxid + ' - Levenshtein Distance (clean): ' + distance + ' (' + percentage + '%)' + ' Length Difference: ' + difference + ' LOC Diff:' + locdiff)
     result = {
