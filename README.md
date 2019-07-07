@@ -14,7 +14,7 @@ Get it from the [Chrome Web Store](https://chrome.google.com/webstore/detail/spd
 [Come help out!](CONTRIBUTING.md)
 
 # Credits
-- Scaffolding form  [webextension-toolbox](https://github.com/HaNdTriX/webextension-toolbox)
+- Scaffolding from [webextension-toolbox](https://github.com/HaNdTriX/webextension-toolbox)
 - See [third-party licenses](oss-attribution/attribution.txt) for production attribution.
 
 # License
