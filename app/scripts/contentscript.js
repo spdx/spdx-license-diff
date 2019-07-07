@@ -39,7 +39,7 @@ chrome.runtime.onMessage.addListener(
           if (spdx && selection === lastselection) { // diff previously done on selection
             updateProgressBar(1, 1, false)
             updateBubbleText('Done')
-            processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
+            processLicenses((options.showBest === 0 && spdx) ? spdx.length : options.showBest, processTime)
             return
           } else {
             rawspdx = null
@@ -73,7 +73,7 @@ chrome.runtime.onMessage.addListener(
         processTime = msEnd - msStart
         console.log('processTime: ' + processTime / 1000 + ('s'))
         updateBubbleText('Sorting done')
-        processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
+        processLicenses((options.showBest === 0 && rawspdx) ? rawspdx.length : options.showBest, processTime)
         break
       case 'diffnext':
         updateProgressBar(-1, -1)
@@ -177,7 +177,7 @@ function filterSPDX (rawspdx) {
   var spdx = []
   var filtered = 0
   if (selectedfilters === undefined) { selectedfilters = options.filters }
-  var showBest = (options.showBest === 0) ? rawspdx.length : options.showBest
+  var showBest = (options.showBest === 0 && rawspdx) ? rawspdx.length : options.showBest
   for (var i = 0; i < showBest + filtered; i++) {
     var license = rawspdx[i].spdxid
     var details = rawspdx[i].details
@@ -256,7 +256,7 @@ function showFilters (form) {
         delete selectedfilters[this.id]
       }
       diffdisplayed = false
-      processLicenses((options.showBest === 0) ? spdx.length : options.showBest, processTime)
+      processLicenses((options.showBest === 0 && spdx) ? spdx.length : options.showBest, processTime)
       // chrome.runtime.sendMessage({ 'command': 'resort', 'filter': selectedfilters })
       // msStart = (new Date()).getTime() + processTime
     }, false)
