@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "webextension-toolbox dev",
     "build": "webextension-toolbox build",
+    "firefox": "web-ext run -s dist/firefox --bc -u https://www.apache.org/licenses/LICENSE-2.0 -u https://www.gnu.org/licenses/gpl-3.0.en.html",
     "lint": "eslint app",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "generate-attribution --production",
@@ -29,6 +30,7 @@
     "github-release-notes": "^0.17.0",
     "oss-attribution-generator": "^1.7.1",
     "standard": "^12.0.1",
+    "web-ext": "^3.1.0",
     "webextension-toolbox": "latest"
   },
   "dependencies": {
