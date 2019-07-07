@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+import DiffMatchPatch from 'diff-match-patch'
+import Levenshtein from 'fast-levenshtein'
+
 var promises = []
 var SPDXlist = {}
 var files = []

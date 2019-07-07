@@ -1,100 +1,125 @@
 # Changelog
 
+## v0.2.0 (04/07/2019)
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/7e110c20798a6ea84f7aca10bfbd848283de5c59) - @alandtse
+- [Bump version](https://github.com/spdx/spdx-license-diff/commit/e078ca7a58e2d02ab61528edadfac663c1a062d0) - @alandtse
+- [Fix bug where firefox didn't report local storage size](https://github.com/spdx/spdx-license-diff/commit/5f185c6dd910e659d608a6a7e2fe55884bb09ff6) - @alandtse
+- [Update dependencies](https://github.com/spdx/spdx-license-diff/commit/5540475001081ef4133f6bb89a5659f8791d8249) - @alandtse
+- [Fix bug where defaults for filter not set](https://github.com/spdx/spdx-license-diff/commit/2d10e26e45c0780796aaf87d12f6780cdc3c32ec) - @alandtse
+- [Remove unused storing of details](https://github.com/spdx/spdx-license-diff/commit/d6a0c119be0f29498b7d9e8d96b1ae40b2a755d8) - @alandtse
+- [Add additional UI information](https://github.com/spdx/spdx-license-diff/commit/e6b100c088e302b72a7802794207b42021cf0316) - @alandtse
+- [Add version to log info](https://github.com/spdx/spdx-license-diff/commit/76748970afde4802e9f757b0e829484163499df5) - @alandtse
+- [Add filtering support](https://github.com/spdx/spdx-license-diff/commit/d6eb91b63e714bcca346c17e71fe639b08f38edc) - @alandtse
+- [Fix spacing](https://github.com/spdx/spdx-license-diff/commit/a8242edf1208edc818c0c06186121babcfda0b5f) - @alandtse
+- [Update default options](https://github.com/spdx/spdx-license-diff/commit/a1b816ef88c0629d9c4bf92b6fa21d7619996464) - @alandtse
+- [Change options.js to dynamically build filters](https://github.com/spdx/spdx-license-diff/commit/8c801fb30dd0d6a26c39394fa7e9e18ebaa19631) - @alandtse
+- [Reformat options ui](https://github.com/spdx/spdx-license-diff/commit/4316c1c40f3da9192780f28c2a2b7b54e78ce08a) - @alandtse
+- [Add deprecated filter](https://github.com/spdx/spdx-license-diff/commit/61ee5b2036269f7bec7257937d3a2b909486b372) - @alandtse
+
+---
+
+## v0.1.1 (10/01/2019)
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/391bcb60f3e051183f060f086d953f89fa6bca3b) - @alandtse
+- [Add Valid-License-Identifier to LICENSE file](https://github.com/spdx/spdx-license-diff/commit/7ec63f120a3995df908e9c6b774a6b4b28350cba) - @alandtse
+- [Fix infinite spawning of workers by saving options as ints](https://github.com/spdx/spdx-license-diff/commit/b86b944b5eb53cfe915c4e5669df373074cb573e) - @alandtse
+
+---
+
 ## v0.1.0 (21/12/2018)
-- [bump package version](https://github.com/alandtse/spdx-license-diff/commit/adce24d35b3f7e4b287fc8104afeca76852987a3) - @alandtse
-- [Address #5 by changing name and other tasks](https://github.com/alandtse/spdx-license-diff/commit/582946059616a8102164719a4d00bcb7a94f60b3) - @alandtse
-- [Convert to eslint](https://github.com/alandtse/spdx-license-diff/commit/873f7f43e26e36b0c4982290698298c680c84c0b) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/adce24d35b3f7e4b287fc8104afeca76852987a3) - @alandtse
+- [Address #5 by changing name and other tasks](https://github.com/spdx/spdx-license-diff/commit/582946059616a8102164719a4d00bcb7a94f60b3) - @alandtse
+- [Convert to eslint](https://github.com/spdx/spdx-license-diff/commit/873f7f43e26e36b0c4982290698298c680c84c0b) - @alandtse
 
 ---
 
 ## v0.0.7 (17/12/2018)
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/7879544241faa77d03755c86dac79ae887c406ce) - @alandtse
-- [Add changelog](https://github.com/alandtse/spdx-diff/commit/7dafbfd1a38bb2429c28179627386fd73247f93d) - @alandtse
-- [Clean up worker code based on jshint](https://github.com/alandtse/spdx-diff/commit/0c3017d3fe69a262d1633a6fe3b17ec35bad563c) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/203c4cbb18713314afc6a34f458c6a0048fd5462) - @alandtse
+- [Add changelog](https://github.com/spdx/spdx-license-diff/commit/53f24532dd0b6bfd0e8ac2c9f7586a47eecdd176) - @alandtse
+- [Clean up worker code based on jshint](https://github.com/spdx/spdx-license-diff/commit/4be2fecf01de99dce0f69695c824620785d37108) - @alandtse
 
 ---
 
 ## v0.0.6 (15/12/2018)
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/764b548ec6b4a2b7bc9f56aaa3ba99fc18259258) - @alandtse
-- [Fix #8 by adding check for content script insertion success](https://github.com/alandtse/spdx-diff/commit/e73071dfce0a245c7b711d928cbc4aa89321768a) - @alandtse
-- [Refactor handleUpdate for tabs](https://github.com/alandtse/spdx-diff/commit/fcdbe90ba2dbe6ac7f0d0d6aacbd02fcd76fa659) - @alandtse
-- [Remove local license-list in build to reduce size](https://github.com/alandtse/spdx-diff/commit/892473340a23d6a81b6bc2a201edbe72cc9d9428) - @alandtse
-- [Move non-app images to root images folder](https://github.com/alandtse/spdx-diff/commit/1fe8e73a66ba08c64597c13a7877cf53864b5f22) - @alandtse
-- [Fix #6 by converting diff-match-patch html to xhtml](https://github.com/alandtse/spdx-diff/commit/f494833593768a722494f02e8bea3906a97505e9) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/4dc28218c7d329229a80c926fe067260fd21a751) - @alandtse
+- [Fix #8 by adding check for content script insertion success](https://github.com/spdx/spdx-license-diff/commit/cd6fbcc613bed6df5b1ffb2f0c9b497b25c8c810) - @alandtse
+- [Refactor handleUpdate for tabs](https://github.com/spdx/spdx-license-diff/commit/6d418234d534f5155cdc6b15350fd192276e47cf) - @alandtse
+- [Remove local license-list in build to reduce size](https://github.com/spdx/spdx-license-diff/commit/83b9efb8095dba263df2b3dbe354935e755c5dd1) - @alandtse
+- [Move non-app images to root images folder](https://github.com/spdx/spdx-license-diff/commit/051d73e392e9eb75ab2a9aeafd05b0b27174bdbd) - @alandtse
+- [Fix #6 by converting diff-match-patch html to xhtml](https://github.com/spdx/spdx-license-diff/commit/9879bc259cf1d5b5514f4deb0b4e99bd8615dd01) - @alandtse
 
 ---
 
 ## v0.0.5 (14/12/2018)
-- [add changelog](https://github.com/alandtse/spdx-diff/commit/a2bf6815d8aeae4f1dbb9d126c82aeeb01098893) - @alandtse
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/5f7960f5da6aa1349ff1db8d61ea84daed5fc47a) - @alandtse
-- [Add further checks to load list prior to compare](https://github.com/alandtse/spdx-diff/commit/4ef3a51cf2fa3c463ecc404da0d5fb3add5643eb) - @alandtse
+- [add changelog](https://github.com/spdx/spdx-license-diff/commit/6252e14a74187e2b69a6a82032b675fa589dcfb1) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/c1b2fcec7ed16c802646cc1a0f5df414203d7ddd) - @alandtse
+- [Add further checks to load list prior to compare](https://github.com/spdx/spdx-license-diff/commit/e522eb48ad2fd8db3ed05aa36c5f1e0a94af3d6d) - @alandtse
 
 ---
 
 ## v0.0.4 (13/12/2018)
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/ae87d1a52ac6c49b040702ab89f4bfed78f70a09) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/2737192005a4fd190eaa91b82b882459704cbada) - @alandtse
 
 ---
 
 ## v0.0.3 (08/11/2018)
-- [Add changelog generation using gren to tasks](https://github.com/alandtse/spdx-diff/commit/39de01e47974b7924eb812240309891e791cef41) - @alandtse
-- [Update changelog](https://github.com/alandtse/spdx-diff/commit/05a3799e188995c2f8cb1de09d6d84e4e0841155) - @alandtse
-- [Add gren changelog generation](https://github.com/alandtse/spdx-diff/commit/f07bb8d376e3ee53a00b34abd83652abdf80cb7b) - @alandtse
-- [Update diff-match-patch to 1.0.4](https://github.com/alandtse/spdx-diff/commit/28c50fd3b637f93581b257978bc4cd4db7eee6c4) - @alandtse
+- [Add changelog generation using gren to tasks](https://github.com/spdx/spdx-license-diff/commit/3f778a63bbb03d08fe00480964e499570af5f16f) - @alandtse
+- [Update changelog](https://github.com/spdx/spdx-license-diff/commit/f4090ab460c128ef771f8f062e10682071ae75e0) - @alandtse
+- [Add gren changelog generation](https://github.com/spdx/spdx-license-diff/commit/0108481dc8e0e3ee4c333d2d6ecc9c259c3537cd) - @alandtse
+- [Update diff-match-patch to 1.0.4](https://github.com/spdx/spdx-license-diff/commit/8cb1def42bbb93e2570372e6cb94b465e0dcbe43) - @alandtse
 
 ---
 
-## v0.0.2 (07/11/2018)
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/33529dfd54ee3725004a9e4ad7c9ece2a309b68f) - @alandtse
-- [Move addListeners to top level to resolve #3](https://github.com/alandtse/spdx-diff/commit/555da1c90c5d8b8ebca62639edcdc33f921575e6) - @alandtse
+## v0.0.2 (26/10/2018)
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/423df1977216fcdf1de153e05bbbcad616ea65ab) - @alandtse
+- [Move addListeners to top level to resolve #3](https://github.com/spdx/spdx-license-diff/commit/d36deb39316981194782dff1c6e87d28c19cb004) - @alandtse
 
 ---
 
 ## v0.0.1 (15/08/2018)
-- [Updating README to add Firefox instructions](https://github.com/alandtse/spdx-diff/commit/3085e495909da2f19423c9500b922c318ca28435) - @alandtse
-- [bump package version](https://github.com/alandtse/spdx-diff/commit/18551e64520ce5abe13a11ad867fa6e70e32d2a3) - @alandtse
-- [Add Firefox support](https://github.com/alandtse/spdx-diff/commit/4451b2a9df35a235f1353fc0521cff2c94396b87) - @alandtse
-- [Beginning Firefox addon changes](https://github.com/alandtse/spdx-diff/commit/1c34f78be38ebc3e946924ced749a3de756f3f55) - @alandtse
-- [Fix double injection bug](https://github.com/alandtse/spdx-diff/commit/3db9922e72b14983d725dba964789cf7327dee09) - @alandtse
-- [Change to activeTab permission](https://github.com/alandtse/spdx-diff/commit/ae60e3e65a6529f565789971e16131b81a2fe7dd) - @alandtse
-- [Remove unused worker_proxy](https://github.com/alandtse/spdx-diff/commit/a4ea3395f166e0b7b3f63633ffcc869bf60ddd8b) - @alandtse
-- [Enable max result option with 0](https://github.com/alandtse/spdx-diff/commit/036b3b0a2b956d140fa0145bd9b95c0688e360d7) - @alandtse
-- [Enable unlimited max length difference option using 0](https://github.com/alandtse/spdx-diff/commit/6151ceeba7e05a632d2cb059f37d412399f3bc5a) - @alandtse
-- [Fixing last update date to display stored date](https://github.com/alandtse/spdx-diff/commit/c67ab6067c31c92a66317b9f62fc5987230054c9) - @alandtse
-- [Adding queue prioritization for active tab](https://github.com/alandtse/spdx-diff/commit/05de6e523934a1114776264dd550d082c418a08e) - @alandtse
-- [Implement multiple tab compare queing](https://github.com/alandtse/spdx-diff/commit/8648875ede7e61371a955a906cdcbd1674240b67) - @alandtse
-- [Cleaning up readability by replacing arrays with dicts](https://github.com/alandtse/spdx-diff/commit/4c98c5afcc58f254a38d7c4996e92535ad711677) - @alandtse
-- [Updated results to show links and better progress status](https://github.com/alandtse/spdx-diff/commit/2682ccc2f6bb5e62b5323de1e973acdb1420cb21) - @alandtse
-- [Cleaning up unused code/variables](https://github.com/alandtse/spdx-diff/commit/a59b602e5eb06278639b8ead39f35ce8c59404ab) - @alandtse
-- [Fixing UI updates](https://github.com/alandtse/spdx-diff/commit/20cfe17fbfbc37ad2c4bc5fd89e836cf21f9675a) - @alandtse
-- [Moving processing to background script](https://github.com/alandtse/spdx-diff/commit/f0b7a0c747cc0b57ccef31da3df8b46dd3c73055) - @alandtse
-- [Enabling update list in options](https://github.com/alandtse/spdx-diff/commit/eacbf8cdc0c2bb5ed1c47c01b906945d83d6cf71) - @alandtse
-- [Moving processing to background script](https://github.com/alandtse/spdx-diff/commit/f51c6ec4a5ca62291b84db6416d6508b36193346) - @alandtse
-- [Fixing bug where option's did not refresh list and storage data after update](https://github.com/alandtse/spdx-diff/commit/06d69dfda08637cfc955443a0c67acf1ee504ab2) - @alandtse
-- [Fixing bug where compare not queued during update](https://github.com/alandtse/spdx-diff/commit/3631f9f23fc7de78ffd8e90b11d2c1980046fe8b) - @alandtse
-- [Adding details to options page](https://github.com/alandtse/spdx-diff/commit/d60841aac7ce191c684eb54e7b6ec6b3d82bab71) - @alandtse
-- [Removing used code and files](https://github.com/alandtse/spdx-diff/commit/c899ae2febaa356a5f2eeff67e7a09090e31ac02) - @alandtse
-- [Rearranging contentscript to better group code logically](https://github.com/alandtse/spdx-diff/commit/266d5d30164ce967ac45df8fc73e740357b8a648) - @alandtse
-- [Breaking out stackoverflow code to own file](https://github.com/alandtse/spdx-diff/commit/2c4941f02bd8b5fede2110466d33cc8f3851176c) - @alandtse
-- [Added default values if options not set](https://github.com/alandtse/spdx-diff/commit/fd3d4cda3d5c6c1d53616908e021b889f568cc02) - @alandtse
-- [Updated UI to disable select options that are still processing](https://github.com/alandtse/spdx-diff/commit/161a8f92af283757b5fc8331424728657201126e) - @alandtse
-- [Adding updateProgressBar function](https://github.com/alandtse/spdx-diff/commit/0d6892c909bec702eb7f6dba64787b53c0ae1ec1) - @alandtse
-- [Fixing bug #1](https://github.com/alandtse/spdx-diff/commit/cbed779691305176c4eac6a0b77ddb67e9bd849a) - @alandtse
-- [Updating README with more detail](https://github.com/alandtse/spdx-diff/commit/709540c5db6cdf68839004493fa0b1764be5ff43) - @alandtse
-- [Adding options page](https://github.com/alandtse/spdx-diff/commit/d0e0fc79554dfb395c880cb720785e93693a92b6) - @alandtse
-- [Moved diff generation to worker thread](https://github.com/alandtse/spdx-diff/commit/a547a11ccc0e4d47b49d2638fe40540ae585e038) - @alandtse
-- [Adding oss attribution task and cleaning up other tasks](https://github.com/alandtse/spdx-diff/commit/4d19471c5ff39889f39d1b0c05c07ef51888b8a6) - @alandtse
-- [Updating to webpack4 and yarn](https://github.com/alandtse/spdx-diff/commit/a447d4159b570d89421727e65f71c377a22d6d71) - @alandtse
-- [Adding min threshold and storage of new licenses only](https://github.com/alandtse/spdx-diff/commit/7fd838f712c2ccd500b2af3bd3b1de6401dafd51) - @alandtse
-- [Fix various bugs and update logs](https://github.com/alandtse/spdx-diff/commit/2aeba0cdddb38ebf2ddf6ab0f6fd70a6022e9403) - @alandtse
-- [Adding gulp-cli](https://github.com/alandtse/spdx-diff/commit/07f0241edbb534ec53c44a3e06f2f036a154c3ae) - @alandtse
-- [Added multithreading processing](https://github.com/alandtse/spdx-diff/commit/dad38f611309f65c87262bb9ce46ebce51be8e54) - @alandtse
-- [Added basic work queuing](https://github.com/alandtse/spdx-diff/commit/9124044fc9353a6cf46434d58bc1dd15e39ddf89) - @alandtse
-- [Cleaning unused function and adding line counting](https://github.com/alandtse/spdx-diff/commit/86d259032a9f99016f6635bd5bb5749f0919cc54) - @alandtse
-- [Adding background and caching of licenses.](https://github.com/alandtse/spdx-diff/commit/a64744f853a37f442c76835a17ec5899f04d04f9) - @alandtse
-- [Adding network download option (slow)](https://github.com/alandtse/spdx-diff/commit/0ae0916315280b5382d66805ce76fc27341cbf0e) - @alandtse
-- [Adding preliminary attribution notice](https://github.com/alandtse/spdx-diff/commit/481b6ba420c07bd52c2ed75d9aa38affdebc7130) - @alandtse
-- [Fixing spdx.txt creation](https://github.com/alandtse/spdx-diff/commit/cc7dde3b11d58a445e68c8dbeb8b37d42a2e8012) - @alandtse
-- [Refactored build script to pull license-list from git](https://github.com/alandtse/spdx-diff/commit/5de0f711c405eefc526e38222c3ea0bc44300a68) - @alandtse
-- [Updating build script to generate spdx.txt](https://github.com/alandtse/spdx-diff/commit/b8d0bb3e989fe0aabcd10856aa9bfa0014d41bcd) - @alandtse
-- [Begin refactoring of stackoverflow code](https://github.com/alandtse/spdx-diff/commit/9170a5f79334fecd81a6f43d3160b2658bdb8167) - @alandtse
+- [Updating README to add Firefox instructions](https://github.com/spdx/spdx-license-diff/commit/cce82e40ee845cde38607a40a253a8504cadfca4) - @alandtse
+- [bump package version](https://github.com/spdx/spdx-license-diff/commit/7172a0a492e3e53f8f5ee694c2b39f27c1bd3546) - @alandtse
+- [Add Firefox support](https://github.com/spdx/spdx-license-diff/commit/405e6205c9509c3664b9619c4fdcd42f9ad9cee6) - @alandtse
+- [Beginning Firefox addon changes](https://github.com/spdx/spdx-license-diff/commit/ed0c0c69fe70df8fcbabe614ac120021fcf189b1) - @alandtse
+- [Fix double injection bug](https://github.com/spdx/spdx-license-diff/commit/67aabcb782975eb71166bbba6543ea67680b568b) - @alandtse
+- [Change to activeTab permission](https://github.com/spdx/spdx-license-diff/commit/4c4b9bb127a459daedc7fe1982a14adb349fc62e) - @alandtse
+- [Remove unused worker_proxy](https://github.com/spdx/spdx-license-diff/commit/4a95520b7ca1e09691fda191045608ef850f601d) - @alandtse
+- [Enable max result option with 0](https://github.com/spdx/spdx-license-diff/commit/e94f198409ef19fd76c599b6eca1345bcf0c2bf3) - @alandtse
+- [Enable unlimited max length difference option using 0](https://github.com/spdx/spdx-license-diff/commit/cc46591ce505d5ce961171a209e7a22efaed3b0c) - @alandtse
+- [Fixing last update date to display stored date](https://github.com/spdx/spdx-license-diff/commit/3668b00c07f6eca9cca1091a0a6c411b094e3934) - @alandtse
+- [Adding queue prioritization for active tab](https://github.com/spdx/spdx-license-diff/commit/fc39ca2836d744e008023adf8b43e5312db6f8b3) - @alandtse
+- [Implement multiple tab compare queing](https://github.com/spdx/spdx-license-diff/commit/13e627b83bac646daf788763afdd3818d844370a) - @alandtse
+- [Cleaning up readability by replacing arrays with dicts](https://github.com/spdx/spdx-license-diff/commit/466e132001fc06da25cb09be210453503c096e1d) - @alandtse
+- [Updated results to show links and better progress status](https://github.com/spdx/spdx-license-diff/commit/599226bb8ef1effe524df31a9dac0905a6ba0c8c) - @alandtse
+- [Cleaning up unused code/variables](https://github.com/spdx/spdx-license-diff/commit/6270e949781c9db4f202295c0e302ef150a905b6) - @alandtse
+- [Fixing UI updates](https://github.com/spdx/spdx-license-diff/commit/c743113a9e9a2fdaff6fba7bc1e14c6843755d95) - @alandtse
+- [Moving processing to background script](https://github.com/spdx/spdx-license-diff/commit/64d45153c85d7d6ee81f7ad2a41bb79fc0bd967e) - @alandtse
+- [Enabling update list in options](https://github.com/spdx/spdx-license-diff/commit/cced217f91b2a80c8cfef46d9c01ca9aecf56a47) - @alandtse
+- [Moving processing to background script](https://github.com/spdx/spdx-license-diff/commit/7d4d4a847627ce35a5e51f2d6acdd860e9bef2ce) - @alandtse
+- [Fixing bug where option's did not refresh list and storage data after update](https://github.com/spdx/spdx-license-diff/commit/b93678bbacb142c0e0a0781b56e48753eda32e68) - @alandtse
+- [Fixing bug where compare not queued during update](https://github.com/spdx/spdx-license-diff/commit/5a670719b79187d01bbfa8d000c316cf8350e580) - @alandtse
+- [Adding details to options page](https://github.com/spdx/spdx-license-diff/commit/11a2d8c0cafd51921a92aa2be7ed34eed005baff) - @alandtse
+- [Removing used code and files](https://github.com/spdx/spdx-license-diff/commit/27902bb868e10d3a37de42f0b5662b42fbc0b580) - @alandtse
+- [Rearranging contentscript to better group code logically](https://github.com/spdx/spdx-license-diff/commit/914b4b7a4fad60f373a159836f27544a00771584) - @alandtse
+- [Breaking out stackoverflow code to own file](https://github.com/spdx/spdx-license-diff/commit/78045668062ef99f9382d269c51456dfe9128a69) - @alandtse
+- [Added default values if options not set](https://github.com/spdx/spdx-license-diff/commit/749c954cf9fc519bf3436a3f22edd24a43f6ff17) - @alandtse
+- [Updated UI to disable select options that are still processing](https://github.com/spdx/spdx-license-diff/commit/9a30085f005c33e6a8ccd07bc6118fe6add2c7ea) - @alandtse
+- [Adding updateProgressBar function](https://github.com/spdx/spdx-license-diff/commit/8e6f4993d5e13b2d1c053f726522cbabd9045d25) - @alandtse
+- [Fixing bug #1](https://github.com/spdx/spdx-license-diff/commit/0dabd8848ac94df1ebcea7f7fdef0960a7cdc210) - @alandtse
+- [Updating README with more detail](https://github.com/spdx/spdx-license-diff/commit/112474440ee6c0ece770c7a19fdec4c557af1d2e) - @alandtse
+- [Adding options page](https://github.com/spdx/spdx-license-diff/commit/c2dde1fc690349aa8d50b7a9d74d7766b912d7e7) - @alandtse
+- [Moved diff generation to worker thread](https://github.com/spdx/spdx-license-diff/commit/abddbd8fa0f4a48ee87c4ab2b13165ace0ee9d9d) - @alandtse
+- [Adding oss attribution task and cleaning up other tasks](https://github.com/spdx/spdx-license-diff/commit/0a3be837d00ac362a3e7a3f23a5f2cd9e3dc6032) - @alandtse
+- [Updating to webpack4 and yarn](https://github.com/spdx/spdx-license-diff/commit/3ba9013eea3199810c499a1162dec4c26262b5c9) - @alandtse
+- [Adding min threshold and storage of new licenses only](https://github.com/spdx/spdx-license-diff/commit/705fac9c8960c4156997d825bf1e0f12b6b2a3d9) - @alandtse
+- [Fix various bugs and update logs](https://github.com/spdx/spdx-license-diff/commit/e7a7b81b35a254558e75f6d6e975ca67c7754a72) - @alandtse
+- [Adding gulp-cli](https://github.com/spdx/spdx-license-diff/commit/d8675c61730be1915a6fc9dc780176068ecc835a) - @alandtse
+- [Added multithreading processing](https://github.com/spdx/spdx-license-diff/commit/567bc9c00d50ed431672990b5e5cc1113c214f9f) - @alandtse
+- [Added basic work queuing](https://github.com/spdx/spdx-license-diff/commit/a57aae2b62603188eeeb184993a28c756d696d65) - @alandtse
+- [Cleaning unused function and adding line counting](https://github.com/spdx/spdx-license-diff/commit/bcfa161b2484bb44199f55abb6d4aed96bfd131c) - @alandtse
+- [Adding background and caching of licenses.](https://github.com/spdx/spdx-license-diff/commit/1e91aca4ae5ef0bbbc00937c0817874d34b317fc) - @alandtse
+- [Adding network download option (slow)](https://github.com/spdx/spdx-license-diff/commit/6eb6e871211d0da3a36ae8a810762aee50e4e6b9) - @alandtse
+- [Adding preliminary attribution notice](https://github.com/spdx/spdx-license-diff/commit/6d3e551ada7b3df973048cfa0ff63ebb5cf87eea) - @alandtse
+- [Fixing spdx.txt creation](https://github.com/spdx/spdx-license-diff/commit/c4a6316eec4fa9ee44b99a664e93ae3afad2c108) - @alandtse
+- [Refactored build script to pull license-list from git](https://github.com/spdx/spdx-license-diff/commit/e3a1032913eef8723886426e25e5b795d9728318) - @alandtse
+- [Updating build script to generate spdx.txt](https://github.com/spdx/spdx-license-diff/commit/d2ac02751ff3fef0b81eb8e72da300af0eef1a51) - @alandtse
+- [Begin refactoring of stackoverflow code](https://github.com/spdx/spdx-license-diff/commit/5691d035c349da21a86281260f1199f867cfda72) - @alandtse

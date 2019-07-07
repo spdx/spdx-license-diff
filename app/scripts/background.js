@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
-// Enable chromereload by uncommenting this line:
-// if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
-//   require('chromereload/devonly');
-// }
 
 import { version, defaultoptions } from './const.js'
+import _ from 'underscore'
+
 var list = {}
 var options
 var lastupdate

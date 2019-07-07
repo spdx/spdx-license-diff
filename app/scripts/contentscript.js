@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
-// Enable chromereload by uncommenting this line:
-// if(process.env.NODE_ENV === 'development' && typeof browser === "undefined"){
-//   require('chromereload/devonly');
-// }
 
 import { selectRangeCoords, getSelectionText } from './cc-by-sa.js'
 import { filters, version, defaultoptions } from './const.js'
+import $ from 'jquery'
 
 var selectedLicense = ''
 var spdx = null
