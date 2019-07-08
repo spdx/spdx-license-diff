@@ -4,15 +4,16 @@
   "version": "0.2.1",
   "description": "Diff selected text against SPDX licenses",
   "scripts": {
+    "clean": "rm -rf packages dist",
     "dev": "webextension-toolbox dev",
     "build": "webextension-toolbox build",
     "firefox": "web-ext run -s dist/firefox --bc -u https://www.apache.org/licenses/LICENSE-2.0 -u https://www.gnu.org/licenses/gpl-3.0.en.html",
     "lint": "eslint app",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "generate-attribution --production",
-    "test": "yarn run lint && yarn install && yarn run build chrome && yarn run build firefox && yarn run build opera && yarn run build edge && yarn run build firefox -m",
-    "production": "yarn run lint && yarn install && yarn run build chrome && yarn run build firefox && yarn run build opera && yarn run build edge && yarn run build firefox",
-    "buildall": "yarn run production && yarn run changelog && yarn run attribution"
+    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox -m",
+    "production": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox",
+    "buildall": "yarn clean && yarn attribution && yarn production && yarn changelog "
   },
   "standard": {
     "globals": [
@@ -20,6 +21,7 @@
     ]
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^5.0.3",
     "eslint": "^6.0.1",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.18.0",
