@@ -14,7 +14,7 @@ Get it from the [Chrome Web Store](https://chrome.google.com/webstore/detail/spd
 [Come help out!](CONTRIBUTING.md)
 
 # Credits
-- Scaffolding from <https://github.com/HaNdTriX/generator-chrome-extension-kickstart>
+- Scaffolding from [webextension-toolbox](https://github.com/HaNdTriX/webextension-toolbox)
 - See [third-party licenses](oss-attribution/attribution.txt) for production attribution.
 
 # License

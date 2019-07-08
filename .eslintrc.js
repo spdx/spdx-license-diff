@@ -1,14 +1,24 @@
 module.exports = {
-    "extends": "standard",
     "env": {
+        "browser": true,
+        "es6": true,
         "webextensions": true,
-        "jquery": true,
-        "browser": true
+        "jquery": true
     },
+    "extends": [
+        "standard"
+    ],
     "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly",
         "_": false,
         "DiffMatchPatch": false,
         "Levenshtein": false
-
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module"
+    },
+    "rules": {
     }
 };
