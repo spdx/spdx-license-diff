@@ -8,7 +8,7 @@ The SPDX License List is a list of commonly found licenses and exceptions used i
 
 # Installation
 
-Get it from the [Chrome Web Store](https://chrome.google.com/webstore/detail/spdx-diff/kfoadicmilbgnicoldjmccpaicejacdh) or [FireFox Add-ons] (https://addons.mozilla.org/en-US/firefox/addon/spdx-license-diff).
+Get it from the [Chrome Web Store](https://chrome.google.com/webstore/detail/spdx-diff/kfoadicmilbgnicoldjmccpaicejacdh) or [FireFox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/spdx-license-diff).
 
 # Contributing
 [Come help out!](CONTRIBUTING.md)
