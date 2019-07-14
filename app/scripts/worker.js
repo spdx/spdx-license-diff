@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+import { urls, spdxkey } from './const.js'
 import DiffMatchPatch from 'diff-match-patch'
 import Levenshtein from 'js-levenshtein'
 
-var promises = []
-var SPDXlist = {}
-var files = []
 var id
 var dmp = new DiffMatchPatch() // options may be passed to constructor; see below
 
@@ -15,16 +13,17 @@ self.onmessage = function (event) {
     // 'license':spdxid,'hash':hash, 'selection': selection
       break
     case 'updatelicenselist':
-      getSPDXlist(event.data.url, event.data.remote)
+      getSPDXlist()
       break
     case 'compare':
       var spdxid = event.data.spdxid
-      var license = event.data.license
+      var itemdict = event.data.itemdict
       var maxLengthDifference = event.data.maxLengthDifference
       var total = event.data.total
       var tabId = event.data.tabId
       var background = event.data.background
-      comparelicense(event.data.selection, spdxid, license, tabId, maxLengthDifference, total, background)
+      var type = event.data.type
+      compareitem(event.data.selection, spdxid, itemdict, tabId, type, maxLengthDifference, total, background)
       break
     case 'sortlicenses':
       tabId = event.data.tabId
@@ -32,109 +31,53 @@ self.onmessage = function (event) {
       break
     case 'generateDiff':
       spdxid = event.data.spdxid
-      license = event.data.license
+      let text = event.data.license
       var record = event.data.record
       tabId = event.data.tabId
-      generateDiff(event.data.selection, spdxid, license, record, tabId)
+      generateDiff(event.data.selection, spdxid, text, record, tabId)
       break
 
     default:
-    // getSPDXlist(event.data["url"], event.data["selection"]);
   }
 }
 // load files array with list of files to download
-function getSPDXlist (baseurl, remote = true) {
-  if (typeof files === 'undefined') { files = [] }
-  var url = ''
-  if (remote) {
-    url = 'https://spdx.org/licenses/licenses.json'
-  } else {
-    url = baseurl + 'license-list/spdx.txt'
-  }
-  var x = new XMLHttpRequest()
-  x.open('GET', url)
-  x.onload = function () {
-    var lines = ''
-    if (remote) {
-      lines = JSON.parse(x.responseText)
-      postMessage({ 'command': 'progressbarmax', 'value': lines.licenses.length, 'stage': 'Updating licenses', 'id': id, 'reset': true })
-      postMessage({ 'command': 'savelicenselist', 'value': lines, 'id': id })
-      console.log(id, 'Updating: ', lines)
-      for (var j = 0; j < lines.licenses.length; j++) {
-        var line = lines.licenses[j]
-        var license = line.detailsUrl
-        license = license.replace('http:', 'https:')
-        files.push(license)
-      }
-    } else {
-      lines = x.responseText.split('\n')
-      postMessage({ 'command': 'progressbarmax', 'value': lines.licenses.length, 'stage': 'Updating licenses', 'id': id, 'reset': true })
-      for (j = 0; j < lines.length; j++) {
-        line = lines[j]
-        if (line.search(/\.txt/g) >= 0) {
-          license = line.substring(0, line.search(/\.txt/g))
-          files.push(license)
-        }
-      }
-    }
-    processSPDXlist(files, true, baseurl)
-  }
-  x.send()
-}
-// download licenses from files array
-function processSPDXlist (files, remote = true, baseurl) {
-  promises = files.map(
-    function (value, index) {
-      return new Promise(function (resolve, reject) {
-        var url = ''
-        if (remote) {
-          url = value
-        } else {
-          url = baseurl + 'license-list/' + value + '.txt'
-        }
-        var x = new XMLHttpRequest()
-        x.open('GET', url)
-        x.onload = function () {
+function getSPDXlist () {
+  for (let type of Object.keys(urls)) {
+    var url = urls[type]
+    getJSON(url).then(function (result) {
+      var total = result[type].length
+      var index = 0
+      postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Updating ' + type, 'id': id, 'reset': true })
+      postMessage({ 'command': 'savelicenselist', 'value': result, 'id': id, 'type': type })
+      console.log(id, 'Updating: ', result)
+      return result[type].map((item) => { return getJSON(item.detailsUrl.replace('http:', 'https:')) })
+        .reduce(function (sequence, itemPromise) {
+          return sequence.then(function () {
+            return itemPromise
+          }).then(function (item) {
           // var md5 = require('md5-jkmyers')
-          var response, raw, spdxid //, hash
-          if (remote) {
-            response = JSON.parse(this.responseText)
-            // hash = md5(response.licenseText)
-            raw = response.licenseText
-            spdxid = response.licenseId
-          } else {
-            response = {}
-            // hash = md5(this.responseText)
-            raw = this.responseText
-            spdxid = value.replace(/\.template$/g, '')
-            response.licenseText = raw
-            response.licenseId = spdxid
-          }
-          postMessage({ 'command': 'savelicense', 'spdxid': spdxid, 'data': response, 'id': id })
-          postMessage({ 'command': 'progressbarmax', 'value': files.length, 'stage': 'Updating licenses', 'id': id })
-          postMessage({ 'command': 'progressbarvalue', 'value': index, 'spdxid': spdxid, 'id': id })
-          SPDXlist[spdxid] = response
-          // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-          resolve(SPDXlist[spdxid])
-        }
-        x.send()
-      })
+          // hash = md5(item)
+            postMessage({ 'command': 'saveitem', 'data': item, 'id': id, 'type': type })
+            postMessage({ 'command': 'progressbarvalue', 'value': index++, 'id': id })
+            // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
+          })
+        }, Promise.resolve())
+    }).then(function (response) {
+      console.log('All %s downloads completed', type)
+      postMessage({ 'command': 'updatedone', 'id': id, 'type': type })
+    }).catch(function (err) {
+      // catch any error that happened along the way
+      console.log('Error: ' + err.message)
     })
-  Promise.all(promises)
-    .then(function (data) { // success
-      console.log(id, 'License List Updated')
-      postMessage({ 'command': 'updatedone', 'result': data, 'id': id })
-    }
-
-    )
+  }
 }
 
-function comparelicense (selection, spdxid, license, tabId, maxLengthDifference = 1000, total = 0, background = false) {
-  if (!background) { postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'id': id, 'reset': true, 'tabId': tabId }) }
+function compareitem (selection, spdxid, item, tabId, type, maxLengthDifference = 1000, total = 0, background = false) {
+  if (!background) { postMessage({ 'command': 'progressbarmax', 'value': total, 'stage': 'Comparing items', 'id': id, 'reset': true, 'tabId': tabId }) }
   var result = {}
   var count2 = selection.length
   // console.log(id, "Processing selection of " + count2 + " chars.");
-  var data = license.licenseText
+  var data = item[spdxkey[type].text]
   var count = data.length
   var locre = data.match(/\r?\n/g)
   var loc = (locre ? locre.length : 0)
@@ -151,7 +94,7 @@ function comparelicense (selection, spdxid, license, tabId, maxLengthDifference 
       distance: distance,
       text: data,
       percentage: percentage,
-      details: license
+      details: item
       // patterns: result.patterns
     }
   } else {
@@ -258,4 +201,27 @@ function processVariables (str) { // eslint-disable-line no-unused-vars
   result.patterns = patterns
   result.data = result.data.replace(/<<beginOptional;.*?>>/g, '').replace(/<<endOptional>>/g, '')
   return result
+}
+
+// promisfy gets
+const get = function (url) {
+  return new Promise((resolve, reject) => {
+    var x = new XMLHttpRequest()
+    x.open('GET', url)
+    x.onload = function () {
+      if (x.status === 200) {
+        resolve(x.response)
+      } else {
+        reject(Error(x.statusText))
+      }
+    }
+    x.onerror = function () {
+      reject(Error('Network Error'))
+    }
+    x.send()
+  })
+}
+
+const getJSON = function (url) {
+  return get(url).then(JSON.parse)
 }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
-import { version, defaultoptions } from './const.js'
 import _ from 'underscore'
+import { spdxkey, defaultoptions, urls } from './const.js'
 
+var version = browser.runtime.getManifest().version
 var list = {}
 var options
 var lastupdate
@@ -144,6 +145,8 @@ function workeronmessage (event) {
     ? activeTabId : 0) // Message received so see if queue can be cleared.
   var result
   var threadid
+  var type
+  var item
   switch (event.data.command) {
     case 'progressbarmax':
       var tabId = (event.data.tabId !== undefined) ? event.data.tabId : activeTabId
@@ -180,10 +183,7 @@ function workeronmessage (event) {
         processed: event.data.processed,
         patterns: event.data.patterns }
 
-      chrome.storage.local.set(obj,
-        function () {
-          console.log('Setting', obj)
-        })
+      setStorage(obj)
 
       break
     case 'license':
@@ -202,43 +202,69 @@ function workeronmessage (event) {
       // });
       break
     case 'savelicenselist':
+      type = event.data.type
       var externallicenselist = event.data.value
+      var externalversion = externallicenselist.licenseListVersion
+      var externalcount = (externallicenselist[type])
+        ? Object.keys(externallicenselist[type]).length : 0
       console.log('Trying to save list', externallicenselist)
-      chrome.storage.local.get(['list'], function (result) {
+      getStorage('list').then(function (result) {
         if (result.list && result.list.licenseListVersion) {
           var list = result.list
-          console.log('Existing License list version %s with %s licenses', list.licenseListVersion,
-            Object.keys(list.licenses).length)
-          if (list.licenseListVersion < externallicenselist.licenseListVersion) {
-            console.log('Newer license list version %s found with %s licenses',
-              externallicenselist.licenseListVersion,
-              Object.keys(externallicenselist.licenses).length)
+          var version = list.licenseListVersion
+          var count = (list[type]) ? Object.keys(list[type]).length : 0
+          console.log('Existing License list version %s with %s %s',
+            version,
+            count,
+            type)
+          if (version < externalversion) {
+            console.log('Newer license list version %s found with %s %s',
+              externalversion,
+              externalcount,
+              type)
             storeList(externallicenselist)
+          } else if (count < externalcount) {
+            list[type] = externallicenselist[type]
+            console.log('New list version %s found with %s %s more than old list with %s %s',
+              externalversion,
+              externalcount,
+              type,
+              count,
+              type)
+            storeList(list)
           } else {
-            dowork({ 'command': 'populatelicenselist', 'data': list })
-            console.log('No new update found; same version %s and %s licenses',
-              externallicenselist.licenseListVersion,
-              Object.keys(externallicenselist.licenses).length)
+            // dowork({ 'command': 'populatelicenselist', 'data': list })
+            console.log('No new update found; same version %s and with %s %s',
+              externalversion,
+              externalcount,
+              type)
           }
         } else {
-          console.log('No license list found')
+          console.log('No existing license list found; storing')
           storeList(externallicenselist)
         }
       })
+
       break
-    case 'savelicense':
+    case 'saveitem':
       if (updating) {
-        externallicenselist = event.data
-        spdxid = event.data.spdxid
-        console.log('Saving license', event.data)
-        chrome.storage.local.get([spdxid], function (result) {
-          if (result[spdxid] && externallicenselist.data && _.isEqual(result[spdxid], externallicenselist.data)) {
+        item = event.data
+        type = event.data.type
+        spdxid = item.data[spdxkey[type].id]
+        if (list[type + 'dict'] === undefined) {
+          list[type + 'dict'] = {}
+        }
+        list[type + 'dict'][spdxid] = item.data[spdxid]
+
+        console.log('Saving %s: %s', type, spdxid, item.data)
+        getStorage(spdxid).then(function (result) {
+          if (result[spdxid] && item.data && _.isEqual(result[spdxid], item.data)) {
             // var license = result[spdxid]
-            console.log('Ignoring existing license', spdxid)
+            console.log('Ignoring existing %s %s', type, spdxid)
           } else {
-            console.log('Saving new', spdxid)
+            console.log('Saving new %s %s', type, spdxid)
             var obj = {}
-            obj[spdxid] = externallicenselist.data
+            obj[spdxid] = item.data
             chrome.storage.local.set(obj,
               function () {
                 console.log('Storing', obj)
@@ -246,18 +272,21 @@ function workeronmessage (event) {
           }
         })
       } else {
-        console.log('Not supposed to update but received savelicense request; ignoring', event.data)
+        console.log('Not supposed to update but received saveitem request; ignoring', event.data)
       }
       break
     case 'updatedone':
       workerdone(event.data.id)
-      var arr = event.data.result
-      if (typeof list.license === 'undefined') { list.license = {} }
-      for (i = 0; i < arr.length; i++) {
-        list.license[arr[i].licenseId] = arr[i]
+      type = event.data.type
+      console.log('Received worker update completion for %s', type)
+      let types = Object.keys(urls)
+      if (types.every((type) => {
+        return (list[type].length === Object.keys(list[type + 'dict']).length)
+      })) {
+        console.log('Update completed')
+        updating = false
+        launchPendingCompares()
       }
-      updating = false
-      launchPendingCompares()
       break
     case 'comparenext':
       threadid = event.data.id
@@ -294,11 +323,13 @@ function workeronmessage (event) {
       diffcount[tabId] = diffcount[tabId] - 1
       if (diffcount[tabId] === 0) {
         status[tabId] = 'Done'
-        for (var filter of Object.keys(filtered[tabId])) {
-          for (var license in filtered[tabId][filter]) {
+        for (let filter of Object.keys(filtered[tabId])) {
+          for (let item in filtered[tabId][filter]) {
+            let type = filtered[tabId][filter][item].type
+            let itemdict = list[type + 'dict'][item]
             status[tabId] = 'Background comparing'
-            console.log('Background compare for %s', license)
-            dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId, 'background': true })
+            console.log('Background compare for %s', item)
+            dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': item, 'itemdict': itemdict, 'total': total, 'tabId': tabId, 'type': type, 'background': true })
           }
         }
       }
@@ -314,7 +345,10 @@ function workeronmessage (event) {
       filtered[tabId]['results'][spdxid] = result
       unsorted[tabId][spdxid] = result
       completedcompares++
-      if (completedcompares === Object.keys(list.license).length) {
+      total = Object.keys(urls).reduce((type) => {
+        return (Object.keys(list[type + 'dict']).length)
+      })
+      if (completedcompares === total) {
         console.log('Done with background compare of %s for tab %s', Object.keys(filtered[tabId]['results']).length, tabId)
         status[tabId] = 'Done'
         dowork({ 'command': 'sortlicenses', 'licenses': unsorted[tabId], 'tabId': tabId })
@@ -332,10 +366,7 @@ function storeList (externallicenselist) {
   obj = {
     list: externallicenselist
   }
-  chrome.storage.local.set(obj,
-    function () {
-      console.log('Storing cached copy of ', obj)
-    })
+  setStorage(obj)
 }
 function loadList () {
   if (pendingload) {
@@ -343,37 +374,51 @@ function loadList () {
   } else {
     pendingload = true
     console.log('Attempting to load list from storage')
-    chrome.storage.local.get(['list'], function (result) {
+    getStorage('list').then((result, intspdxkey = spdxkey) => {
       if (result.list && result.list.licenseListVersion) {
         list = result.list
         lastupdate = list.lastupdate
-        console.log('Loading License list version %s from storage with %s licenses last updated %s',
-          list.licenseListVersion, list.licenses.length, new Date(lastupdate))
+        var version = list.licenseListVersion
+        var lcount = (list.licenses) ? Object.keys(list.licenses).length : 0
+        var ecount = (list.exceptions) ? Object.keys(list.exceptions).length : 0
+
+        console.log('Loading License list version %s from storage with %s licenses %s exceptions last updated %s',
+          version, lcount, ecount, new Date(lastupdate))
         if ((Date.now() - lastupdate) >= (options.updateFrequency * 86400000)) {
           console.log('Last update was over %s days ago; update required', options.updateFrequency)
           updateList()
         } else {
-          for (var j = 0; j < list.licenses.length; j++) {
-            var line = list.licenses[j]
-            var license = line.licenseId
-            list.license = {}
-            console.log('Attempting to load %s from storage', license)
-            chrome.storage.local.get([license], function (result) {
-              if (result && !_.isEmpty(result)) {
-                license = Object.keys(result)[0]
-                list.license[license] = result[license]
-                licensesLoaded++
-                console.log('%s succesfully loaded from storage %s/%s',
-                  license, licensesLoaded, list.licenses.length)
-              } else {
-                console.log('%s not found in storage; requesting update', license)
-                updateList()
-              }
-              if (list.licenses.length === licensesLoaded) {
-                pendingload = false
-                launchPendingCompares()
-              }
-            })
+          for (let type of Object.keys(urls)) {
+            if (!list[type]) {
+              continue
+            }
+            if (typeof list[type + 'dict'] === 'undefined') { list[type + 'dict'] = {} }
+            for (let j = 0; j < list[type].length; j++) {
+              let line = list[type][j]
+              let item = line[intspdxkey[type].id]
+              console.log('Attempting to load %s from storage', item)
+              getStorage(item).then((result, types = Object.keys(urls)) => {
+                if (result && !_.isEmpty(result)) {
+                  item = Object.keys(result)[0]
+                  list[type + 'dict'][item] = result[item]
+                  licensesLoaded++
+                  console.log('%s succesfully loaded from storage %s/%s (%s)',
+                    item, Object.keys(list[type + 'dict']).length, list[type].length, type)
+                } else if (updating) {
+                  console.log('%s not found in storage; update pending', item)
+                } else {
+                  console.log('%s not found in storage; requesting update', item)
+                  updateList()
+                }
+                if (types.every((type) => {
+                  return (list[type] && list[type + 'dict'] &&
+                    list[type].length === Object.keys(list[type + 'dict']).length)
+                })) {
+                  pendingload = false
+                  launchPendingCompares()
+                }
+              })
+            }
           }
         }
       } else {
@@ -384,13 +429,14 @@ function loadList () {
     })
   }
 }
+
 function updateList () {
   if (updating) {
     console.log('Ignoring redundant update request')
   } else {
     updating = true
     licensesLoaded = 0
-    dowork({ 'command': 'updatelicenselist', 'url': chrome.extension.getURL(''), 'remote': true })
+    dowork({ 'command': 'updatelicenselist' })
   }
 }
 
@@ -404,23 +450,30 @@ function compareSelection (selection, tabId = activeTabId) {
     filtered = {}
   }
   filtered[tabId] = {}
-  total = Object.keys(list.license).length
   completedcompares = 0
-  for (var license in list.license) {
-    for (var filter in options.filters) {
-      if (list.license[license][options.filters[filter]]) {
-        if (filtered[tabId][filter] === undefined) { filtered[tabId][filter] = {} }
-        filtered[tabId][filter][license] = true
-        console.log('Deferring %s because its %s', license, filter)
+  for (let type of Object.keys(urls)) {
+    for (let item of Object.keys(list[type + 'dict'])) {
+      for (let filter in options.filters) {
+        if (list[type + 'dict'][item][options.filters[filter]]) {
+          if (filtered[tabId][filter] === undefined) { filtered[tabId][filter] = {} }
+          filtered[tabId][filter][item] = {}
+          filtered[tabId][filter][item].type = type
+          console.log('Deferring %s %s because its %s', type, item, filter)
+        }
+        if (filtered[tabId] === undefined ||
+          filtered[tabId][filter] === undefined ||
+          filtered[tabId][filter][item] === undefined) {
+          unsorted[tabId][item] = list[type + 'dict'][item]
+          unsorted[tabId][item].type = type
+        }
       }
     }
-    if (filtered[tabId] === undefined ||
-        filtered[tabId][filter] === undefined ||
-        filtered[tabId][filter][license] === undefined) { unsorted[tabId][license] = list.license[license] }
   }
   total = Object.keys(unsorted[tabId]).length
-  for (license in unsorted[tabId]) {
-    dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': license, 'license': list.license[license], 'total': total, 'tabId': tabId })
+  for (let item in unsorted[tabId]) {
+    let type = unsorted[tabId][item].type
+    let itemdict = list[type + 'dict'][item]
+    dowork({ 'command': 'compare', 'selection': selection, 'maxLengthDifference': options.maxLengthDifference, 'spdxid': item, 'itemdict': itemdict, 'total': total, 'tabId': tabId, 'type': type })
     chrome.tabs.sendMessage(tabId, { 'message': 'progressbarmax', 'value': total, 'stage': 'Comparing licenses', 'reset': true })
   }
 }
@@ -439,7 +492,7 @@ function launchPendingCompares () {
 }
 
 function restoreOptions () {
-  chrome.storage.local.get(['options'], function (result) {
+  getStorage('options').then(function (result) {
     options = result.options
     if (options === undefined) {
       options = defaultoptions
@@ -518,6 +571,32 @@ function queuework (message) {
 function workerdone (id) {
   workers[id][1] = false
   runningworkers--
+}
+
+// promisfy gets
+const getStorage = function (item) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(item, function (result) {
+      if (chrome.runtime.lastError) {
+        reject(Error(chrome.runtime.lastError))
+      } else {
+        resolve(result)
+      }
+    })
+  })
+}
+
+const setStorage = function (obj) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set(obj, function () {
+      if (chrome.runtime.lastError) {
+        reject(Error(chrome.runtime.lastError))
+      } else {
+        console.log('Storing', obj)
+        resolve()
+      }
+    })
+  })
 }
 
 function init () {
