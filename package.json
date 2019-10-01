@@ -8,7 +8,7 @@
     "dev": "webextension-toolbox dev",
     "build": "webextension-toolbox build",
     "firefox": "web-ext run -s dist/firefox --bc -u https://www.apache.org/licenses/LICENSE-2.0 -u https://www.gnu.org/licenses/gpl-3.0.en.html",
-    "lint": "eslint app",
+    "lint": "eslint app && web-ext lint -s app",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "generate-attribution --production",
     "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox -m",
