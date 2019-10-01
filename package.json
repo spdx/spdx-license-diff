@@ -13,14 +13,62 @@
     "attribution": "generate-attribution --production",
     "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox -m",
     "production": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox",
-    "buildall": "yarn clean && yarn attribution && yarn production && yarn changelog "
+    "buildall": "yarn clean && yarn attribution && yarn production"
   },
   "standard": {
     "globals": [
       "chrome"
     ]
   },
+  "release": {
+    "branch": "master",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      [
+        "@semantic-release/exec",
+        {
+          "verifyConditionsCmd": "yarn lint",
+          "verifyReleaseCmd": "cp app/manifest.json . && mversion ${nextRelease.version} && mv manifest.json app && git add app/manifest.json",
+          "prepareCmd": "yarn buildall"
+        }
+      ],
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/changelog",
+        {
+          "changelogTitle": "# Changelog"
+        }
+      ],
+      "@semantic-release/git",
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "packages/*.chrome.zip",
+              "label": "Chrome"
+            },
+            {
+              "path": "packages/*.firefox.xpi.zip",
+              "label": "Firefox"
+            },
+            {
+              "path": "packages/*.edge.zip",
+              "label": "Edge"
+            },
+            {
+              "path": "packages/*.opera.crx.zip",
+              "label": "Opera"
+            }
+          ]
+        }
+      ]
+    ]
+  },
   "devDependencies": {
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/exec": "^3.3.7",
+    "@semantic-release/git": "^7.0.16",
     "copy-webpack-plugin": "^5.0.3",
     "eslint": "^6.0.1",
     "eslint-config-standard": "^12.0.0",
@@ -30,7 +78,11 @@
     "eslint-plugin-standard": "^4.0.0",
     "eslint-standard": "^1.0.2",
     "github-release-notes": "^0.17.0",
+    "mversion": "^1.13.0",
     "oss-attribution-generator": "^1.7.1",
+    "semantic-release": "^15.13.24",
+    "semantic-release-chrome": "^1.1.1",
+    "semantic-release-firefox": "^1.2.0",
     "standard": "^12.0.1",
     "web-ext": "^3.1.0",
     "webextension-toolbox": "latest"

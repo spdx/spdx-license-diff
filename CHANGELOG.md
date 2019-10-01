@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.1 (07/07/2019)
+- [Update build script to package license info](https://github.com/spdx/spdx-license-diff/commit/e70fcfc3f1dc99d72c2ec45cf07cfad9100cfb37) - @alandtse
+- [Fix typo in markdown for Firefox Add-ons](https://github.com/spdx/spdx-license-diff/commit/ecce4473a336932c83f8c0db62281ddb3fcfeff3) - @alandtse
+- [Bump to 0.2.1](https://github.com/spdx/spdx-license-diff/commit/f9acd8299dc16eb0314cb8deaf4305a23d2072ab) - @alandtse
+- [Fix bug where showBest was not properly allowing for unlimited](https://github.com/spdx/spdx-license-diff/commit/a1ee405886d8c876decc75d7d97eb417d76b1074) - @alandtse
+- [Fix typo in credits](https://github.com/spdx/spdx-license-diff/commit/e5be502e82b9e9da86bfe19f53cc82e1d9910bab) - @alandtse
+- [Replace fast-levenshtein with js-levenshtein](https://github.com/spdx/spdx-license-diff/commit/05ced438afbec96223097714cb0b0d9a8743e664) - @alandtse
+- [Add firefox test command](https://github.com/spdx/spdx-license-diff/commit/4f24f5452acf64b2c41ce4bd811807b9c443c7f6) - @alandtse
+- [Change version value to read from manifest.json](https://github.com/spdx/spdx-license-diff/commit/e8a255ad2109da1a76c9c172a25bc706401c4234) - @alandtse
+- [Update developers documentation](https://github.com/spdx/spdx-license-diff/commit/66f6c54a804eb10010e24c7111031daaae789a9f) - @alandtse
+- [Migrate to webextension-toolbox for build](https://github.com/spdx/spdx-license-diff/commit/4e32bbb061646840cdc762363245712e81dcdf7e) - @alandtse
+- [Add Firefox Add-ons info](https://github.com/spdx/spdx-license-diff/commit/6a66c10869ecf7a80b483e365d4e3a6ac1b898d5) - @alandtse
+- [Add eslint](https://github.com/spdx/spdx-license-diff/commit/8080a674efcba376aa5145373ca42b600da688ee) - @alandtse
+
+---
+
 ## v0.2.0 (04/07/2019)
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/7e110c20798a6ea84f7aca10bfbd848283de5c59) - @alandtse
 - [Bump version](https://github.com/spdx/spdx-license-diff/commit/e078ca7a58e2d02ab61528edadfac663c1a062d0) - @alandtse
