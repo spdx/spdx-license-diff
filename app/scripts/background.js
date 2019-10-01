@@ -611,7 +611,4 @@ chrome.browserAction.onClicked.addListener(handleClick)
 chrome.tabs.onActivated.addListener(handleActivate)
 chrome.windows.onFocusChanged.addListener(handleFocusChanged)
 chrome.storage.onChanged.addListener(handleStorageChange)
-chrome.runtime.onSuspend.addListener(function () {
-  console.log('Unloading.')
-})
 chrome.tabs.onUpdated.addListener(handleUpdated)
