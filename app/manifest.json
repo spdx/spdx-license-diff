@@ -27,5 +27,11 @@
     "unlimitedStorage",
     "activeTab",
     "*://spdx.org/*"
-  ]
+  ],
+  "__firefox__browser_specific_settings": {
+    "gecko": {
+      "id": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
+      "strict_min_version": "42.0"
+    }
+  }
 }
