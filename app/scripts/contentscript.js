@@ -3,6 +3,7 @@
 import { selectRangeCoords, getSelectionText } from './cc-by-sa.js'
 import { filters, defaultoptions } from './const.js'
 import $ from 'jquery'
+import _ from 'underscore'
 
 var version = browser.runtime.getManifest().version
 var selectedLicense = ''
@@ -229,7 +230,7 @@ function prepDiff (spdxid, time, html, details) {
   for (var filter in filters) {
     if (details[filters[filter]]) { hoverInfo += filter + ' ' }
   }
-  if (details.licenseComments) { hoverInfo += '&#10;comments: ' + details.licenseComments }
+  if (details.licenseComments) { hoverInfo += '&#10;comments: ' + _.escape(details.licenseComments) }
   var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`
   var timehtml = ' processed in ' + (time + processTime) / 1000 + 's<br /><hr />'
   return (title + timehtml + html)
@@ -348,9 +349,15 @@ function renderBubble (mouseX, mouseY, selection) {
 function updateBubbleText (text, target = '#bubble_text') {
   var bubbleDOMText = $(target)[0]
   // convert html to xhtml
-  // concept from https://stackoverflow.com/a/12092919
+  // concept from https://stackoverflow.com/a/12092919 and
+  // https://devtidbits.com/2017/12/06/quick-fix-the-unsafe_var_assignment-warning-in-javascript/
   text = new XMLSerializer().serializeToString(new DOMParser().parseFromString(text, 'text/html'))
-  bubbleDOMText.innerHTML = text
+  text = new DOMParser().parseFromString(text, 'application/xml')
+  const tags = text.getElementsByTagName(`body`)
+  bubbleDOMText.innerHTML = ``
+  for (const tag of tags) {
+    bubbleDOMText.appendChild(tag)
+  }
 }
 
 // max will increase if > 0; value will be set if not null and >=0
