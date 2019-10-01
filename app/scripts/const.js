@@ -1,8 +1,8 @@
 const filters = {
-  deprecated: 'isDeprecatedLicenseId',
-  OSIApproved: 'isOsiApproved',
-  FSFLibre: 'isFsfLibre'
-}
+  deprecated: "isDeprecatedLicenseId",
+  OSIApproved: "isOsiApproved",
+  FSFLibre: "isFsfLibre"
+};
 
 const defaultoptions = {
   updateFrequency: 90,
@@ -10,25 +10,24 @@ const defaultoptions = {
   minpercentage: 25,
   maxLengthDifference: 1500,
   maxworkers: 10,
-  filters:
-          {
-            deprecated: 'isDeprecatedLicenseId'
-          }
-}
+  filters: {
+    deprecated: "isDeprecatedLicenseId"
+  }
+};
 
 const urls = {
-  licenses: 'https://spdx.org/licenses/licenses.json',
-  exceptions: 'https://spdx.org/licenses/exceptions.json'
-}
+  licenses: "https://spdx.org/licenses/licenses.json",
+  exceptions: "https://spdx.org/licenses/exceptions.json"
+};
 
 const spdxkey = {
   licenses: {
-    id: 'licenseId',
-    text: 'licenseText'
+    id: "licenseId",
+    text: "licenseText"
   },
   exceptions: {
-    id: 'licenseExceptionId',
-    text: 'licenseExceptionText'
+    id: "licenseExceptionId",
+    text: "licenseExceptionText"
   }
-}
-export { filters, defaultoptions, urls, spdxkey }
+};
+export { filters, defaultoptions, urls, spdxkey };
