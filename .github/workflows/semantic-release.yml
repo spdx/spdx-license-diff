@@ -1,0 +1,64 @@
+name: Node CI
+
+on: 
+  push:
+    branches:
+    - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: install yarn
+      run: |
+        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+        echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+        sudo apt-get update && sudo apt-get install yarn
+      env:
+        CI: true
+    - name: install dependencies
+      run: |
+        yarn install
+      env:
+        CI: true
+    - name: Setup Git
+      run: |
+        git config --global user.name "semantic-release"
+        git config --global user.email "semantic-release@GitHub"
+    - name: semantic-release to GitHub
+      run: |
+        npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
+    - name: publish chrome
+      uses: trmcnvn/chrome-addon@v1
+      with:
+      # extension is only necessary when updating an existing addon,
+      # omitting it will create a new addon
+        extension: kfoadicmilbgnicoldjmccpaicejacdh
+        zip: packages/*.chrome.zip
+        client-id: ${{ secrets.CHROME_CLIENT_ID }}
+        client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+        refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+    - name: publish firefox
+      uses: trmcnvn/firefox-addon@v1
+      with:
+      # uuid is only necessary when updating an existing addon,
+      # omitting it will create a new addon
+        uuid: '{95b7d495-ee73-4a03-b918-670a9d77c871}'
+        xpi: packages/*.firefox.xpi.zip
+        manifest: dist/firefox/manifest.json
+        api-key: ${{ secrets.FIREFOX_API_KEY }}
+        api-secret: ${{ secrets.FIREFOX_API_SECRET }}  
