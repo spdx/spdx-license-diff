@@ -1,10 +1,10 @@
-var filters = {
+const filters = {
   deprecated: 'isDeprecatedLicenseId',
   OSIApproved: 'isOsiApproved',
   FSFLibre: 'isFsfLibre'
 }
-var version = browser.runtime.getManifest().version
-var defaultoptions = {
+
+const defaultoptions = {
   updateFrequency: 90,
   showBest: 10,
   minpercentage: 25,
@@ -16,4 +16,19 @@ var defaultoptions = {
           }
 }
 
-export { filters, version, defaultoptions }
+const urls = {
+  licenses: 'https://spdx.org/licenses/licenses.json',
+  exceptions: 'https://spdx.org/licenses/exceptions.json'
+}
+
+const spdxkey = {
+  licenses: {
+    id: 'licenseId',
+    text: 'licenseText'
+  },
+  exceptions: {
+    id: 'licenseExceptionId',
+    text: 'licenseExceptionText'
+  }
+}
+export { filters, defaultoptions, urls, spdxkey }

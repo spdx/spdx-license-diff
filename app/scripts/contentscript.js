@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import { selectRangeCoords, getSelectionText } from './cc-by-sa.js'
-import { filters, version, defaultoptions } from './const.js'
+import { filters, defaultoptions } from './const.js'
 import $ from 'jquery'
 
+var version = browser.runtime.getManifest().version
 var selectedLicense = ''
 var spdx = null
 var rawspdx = null
