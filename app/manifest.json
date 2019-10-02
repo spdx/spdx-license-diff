@@ -6,7 +6,7 @@
   "manifest_version": 2,
   "default_locale": "en",
   "icons": {
-    "128": "images/spdx.png"
+    "32": "images/spdx.png"
   },
   "background": {
     "scripts": [
