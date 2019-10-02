@@ -1,4 +1,4 @@
-name: Node CI
+name: semantic-release
 
 on: 
   push:
@@ -16,17 +16,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+      with:
+        ref: master
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: install yarn
-      run: |
-        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-        echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-        sudo apt-get update && sudo apt-get install yarn
-      env:
-        CI: true
+    #- name: install yarn
+    #  run: |
+    #    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+    #    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+    #    sudo apt-get update && sudo apt-get install yarn
     - name: install dependencies
       run: |
         yarn install
@@ -36,14 +36,15 @@ jobs:
       run: |
         git config --global user.name "semantic-release"
         git config --global user.email "semantic-release@GitHub"
-    - name: semantic-release to GitHub
-      run: |
-        npx semantic-release
+    - name: Semantic Release Action
+      id: semantic
+      uses: codfish/semantic-release-action@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
     - name: publish chrome
       uses: trmcnvn/chrome-addon@v1
+      if: steps.semantic.outputs.new-release-published == 'true'
       with:
       # extension is only necessary when updating an existing addon,
       # omitting it will create a new addon
@@ -54,6 +55,7 @@ jobs:
         refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
     - name: publish firefox
       uses: trmcnvn/firefox-addon@v1
+      if: steps.semantic.outputs.new-release-published == 'true'      
       with:
       # uuid is only necessary when updating an existing addon,
       # omitting it will create a new addon
