@@ -41,7 +41,10 @@ jobs:
       uses: codfish/semantic-release-action@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}     
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    - name: Force build packages
+      run: |
+        yarn buildall    
     - name: Publish Chrome
       uses: trmcnvn/chrome-addon@v1
       #if: steps.semantic.outputs.new-release-published == 'true'
