@@ -44,7 +44,7 @@ jobs:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}     
     - name: publish chrome
       uses: trmcnvn/chrome-addon@v1
-      if: steps.semantic.outputs.new-release-published == 'true'
+      #if: steps.semantic.outputs.new-release-published == 'true'
       with:
       # extension is only necessary when updating an existing addon,
       # omitting it will create a new addon
@@ -55,7 +55,7 @@ jobs:
         refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
     - name: publish firefox
       uses: trmcnvn/firefox-addon@v1
-      if: steps.semantic.outputs.new-release-published == 'true'      
+      #if: steps.semantic.outputs.new-release-published == 'true'      
       with:
       # uuid is only necessary when updating an existing addon,
       # omitting it will create a new addon
