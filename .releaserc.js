@@ -5,9 +5,8 @@ module.exports = {
     [
       "@semantic-release/exec",
       {
-        verifyConditionsCmd: "yarn lint",
         verifyReleaseCmd:
-          "cp app/manifest.json . && mversion ${nextRelease.version} && mv manifest.json app && git add app/manifest.json",
+          "cd app && mversion ${nextRelease.version} && git add manifest.json",
         prepareCmd: "yarn buildall"
       }
     ],
