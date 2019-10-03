@@ -10,9 +10,7 @@
     "128": "images/128.png"
   },
   "background": {
-    "scripts": [
-      "scripts/background.js"
-    ]
+    "scripts": ["scripts/background.js"]
   },
   "browser_action": {
     "default_icon": {
@@ -23,16 +21,11 @@
     "page": "pages/options.html",
     "open_in_tab": false
   },
-  "permissions": [
-    "storage",
-    "unlimitedStorage",
-    "activeTab",
-    "*://spdx.org/*"
-  ],
+  "permissions": ["storage", "unlimitedStorage", "activeTab", "*://spdx.org/*"],
   "__firefox__browser_specific_settings": {
     "gecko": {
       "id": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
-      "strict_min_version": "42.0"
+      "strict_min_version": "56.0"
     }
   }
 }
