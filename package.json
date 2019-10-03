@@ -12,7 +12,7 @@
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "generate-attribution --production",
     "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox -m",
-    "production": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox",
+    "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox",
     "buildall": "yarn clean && yarn attribution && yarn production"
   },
   "standard": {
