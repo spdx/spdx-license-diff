@@ -1,7 +1,7 @@
 {
   "name": "spdx-license-diff",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Diff selected text against SPDX licenses",
   "scripts": {
     "clean": "rm -rf packages dist",

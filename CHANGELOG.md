@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.3.0](https://github.com/spdx/spdx-license-diff/compare/v0.2.1...v0.3.0) (2019-10-03)
+
+
+### Bug Fixes
+
+* remove unsafe innerhtml assignment ([8201ce2](https://github.com/spdx/spdx-license-diff/commit/8201ce2))
+* remove unsupported and unused runtime.onsuspend ([2c9644c](https://github.com/spdx/spdx-license-diff/commit/2c9644c))
+* update icon size ([7c8e7e0](https://github.com/spdx/spdx-license-diff/commit/7c8e7e0))
+
+
+### Features
+
+* add initial exceptions support ([22e2891](https://github.com/spdx/spdx-license-diff/commit/22e2891))
+
 ## v0.2.1 (07/07/2019)
 - [Update build script to package license info](https://github.com/spdx/spdx-license-diff/commit/e70fcfc3f1dc99d72c2ec45cf07cfad9100cfb37) - @alandtse
 - [Fix typo in markdown for Firefox Add-ons](https://github.com/spdx/spdx-license-diff/commit/ecce4473a336932c83f8c0db62281ddb3fcfeff3) - @alandtse
