@@ -347,16 +347,7 @@ function workeronmessage(event) {
       workerdone(event.data.id);
       type = event.data.type;
       console.log("Received worker update completion for %s", type);
-      let types = Object.keys(urls);
-      if (
-        types.every(type => {
-          return list[type].length === Object.keys(list[type + "dict"]).length;
-        })
-      ) {
-        console.log("Update completed");
-        updating = false;
-        launchPendingCompares();
-      }
+      checkUpdateDone();
       break;
     case "comparenext":
       threadid = event.data.id;
@@ -778,6 +769,35 @@ const setStorage = function(obj) {
   });
 };
 
+const checkUpdateDone = function() {
+  let types = Object.keys(urls);
+  try {
+    if (
+      types.every(type => {
+        return (
+          list[type] &&
+          list[type + "dict"] &&
+          list[type].length === Object.keys(list[type + "dict"]).length
+        );
+      })
+    ) {
+      console.log("Update completed");
+      updating = false;
+      launchPendingCompares();
+    } else {
+      types.map(type => {
+        console.log(
+          "Update in progress for %s %s/%s",
+          type,
+          list[type + "dict"] ? Object.keys(list[type + "dict"]).length : 0,
+          list[type] ? list[type].length : 0
+        );
+      });
+    }
+  } catch (err) {
+    throw err;
+  }
+};
 function init() {
   console.log("Initializing spdx-license-diff " + version);
   restoreOptions();
