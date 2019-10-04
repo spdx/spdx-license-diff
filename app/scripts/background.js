@@ -322,6 +322,7 @@ function workeronmessage(event) {
           storeList(externallicenselist);
           list = externallicenselist;
         }
+        checkUpdateDone();
       });
 
       break;
@@ -334,6 +335,7 @@ function workeronmessage(event) {
           list[type + "dict"] = {};
         }
         list[type + "dict"][spdxid] = item.data;
+        checkUpdateDone();
         console.log("Saving %s: %s", type, spdxid, item.data);
         getStorage(spdxid).then(function(result) {
           if (
