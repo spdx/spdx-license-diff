@@ -799,6 +799,22 @@ const checkUpdateDone = function() {
     throw err;
   }
 };
+
+chrome.runtime.onInstalled.addListener(function(details) {
+  if (details.reason === "install") {
+    console.log("Updating list");
+  } else if (details.reason === "update") {
+    console.log(
+      "Updated from " +
+        details.previousVersion +
+        " to " +
+        version +
+        "; forcing list update"
+    );
+    updateList();
+  }
+});
+
 function init() {
   console.log("Initializing spdx-license-diff " + version);
   restoreOptions();
