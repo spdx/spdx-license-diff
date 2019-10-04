@@ -265,9 +265,11 @@ function workeronmessage(event) {
       console.log("Trying to save list", externallicenselist);
       getStorage("list").then(function(result) {
         if (result.list && result.list.licenseListVersion) {
-          var list = result.list;
-          var version = list.licenseListVersion;
-          var count = list[type] ? Object.keys(list[type]).length : 0;
+          var storedlist = result.list;
+          var version = storedlist.licenseListVersion;
+          var count = storedlist[type]
+            ? Object.keys(storedlist[type]).length
+            : 0;
           console.log(
             "Existing License list version %s with %s %s",
             version,
@@ -275,15 +277,20 @@ function workeronmessage(event) {
             type
           );
           if (version < externalversion) {
+            storedlist[type] = externallicenselist[type];
             console.log(
               "Newer license list version %s found with %s %s",
               externalversion,
               externalcount,
               type
             );
-            storeList(externallicenselist);
+            storeList(storedlist);
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           } else if (count < externalcount) {
-            list[type] = externallicenselist[type];
+            storedlist[type] = externallicenselist[type];
             console.log(
               "New list version %s found with %s %s more than old list with %s %s",
               externalversion,
@@ -292,7 +299,11 @@ function workeronmessage(event) {
               count,
               type
             );
-            storeList(list);
+            storeList(storedlist);
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           } else {
             // dowork({ 'command': 'populatelicenselist', 'data': list })
             console.log(
@@ -301,10 +312,15 @@ function workeronmessage(event) {
               externalcount,
               type
             );
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           }
         } else {
           console.log("No existing license list found; storing");
           storeList(externallicenselist);
+          list = externallicenselist;
         }
       });
 
