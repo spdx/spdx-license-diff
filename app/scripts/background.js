@@ -125,7 +125,8 @@ function handleMessage(request, sender, sendResponse) {
       if (
         updating ||
         list.licenses === undefined ||
-        licensesLoaded < list.licenses.length
+        list.exceptions === undefined ||
+        licensesLoaded < list.licenses.length + list.exceptions.length
       ) {
         pendingcompare = true;
         comparequeue.push({ selection: selection, tabId: activeTabId });
