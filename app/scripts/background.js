@@ -317,8 +317,7 @@ function workeronmessage(event) {
         if (list[type + "dict"] === undefined) {
           list[type + "dict"] = {};
         }
-        list[type + "dict"][spdxid] = item.data[spdxid];
-
+        list[type + "dict"][spdxid] = item.data;
         console.log("Saving %s: %s", type, spdxid, item.data);
         getStorage(spdxid).then(function(result) {
           if (
