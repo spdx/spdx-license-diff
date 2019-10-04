@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1](https://github.com/spdx/spdx-license-diff/compare/v0.3.0...v0.3.1) (2019-10-04)
+
+
+### Bug Fixes
+
+* check for exceptions prior to compare ([c39ae36](https://github.com/spdx/spdx-license-diff/commit/c39ae36))
+* fix async steps preventing update completion ([d7a2f8c](https://github.com/spdx/spdx-license-diff/commit/d7a2f8c))
+* fix bug where list not updated with item data ([bdab719](https://github.com/spdx/spdx-license-diff/commit/bdab719))
+* fix bug where saved list would override work due to async ([346dcea](https://github.com/spdx/spdx-license-diff/commit/346dcea))
+* fix case where runningworkers became negative ([7ad83ea](https://github.com/spdx/spdx-license-diff/commit/7ad83ea))
+* force reload of list on update ([9988627](https://github.com/spdx/spdx-license-diff/commit/9988627))
+
 # [0.3.0](https://github.com/spdx/spdx-license-diff/compare/v0.2.1...v0.3.0) (2019-10-03)
 
 
