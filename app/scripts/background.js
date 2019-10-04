@@ -701,6 +701,7 @@ function processqueue(priority = 0) {
 }
 function dowork(message) {
   spawnworkers();
+  runningworkers = runningworkers >= 0 ? runningworkers : 0;
   var offset = options.maxworkers - runningworkers;
   if (options.maxworkers > runningworkers) {
     for (
