@@ -125,7 +125,8 @@ function handleMessage(request, sender, sendResponse) {
       if (
         updating ||
         list.licenses === undefined ||
-        licensesLoaded < list.licenses.length
+        list.exceptions === undefined ||
+        licensesLoaded < list.licenses.length + list.exceptions.length
       ) {
         pendingcompare = true;
         comparequeue.push({ selection: selection, tabId: activeTabId });
@@ -264,9 +265,11 @@ function workeronmessage(event) {
       console.log("Trying to save list", externallicenselist);
       getStorage("list").then(function(result) {
         if (result.list && result.list.licenseListVersion) {
-          var list = result.list;
-          var version = list.licenseListVersion;
-          var count = list[type] ? Object.keys(list[type]).length : 0;
+          var storedlist = result.list;
+          var version = storedlist.licenseListVersion;
+          var count = storedlist[type]
+            ? Object.keys(storedlist[type]).length
+            : 0;
           console.log(
             "Existing License list version %s with %s %s",
             version,
@@ -274,15 +277,20 @@ function workeronmessage(event) {
             type
           );
           if (version < externalversion) {
+            storedlist[type] = externallicenselist[type];
             console.log(
               "Newer license list version %s found with %s %s",
               externalversion,
               externalcount,
               type
             );
-            storeList(externallicenselist);
+            storeList(storedlist);
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           } else if (count < externalcount) {
-            list[type] = externallicenselist[type];
+            storedlist[type] = externallicenselist[type];
             console.log(
               "New list version %s found with %s %s more than old list with %s %s",
               externalversion,
@@ -291,7 +299,11 @@ function workeronmessage(event) {
               count,
               type
             );
-            storeList(list);
+            storeList(storedlist);
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           } else {
             // dowork({ 'command': 'populatelicenselist', 'data': list })
             console.log(
@@ -300,11 +312,17 @@ function workeronmessage(event) {
               externalcount,
               type
             );
+            if (list[type + "dict"]) {
+              storedlist[type + "dict"] = list[type + "dict"];
+            }
+            list[type] = storedlist[type];
           }
         } else {
           console.log("No existing license list found; storing");
           storeList(externallicenselist);
+          list = externallicenselist;
         }
+        checkUpdateDone();
       });
 
       break;
@@ -316,8 +334,8 @@ function workeronmessage(event) {
         if (list[type + "dict"] === undefined) {
           list[type + "dict"] = {};
         }
-        list[type + "dict"][spdxid] = item.data[spdxid];
-
+        list[type + "dict"][spdxid] = item.data;
+        checkUpdateDone();
         console.log("Saving %s: %s", type, spdxid, item.data);
         getStorage(spdxid).then(function(result) {
           if (
@@ -347,16 +365,7 @@ function workeronmessage(event) {
       workerdone(event.data.id);
       type = event.data.type;
       console.log("Received worker update completion for %s", type);
-      let types = Object.keys(urls);
-      if (
-        types.every(type => {
-          return list[type].length === Object.keys(list[type + "dict"]).length;
-        })
-      ) {
-        console.log("Update completed");
-        updating = false;
-        launchPendingCompares();
-      }
+      checkUpdateDone();
       break;
     case "comparenext":
       threadid = event.data.id;
@@ -709,6 +718,7 @@ function processqueue(priority = 0) {
 }
 function dowork(message) {
   spawnworkers();
+  runningworkers = runningworkers >= 0 ? runningworkers : 0;
   var offset = options.maxworkers - runningworkers;
   if (options.maxworkers > runningworkers) {
     for (
@@ -777,6 +787,51 @@ const setStorage = function(obj) {
     });
   });
 };
+
+const checkUpdateDone = function() {
+  let types = Object.keys(urls);
+  try {
+    if (
+      types.every(type => {
+        return (
+          list[type] &&
+          list[type + "dict"] &&
+          list[type].length === Object.keys(list[type + "dict"]).length
+        );
+      })
+    ) {
+      console.log("Update completed");
+      updating = false;
+      launchPendingCompares();
+    } else {
+      types.map(type => {
+        console.log(
+          "Update in progress for %s %s/%s",
+          type,
+          list[type + "dict"] ? Object.keys(list[type + "dict"]).length : 0,
+          list[type] ? list[type].length : 0
+        );
+      });
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+
+chrome.runtime.onInstalled.addListener(function(details) {
+  if (details.reason === "install") {
+    console.log("Updating list");
+  } else if (details.reason === "update") {
+    console.log(
+      "Updated from " +
+        details.previousVersion +
+        " to " +
+        version +
+        "; forcing list update"
+    );
+    updateList();
+  }
+});
 
 function init() {
   console.log("Initializing spdx-license-diff " + version);

@@ -50,13 +50,44 @@ self.onmessage = function(event) {
   }
 };
 // load files array with list of files to download
-function getSPDXlist() {
+async function getSPDXlist() {
   for (let type of Object.keys(urls)) {
     var url = urls[type];
-    getJSON(url)
-      .then(function(result) {
-        var total = result[type].length;
-        var index = 0;
+    try {
+      var result = await getJSON(url);
+      var total = result[type].length;
+      var index = 0;
+      postMessage({
+        command: "progressbarmax",
+        value: total,
+        stage: "Updating " + type,
+        id: id,
+        reset: true
+      });
+      postMessage({
+        command: "savelicenselist",
+        value: result,
+        id: id,
+        type: type
+      });
+      console.log(id, "Updating: ", result);
+      result[type] = result[type].map(async item => {
+        try {
+          return await getJSON(item.detailsUrl.replace("http:", "https:"));
+        } catch (err) {
+          throw err;
+        }
+      });
+      result[type] = result[type].map(async function(item) {
+        item = await item;
+        // var md5 = require('md5-jkmyers')
+        // hash = md5(item)
+        postMessage({
+          command: "saveitem",
+          data: item,
+          id: id,
+          type: type
+        });
         postMessage({
           command: "progressbarmax",
           value: total,
@@ -65,47 +96,19 @@ function getSPDXlist() {
           reset: true
         });
         postMessage({
-          command: "savelicenselist",
-          value: result,
-          id: id,
-          type: type
+          command: "progressbarvalue",
+          value: index++,
+          id: id
         });
-        console.log(id, "Updating: ", result);
-        return result[type]
-          .map(item => {
-            return getJSON(item.detailsUrl.replace("http:", "https:"));
-          })
-          .reduce(function(sequence, itemPromise) {
-            return sequence
-              .then(function() {
-                return itemPromise;
-              })
-              .then(function(item) {
-                // var md5 = require('md5-jkmyers')
-                // hash = md5(item)
-                postMessage({
-                  command: "saveitem",
-                  data: item,
-                  id: id,
-                  type: type
-                });
-                postMessage({
-                  command: "progressbarvalue",
-                  value: index++,
-                  id: id
-                });
-                // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-              });
-          }, Promise.resolve());
-      })
-      .then(function(response) {
-        console.log("All %s downloads completed", type);
-        postMessage({ command: "updatedone", id: id, type: type });
-      })
-      .catch(function(err) {
-        // catch any error that happened along the way
-        console.log("Error: " + err.message);
+        // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
       });
+      await Promise.all(result[type]);
+      console.log("All %s downloads completed", type);
+      postMessage({ command: "updatedone", id: id, type: type });
+    } catch (err) {
+      // catch any error that happened along the way
+      console.log("Error: " + err.message);
+    }
   }
 }
 
@@ -348,6 +351,6 @@ const get = function(url) {
   });
 };
 
-const getJSON = function(url) {
+const getJSON = async function(url) {
   return get(url).then(JSON.parse);
 };
