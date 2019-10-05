@@ -129,14 +129,31 @@ function handleMessage(request, sender, sendResponse) {
         licensesLoaded < list.licenses.length + list.exceptions.length
       ) {
         pendingcompare = true;
-        comparequeue.push({ selection: selection, tabId: activeTabId });
+        var priorIndex = comparequeue.findIndex(item => {
+          return item.tabId === activeTabId;
+        });
+        if (comparequeue.length > 0 && priorIndex > -1) {
+          comparequeue[priorIndex] = {
+            selection: selection,
+            tabId: activeTabId
+          };
+        } else comparequeue.push({ selection: selection, tabId: activeTabId });
         status[activeTabId] = "Pending";
-        if (updating) {
+        var timeElapsed = updating ? Date.now() - updating : 0;
+        if (updating && timeElapsed <= 120000) {
           console.log(
-            "Update pending; queing compare for tab %s; %s queued",
+            "Update pending %s seconds; queing compare for tab %s; %s queued",
+            (timeElapsed / 1000).toFixed(2),
             activeTabId,
             comparequeue.length
           );
+        } else if (updating) {
+          console.log(
+            "Update pending %s seconds exceeded timeout; forcing load list; %s queued",
+            (timeElapsed / 1000).toFixed(2),
+            comparequeue.length
+          );
+          loadList();
         } else {
           console.log(
             "License load needed; queing compare for tab %s; %s queued",
@@ -380,7 +397,7 @@ function workeronmessage(event) {
       });
       unsorted[tabId][spdxid] = result;
       completedcompares++;
-      if (completedcompares >= Object.keys(unsorted[tabId]).length) {
+      if (completedcompares === Object.keys(unsorted[tabId]).length) {
         console.log(
           "Requesting final sort of %s for tab %s",
           Object.keys(unsorted[tabId]).length,
@@ -462,9 +479,9 @@ function workeronmessage(event) {
       filtered[tabId]["results"][spdxid] = result;
       unsorted[tabId][spdxid] = result;
       completedcompares++;
-      total = Object.keys(urls).reduce(type => {
-        return Object.keys(list[type + "dict"]).length;
-      });
+      total = Object.keys(urls).reduce((total, type) => {
+        return total + Object.keys(list[type + "dict"]).length;
+      }, 0);
       if (completedcompares === total) {
         console.log(
           "Done with background compare of %s for tab %s",
@@ -583,7 +600,7 @@ function updateList() {
   if (updating) {
     console.log("Ignoring redundant update request");
   } else {
-    updating = true;
+    updating = Date.now();
     licensesLoaded = 0;
     dowork({ command: "updatelicenselist" });
   }
@@ -664,13 +681,13 @@ function launchPendingCompares() {
   pendingcompare = false;
 }
 
-function restoreOptions() {
+function restoreOptions(callbackFunction = null) {
   getStorage("options").then(function(result) {
     options = result.options;
     if (options === undefined) {
       options = defaultoptions;
     }
-    loadList();
+    if (callbackFunction !== null) callbackFunction();
   });
 }
 
@@ -829,13 +846,13 @@ chrome.runtime.onInstalled.addListener(function(details) {
         version +
         "; forcing list update"
     );
-    updateList();
+    restoreOptions(updateList);
   }
 });
 
 function init() {
   console.log("Initializing spdx-license-diff " + version);
-  restoreOptions();
+  restoreOptions(loadList);
 }
 
 init();

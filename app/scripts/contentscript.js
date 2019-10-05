@@ -101,17 +101,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         diffsdone,
         diffsdue
       );
-      if (diffdisplayed) {
-        return;
-      }
       var bestspdxid = spdx[0].spdxid;
       if (diffsdone >= diffsdue) {
         console.log("All diffs complete; showing %s", bestspdxid);
-        displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
+        if (!diffdisplayed)
+          displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
         updateBubbleText("Diffing done");
       } else if (bestspdxid === spdxid) {
         console.log("Best diff %s received; we can display", bestspdxid);
-        displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
+        if (!diffdisplayed)
+          displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
+        updateBubbleText("Displaying diff");
       }
       break;
     case "alive?":
@@ -216,7 +216,7 @@ function processLicenses(showBest, processTime = 0) {
       displayDiff(diffs[license].html, diffs[license].time);
     }
   }
-  if (diffsdue === diffsdone) {
+  if (diffsdue <= diffsdone) {
     updateProgressBar(1, 1, false);
     updateBubbleText("Done");
   }
