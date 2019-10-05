@@ -664,13 +664,13 @@ function launchPendingCompares() {
   pendingcompare = false;
 }
 
-function restoreOptions() {
+function restoreOptions(callbackFunction = null) {
   getStorage("options").then(function(result) {
     options = result.options;
     if (options === undefined) {
       options = defaultoptions;
     }
-    loadList();
+    if (callbackFunction !== null) callbackFunction();
   });
 }
 
@@ -829,13 +829,13 @@ chrome.runtime.onInstalled.addListener(function(details) {
         version +
         "; forcing list update"
     );
-    updateList();
+    restoreOptions(updateList);
   }
 });
 
 function init() {
   console.log("Initializing spdx-license-diff " + version);
-  restoreOptions();
+  restoreOptions(loadList);
 }
 
 init();
