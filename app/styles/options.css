@@ -2,14 +2,14 @@ div {
   margin-bottom: 10px;
 }
 
-input:invalid+span:after {
+input:invalid + span:after {
   color: red;
-  content: '✖';
+  content: "✖";
   padding-left: 5px;
 }
 
-input:valid+span:after {
+input:valid + span:after {
   color: green;
-  content: '✓';
+  content: "✓";
   padding-left: 5px;
 }
