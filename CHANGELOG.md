@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/spdx/spdx-license-diff/compare/v0.3.1...v0.3.2) (2019-10-05)
+
+
+### Bug Fixes
+
+* add timeout for updating state ([853e4bf](https://github.com/spdx/spdx-license-diff/commit/853e4bf))
+* bump firefox min_version ([e84b4b5](https://github.com/spdx/spdx-license-diff/commit/e84b4b5))
+* fix background compares processing ([1c8a585](https://github.com/spdx/spdx-license-diff/commit/1c8a585))
+* fix failure to update completion state ([fd7ef84](https://github.com/spdx/spdx-license-diff/commit/fd7ef84))
+* prevent adding extra compares from same tab ([4887441](https://github.com/spdx/spdx-license-diff/commit/4887441))
+* prevent unnecessary final sorts ([a5898c9](https://github.com/spdx/spdx-license-diff/commit/a5898c9))
+
 ## [0.3.1](https://github.com/spdx/spdx-license-diff/compare/v0.3.0...v0.3.1) (2019-10-04)
 
 
