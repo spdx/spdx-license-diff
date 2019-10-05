@@ -139,12 +139,21 @@ function handleMessage(request, sender, sendResponse) {
           };
         } else comparequeue.push({ selection: selection, tabId: activeTabId });
         status[activeTabId] = "Pending";
-        if (updating) {
+        var timeElapsed = updating ? Date.now() - updating : 0;
+        if (updating && timeElapsed <= 120000) {
           console.log(
-            "Update pending; queing compare for tab %s; %s queued",
+            "Update pending %s seconds; queing compare for tab %s; %s queued",
+            (timeElapsed / 1000).toFixed(2),
             activeTabId,
             comparequeue.length
           );
+        } else if (updating) {
+          console.log(
+            "Update pending %s seconds exceeded timeout; forcing load list; %s queued",
+            (timeElapsed / 1000).toFixed(2),
+            comparequeue.length
+          );
+          loadList();
         } else {
           console.log(
             "License load needed; queing compare for tab %s; %s queued",
@@ -591,7 +600,7 @@ function updateList() {
   if (updating) {
     console.log("Ignoring redundant update request");
   } else {
-    updating = true;
+    updating = Date.now();
     licensesLoaded = 0;
     dowork({ command: "updatelicenselist" });
   }
