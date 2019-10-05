@@ -45,30 +45,30 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
-    #- name: Force Build Packages
-    #  run: |
-    #    yarn buildall    
+    - name: Force Build Packages
+      run: |
+        yarn buildall    
     - name: Publish Chrome
       uses: trmcnvn/chrome-addon@v1
-      if: steps.semantic.outputs.new-release-published == 'true'
+      #if: steps.semantic.outputs.new-release-published == 'true'
       with:
       # extension is only necessary when updating an existing addon,
       # omitting it will create a new addon
         extension: kfoadicmilbgnicoldjmccpaicejacdh
-        zip: packages/spdx-license-diff.v${{steps.semantic.outputs.release-version}}.chrome.zip
-      #  zip: packages/spdx-license-diff.v0.3.0.chrome.zip
+        #zip: packages/spdx-license-diff.v${{steps.semantic.outputs.release-version}}.chrome.zip
+        zip: packages/spdx-license-diff.v0.3.2.chrome.zip
         client-id: ${{ secrets.CHROME_CLIENT_ID }}
         client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
         refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
     - name: Publish Firefox
       uses: trmcnvn/firefox-addon@v1
-      if: steps.semantic.outputs.new-release-published == 'true'  
+      #if: steps.semantic.outputs.new-release-published == 'true'  
       with:
       # uuid is only necessary when updating an existing addon,
       # omitting it will create a new addon
         uuid: '{95b7d495-ee73-4a03-b918-670a9d77c871}'
-        xpi: packages/spdx-license-diff.v${{steps.semantic.outputs.release-version}}.firefox.xpi.zip
-      #  xpi: packages/spdx-license-diff.v0.3.0.firefox.xpi.zip
+      #  xpi: packages/spdx-license-diff.v${{steps.semantic.outputs.release-version}}.firefox.xpi.zip
+        xpi: packages/spdx-license-diff.v0.3.2.firefox.xpi.zip
         manifest: dist/firefox/manifest.json
         api-key: ${{ secrets.FIREFOX_API_KEY }}
         api-secret: ${{ secrets.FIREFOX_API_SECRET }}  
