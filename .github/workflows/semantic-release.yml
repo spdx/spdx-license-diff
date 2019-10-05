@@ -3,7 +3,9 @@ name: semantic-release
 on: 
   push:
     branches:
-    - master@spdx/spdx-license-diff
+    - master
+    paths:
+    - 'app/**'
 
 jobs:
   build:
