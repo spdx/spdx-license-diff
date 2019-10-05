@@ -129,7 +129,15 @@ function handleMessage(request, sender, sendResponse) {
         licensesLoaded < list.licenses.length + list.exceptions.length
       ) {
         pendingcompare = true;
-        comparequeue.push({ selection: selection, tabId: activeTabId });
+        var priorIndex = comparequeue.findIndex(item => {
+          return item.tabId === activeTabId;
+        });
+        if (comparequeue.length > 0 && priorIndex > -1) {
+          comparequeue[priorIndex] = {
+            selection: selection,
+            tabId: activeTabId
+          };
+        } else comparequeue.push({ selection: selection, tabId: activeTabId });
         status[activeTabId] = "Pending";
         if (updating) {
           console.log(
