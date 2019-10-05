@@ -462,9 +462,9 @@ function workeronmessage(event) {
       filtered[tabId]["results"][spdxid] = result;
       unsorted[tabId][spdxid] = result;
       completedcompares++;
-      total = Object.keys(urls).reduce(type => {
-        return Object.keys(list[type + "dict"]).length;
-      });
+      total = Object.keys(urls).reduce((total, type) => {
+        return total + Object.keys(list[type + "dict"]).length;
+      }, 0);
       if (completedcompares === total) {
         console.log(
           "Done with background compare of %s for tab %s",
