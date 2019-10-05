@@ -397,7 +397,7 @@ function workeronmessage(event) {
       });
       unsorted[tabId][spdxid] = result;
       completedcompares++;
-      if (completedcompares >= Object.keys(unsorted[tabId]).length) {
+      if (completedcompares === Object.keys(unsorted[tabId]).length) {
         console.log(
           "Requesting final sort of %s for tab %s",
           Object.keys(unsorted[tabId]).length,
