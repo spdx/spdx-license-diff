@@ -38,17 +38,18 @@
     "mversion": "^1.13.0",
     "oss-attribution-generator": "^1.7.1",
     "prettier": "^2.0.4",
-    "semantic-release": "^17.0.4",
+    "semantic-release": "^16",
     "semantic-release-chrome": "^1.1.1",
-    "semantic-release-firefox": "^1.2.0",
     "standard": "^14.3.3",
     "web-ext": "^4.1.0",
     "webextension-toolbox": "latest"
   },
   "dependencies": {
+    "acorn": "6.4.1",
     "diff-match-patch": "^1.0.0",
     "jquery": "^3.2.1",
     "js-levenshtein": "^1.1.6",
+    "marked": "^0.7.0",
     "md5-jkmyers": "^0.0.1",
     "underscore": "^1.9.1"
   }
