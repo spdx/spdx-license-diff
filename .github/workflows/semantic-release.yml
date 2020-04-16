@@ -8,6 +8,7 @@ on:
       - "app/**"
       - ".github/workflows/**"
       - "package.json"
+      - ".releaserc.js"
 
 jobs:
   build:
