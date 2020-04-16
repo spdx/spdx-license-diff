@@ -6,6 +6,7 @@ on:
     - master
     paths:
     - 'app/**'
+    - '.github/workflows/**'
 
 jobs:
   build:
