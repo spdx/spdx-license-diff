@@ -26,12 +26,12 @@ var total = 0;
 var completedcompares = 0;
 
 chrome.browserAction.setBadgeText({
-  text: `Diff`
+  text: `Diff`,
 });
 
 function handleClick(tab) {
   // Send a message to the active tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function(tab) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
@@ -52,7 +52,7 @@ function injectContentScript(activeTabId) {
   chrome.tabs.executeScript(
     activeTabId,
     { file: "/scripts/contentscript.js" },
-    function(result) {
+    function (result) {
       chrome.tabs.sendMessage(
         activeTabId,
         { command: "clicked_browser_action" },
@@ -93,7 +93,9 @@ function handleUpdated(tabId, changeInfo, tabInfo) {
 }
 function handleFocusChanged(windowid) {
   // Set the active tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function(queryinfo) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (
+    queryinfo
+  ) {
     if (queryinfo.length > 0) {
       activeTabId = queryinfo[0].id;
     }
@@ -129,13 +131,13 @@ function handleMessage(request, sender, sendResponse) {
         licensesLoaded < list.licenses.length + list.exceptions.length
       ) {
         pendingcompare = true;
-        var priorIndex = comparequeue.findIndex(item => {
+        var priorIndex = comparequeue.findIndex((item) => {
           return item.tabId === activeTabId;
         });
         if (comparequeue.length > 0 && priorIndex > -1) {
           comparequeue[priorIndex] = {
             selection: selection,
-            tabId: activeTabId
+            tabId: activeTabId,
           };
         } else comparequeue.push({ selection: selection, tabId: activeTabId });
         status[activeTabId] = "Pending";
@@ -188,9 +190,9 @@ function handleMessage(request, sender, sendResponse) {
       diffcount[activeTabId] = diffcount[activeTabId] + 1;
       dowork(request);
       break;
-    case "submitNewLicense":
+    case "submitNewLicense": {
       activeTabId = sender.tab.id;
-      let injectCode = `
+      const injectCode = `
           document.getElementById('sourceUrl').value = '${request.url}';
           document.getElementById('comments').value = 'Prepared by spdx-license-diff ${version}';
           document.getElementById('text').value = \`${request.selection}\`;
@@ -203,10 +205,11 @@ function handleMessage(request, sender, sendResponse) {
       );
       browser.tabs.create({ url: newLicenseUrl }).then(() => {
         browser.tabs.executeScript({
-          code: injectCode
+          code: injectCode,
         });
       });
       break;
+    }
     default:
       // console.log("Proxying to worker", request);
       // chrome.tabs.sendMessage(activeTab.id, request);
@@ -270,7 +273,7 @@ function workeronmessage(event) {
         hash: event.data.hash,
         raw: event.data.raw,
         processed: event.data.processed,
-        patterns: event.data.patterns
+        patterns: event.data.patterns,
       };
 
       setStorage(obj);
@@ -299,7 +302,7 @@ function workeronmessage(event) {
         ? Object.keys(externallicenselist[type]).length
         : 0;
       console.log("Trying to save list", externallicenselist);
-      getStorage("list").then(function(result) {
+      getStorage("list").then(function (result) {
         if (result.list && result.list.licenseListVersion) {
           var storedlist = result.list;
           var version = storedlist.licenseListVersion;
@@ -373,7 +376,7 @@ function workeronmessage(event) {
         list[type + "dict"][spdxid] = item.data;
         checkUpdateDone();
         console.log("Saving %s: %s", type, spdxid, item.data);
-        getStorage(spdxid).then(function(result) {
+        getStorage(spdxid).then(function (result) {
           if (
             result[spdxid] &&
             item.data &&
@@ -385,7 +388,7 @@ function workeronmessage(event) {
             console.log("Saving new %s %s", type, spdxid);
             var obj = {};
             obj[spdxid] = item.data;
-            chrome.storage.local.set(obj, function() {
+            chrome.storage.local.set(obj, function () {
               console.log("Storing", obj);
             });
           }
@@ -412,7 +415,7 @@ function workeronmessage(event) {
       chrome.tabs.sendMessage(tabId, {
         command: "next",
         spdxid: spdxid,
-        id: threadid
+        id: threadid,
       });
       unsorted[tabId][spdxid] = result;
       completedcompares++;
@@ -426,7 +429,7 @@ function workeronmessage(event) {
         dowork({
           command: "sortlicenses",
           licenses: unsorted[tabId],
-          tabId: tabId
+          tabId: tabId,
         });
         // unsorted[tabId] = {}
         diffcount[tabId] = 0;
@@ -440,7 +443,7 @@ function workeronmessage(event) {
       chrome.tabs.sendMessage(tabId, {
         command: "sortdone",
         result: result,
-        id: threadid
+        id: threadid,
       });
       break;
     case "diffnext":
@@ -455,15 +458,15 @@ function workeronmessage(event) {
         spdxid: spdxid,
         result: result,
         record: record,
-        id: threadid
+        id: threadid,
       });
       diffcount[tabId] = diffcount[tabId] - 1;
       if (diffcount[tabId] === 0) {
         status[tabId] = "Done";
-        for (let filter of Object.keys(filtered[tabId])) {
-          for (let item in filtered[tabId][filter]) {
-            let type = filtered[tabId][filter][item].type;
-            let itemdict = list[type + "dict"][item];
+        for (const filter of Object.keys(filtered[tabId])) {
+          for (const item in filtered[tabId][filter]) {
+            const type = filtered[tabId][filter][item].type;
+            const itemdict = list[type + "dict"][item];
             status[tabId] = "Background comparing";
             console.log("Background compare for %s", item);
             dowork({
@@ -475,7 +478,7 @@ function workeronmessage(event) {
               total: total,
               tabId: tabId,
               type: type,
-              background: true
+              background: true,
             });
           }
         }
@@ -490,12 +493,12 @@ function workeronmessage(event) {
       chrome.tabs.sendMessage(tabId, {
         command: "next",
         spdxid: spdxid,
-        id: threadid
+        id: threadid,
       });
-      if (filtered[tabId]["results"] === undefined) {
-        filtered[tabId]["results"] = {};
+      if (filtered[tabId].results === undefined) {
+        filtered[tabId].results = {};
       }
-      filtered[tabId]["results"][spdxid] = result;
+      filtered[tabId].results[spdxid] = result;
       unsorted[tabId][spdxid] = result;
       completedcompares++;
       total = Object.keys(urls).reduce((total, type) => {
@@ -504,14 +507,14 @@ function workeronmessage(event) {
       if (completedcompares === total) {
         console.log(
           "Done with background compare of %s for tab %s",
-          Object.keys(filtered[tabId]["results"]).length,
+          Object.keys(filtered[tabId].results).length,
           tabId
         );
         status[tabId] = "Done";
         dowork({
           command: "sortlicenses",
           licenses: unsorted[tabId],
-          tabId: tabId
+          tabId: tabId,
         });
         // unsorted[tabId] = {}
         diffcount[tabId] = 0;
@@ -525,7 +528,7 @@ function storeList(externallicenselist) {
   var obj = {};
   externallicenselist.lastupdate = Date.now();
   obj = {
-    list: externallicenselist
+    list: externallicenselist,
   };
   setStorage(obj);
 }
@@ -557,7 +560,7 @@ function loadList() {
           );
           updateList();
         } else {
-          for (let type of Object.keys(urls)) {
+          for (const type of Object.keys(urls)) {
             if (!list[type]) {
               continue;
             }
@@ -565,7 +568,7 @@ function loadList() {
               list[type + "dict"] = {};
             }
             for (let j = 0; j < list[type].length; j++) {
-              let line = list[type][j];
+              const line = list[type][j];
               let item = line[intspdxkey[type].id];
               console.log("Attempting to load %s from storage", item);
               getStorage(item).then((result, types = Object.keys(urls)) => {
@@ -590,7 +593,7 @@ function loadList() {
                   updateList();
                 }
                 if (
-                  types.every(type => {
+                  types.every((type) => {
                     return (
                       list[type] &&
                       list[type + "dict"] &&
@@ -636,9 +639,9 @@ function compareSelection(selection, tabId = activeTabId) {
   }
   filtered[tabId] = {};
   completedcompares = 0;
-  for (let type of Object.keys(urls)) {
-    for (let item of Object.keys(list[type + "dict"])) {
-      for (let filter in options.filters) {
+  for (const type of Object.keys(urls)) {
+    for (const item of Object.keys(list[type + "dict"])) {
+      for (const filter in options.filters) {
         if (list[type + "dict"][item][options.filters[filter]]) {
           if (filtered[tabId][filter] === undefined) {
             filtered[tabId][filter] = {};
@@ -659,9 +662,9 @@ function compareSelection(selection, tabId = activeTabId) {
     }
   }
   total = Object.keys(unsorted[tabId]).length;
-  for (let item in unsorted[tabId]) {
-    let type = unsorted[tabId][item].type;
-    let itemdict = list[type + "dict"][item];
+  for (const item in unsorted[tabId]) {
+    const type = unsorted[tabId][item].type;
+    const itemdict = list[type + "dict"][item];
     dowork({
       command: "compare",
       selection: selection,
@@ -670,13 +673,13 @@ function compareSelection(selection, tabId = activeTabId) {
       itemdict: itemdict,
       total: total,
       tabId: tabId,
-      type: type
+      type: type,
     });
     chrome.tabs.sendMessage(tabId, {
       message: "progressbarmax",
       value: total,
       stage: "Comparing licenses",
-      reset: true
+      reset: true,
     });
   }
 }
@@ -701,7 +704,7 @@ function launchPendingCompares() {
 }
 
 function restoreOptions(callbackFunction = null) {
-  getStorage("options").then(function(result) {
+  getStorage("options").then(function (result) {
     options = result.options;
     if (options === undefined) {
       options = defaultoptions;
@@ -799,9 +802,9 @@ function workerdone(id) {
 }
 
 // promisfy gets
-const getStorage = function(item) {
+const getStorage = function (item) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get(item, function(result) {
+    chrome.storage.local.get(item, function (result) {
       if (chrome.runtime.lastError) {
         reject(Error(chrome.runtime.lastError));
       } else {
@@ -811,9 +814,9 @@ const getStorage = function(item) {
   });
 };
 
-const setStorage = function(obj) {
+const setStorage = function (obj) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.set(obj, function() {
+    chrome.storage.local.set(obj, function () {
       if (chrome.runtime.lastError) {
         reject(Error(chrome.runtime.lastError));
       } else {
@@ -824,11 +827,11 @@ const setStorage = function(obj) {
   });
 };
 
-const checkUpdateDone = function() {
-  let types = Object.keys(urls);
+const checkUpdateDone = function () {
+  const types = Object.keys(urls);
   try {
     if (
-      types.every(type => {
+      types.every((type) => {
         return (
           list[type] &&
           list[type + "dict"] &&
@@ -840,7 +843,7 @@ const checkUpdateDone = function() {
       updating = false;
       launchPendingCompares();
     } else {
-      types.map(type => {
+      types.map((type) => {
         console.log(
           "Update in progress for %s %s/%s",
           type,
@@ -850,11 +853,12 @@ const checkUpdateDone = function() {
       });
     }
   } catch (err) {
+    console.log("Error in checkUpdateDone");
     throw err;
   }
 };
 
-chrome.runtime.onInstalled.addListener(function(details) {
+chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason === "install") {
     console.log("Updating list");
   } else if (details.reason === "update") {

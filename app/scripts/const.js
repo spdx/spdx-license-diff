@@ -1,7 +1,7 @@
 const filters = {
   deprecated: "isDeprecatedLicenseId",
   OSIApproved: "isOsiApproved",
-  FSFLibre: "isFsfLibre"
+  FSFLibre: "isFsfLibre",
 };
 
 const defaultoptions = {
@@ -11,13 +11,13 @@ const defaultoptions = {
   maxLengthDifference: 1500,
   maxworkers: 10,
   filters: {
-    deprecated: "isDeprecatedLicenseId"
-  }
+    deprecated: "isDeprecatedLicenseId",
+  },
 };
 
 const urls = {
   licenses: "https://spdx.org/licenses/licenses.json",
-  exceptions: "https://spdx.org/licenses/exceptions.json"
+  exceptions: "https://spdx.org/licenses/exceptions.json",
 };
 
 const newLicenseUrl = "http://13.57.134.254/app/submit_new_license/";
@@ -25,11 +25,11 @@ const newLicenseUrl = "http://13.57.134.254/app/submit_new_license/";
 const spdxkey = {
   licenses: {
     id: "licenseId",
-    text: "licenseText"
+    text: "licenseText",
   },
   exceptions: {
     id: "licenseExceptionId",
-    text: "licenseExceptionText"
-  }
+    text: "licenseExceptionText",
+  },
 };
 export { filters, defaultoptions, urls, spdxkey, newLicenseUrl };

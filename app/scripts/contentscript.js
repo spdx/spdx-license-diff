@@ -27,7 +27,7 @@ createBubble();
 // Event driven functions
 
 // This function responds to the UI and background.js
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.command) {
     case "clicked_browser_action":
       sendResponse({ status: "1" }); // send receipt confirmation
@@ -124,7 +124,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 // This function responds to changes to storage
-chrome.storage.onChanged.addListener(function(changes, area) {
+chrome.storage.onChanged.addListener(function (changes, area) {
   if (area === "local" && "options" in changes) {
     console.log("Detected changed options; reloading");
     restoreOptions();
@@ -138,7 +138,7 @@ chrome.storage.onChanged.addListener(function(changes, area) {
 function compareSelection(selection) {
   chrome.runtime.sendMessage({
     command: "compareselection",
-    selection: selection
+    selection: selection,
   });
 }
 
@@ -199,7 +199,7 @@ function processLicenses(showBest, processTime = 0) {
           selection: selection,
           spdxid: license,
           license: data,
-          record: i
+          record: i,
         });
         console.log("Generating diff for " + license + " total " + diffsdue);
       } else {
@@ -271,7 +271,7 @@ function displayDiff(html, time = processTime) {
   updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
   document.getElementById("licenses").addEventListener(
     "change",
-    function() {
+    function () {
       if (this.value !== selectedLicense) {
         selectedLicense = this.value;
         spdxid = spdx[this.options.selectedIndex].spdxid;
@@ -325,7 +325,7 @@ function showFilters(form) {
     checkbox.checked = options.filters[filter];
     checkbox.addEventListener(
       "change",
-      function() {
+      function () {
         console.log("%s changed to %s", this, this.checked);
         if (this.checked) {
           selectedfilters[this.id] = this.value;
@@ -413,7 +413,7 @@ function createBubble() {
 // Close the bubble when we click on the screen.
 document.addEventListener(
   "mousedown",
-  function(e) {
+  function (e) {
     if (
       e.target.id === "license_bubble" ||
       $(e.target).parents("#license_bubble").length ||
@@ -440,11 +440,11 @@ function createNewLicenseButton(form) {
   button.id = "newLicenseButton";
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
-  button.addEventListener("click", function() {
+  button.addEventListener("click", function () {
     chrome.runtime.sendMessage({
       command: "submitNewLicense",
       selection: selection,
-      url: location.href
+      url: location.href,
     });
   });
 }
@@ -460,7 +460,7 @@ function renderBubble(mouseX, mouseY, selection) {
   bubbleDOM.style.visibility = "visible";
   $("html,body").animate(
     {
-      scrollTop: $("#progress_bubble").offset().top
+      scrollTop: $("#progress_bubble").offset().top,
     },
     "fast"
   );
@@ -500,7 +500,7 @@ function updateProgressBar(max, value, visible = true) {
 }
 
 function restoreOptions() {
-  chrome.storage.local.get(["options"], function(result) {
+  chrome.storage.local.get(["options"], function (result) {
     options = result.options;
     if (options === undefined) {
       options = defaultoptions;
