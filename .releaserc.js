@@ -6,16 +6,16 @@ module.exports = {
       "@semantic-release/exec",
       {
         verifyReleaseCmd:
-          "cd app && mversion ${nextRelease.version} && git add manifest.json",
-        prepareCmd: "yarn buildall"
-      }
+          "cd app && yarn run mversion ${nextRelease.version} && git add manifest.json",
+        prepareCmd: "yarn buildall",
+      },
     ],
     "@semantic-release/release-notes-generator",
     [
       "@semantic-release/changelog",
       {
-        changelogTitle: "# Changelog"
-      }
+        changelogTitle: "# Changelog",
+      },
     ],
     ["@semantic-release/npm", { npmPublish: false }],
     "@semantic-release/git",
@@ -25,22 +25,22 @@ module.exports = {
         assets: [
           {
             path: "packages/*.chrome.zip",
-            label: "Chrome"
+            label: "Chrome",
           },
           {
             path: "packages/*.firefox.xpi.zip",
-            label: "Firefox"
+            label: "Firefox",
           },
           {
             path: "packages/*.edge.zip",
-            label: "Edge"
+            label: "Edge",
           },
           {
             path: "packages/*.opera.crx.zip",
-            label: "Opera"
-          }
-        ]
-      }
-    ]
-  ]
+            label: "Opera",
+          },
+        ],
+      },
+    ],
+  ],
 };

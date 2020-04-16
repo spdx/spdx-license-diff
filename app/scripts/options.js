@@ -16,7 +16,7 @@ function saveOptions() {
   var maxworkers = document.getElementById("maxWorkers").value;
   var filters = {};
   if (document.getElementById("deprecated").checked) {
-    filters["deprecated"] = document.getElementById("deprecated").value;
+    filters.deprecated = document.getElementById("deprecated").value;
   }
 
   var options = {
@@ -25,13 +25,13 @@ function saveOptions() {
     minpercentage: parseInt(minpercentage),
     maxLengthDifference: parseInt(maxLengthDifference),
     maxworkers: parseInt(maxworkers),
-    filters: filters
+    filters: filters,
   };
-  chrome.storage.local.set({ options: options }, function() {
+  chrome.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
     var status = document.getElementById("status");
     status.textContent = "Options saved.";
-    setTimeout(function() {
+    setTimeout(function () {
       status.textContent = "";
     }, 1500);
   });
@@ -40,7 +40,7 @@ function saveOptions() {
 // Restores values using the preferences
 // stored in chrome.storage.
 function restoreOptions() {
-  chrome.storage.local.get(["options"], function(result) {
+  chrome.storage.local.get(["options"], function (result) {
     if (result.options === undefined) {
       result.options = defaultoptions;
     }
@@ -85,16 +85,16 @@ function reset() {
   form.reset();
 }
 function loadList() {
-  chrome.storage.local.get(["list"], function(result) {
+  chrome.storage.local.get(["list"], function (result) {
     var licenseversion = document.getElementById("licenseversion");
     var status = document.getElementById("updatestatus");
-    if (result.list && result.list["licenseListVersion"]) {
+    if (result.list && result.list.licenseListVersion) {
       var list = result.list;
-      var lastupdate = list["lastupdate"];
-      var releaseDate = list["releaseDate"];
+      var lastupdate = list.lastupdate;
+      var releaseDate = list.releaseDate;
       licenseversion.textContent =
         "v." +
-        list["licenseListVersion"] +
+        list.licenseListVersion +
         " (" +
         releaseDate +
         ") with " +
@@ -108,18 +108,18 @@ function loadList() {
   });
 }
 function updateList() {
-  chrome.storage.local.remove(["list"], function(result) {
+  chrome.storage.local.remove(["list"], function (result) {
     chrome.runtime.sendMessage({
       command: "updatelicenselist",
       url: chrome.extension.getURL(""),
-      remote: true
+      remote: true,
     });
   });
 }
 function checkStorage() {
   var status = document.getElementById("storagestatus");
   try {
-    chrome.storage.local.getBytesInUse(null, function(result) {
+    chrome.storage.local.getBytesInUse(null, function (result) {
       if (result) {
         status.textContent = (result / 1024 / 1024).toFixed(2) + " MB";
       } else {
@@ -129,7 +129,7 @@ function checkStorage() {
   } catch (err) {
     // Necessary since Firefox doesn't support getBytesInUse
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
-    browser.storage.local.get(function(items) {
+    browser.storage.local.get(function (items) {
       var result = JSON.stringify(items).length;
       if (result) {
         status.textContent = (result / 1024 / 1024).toFixed(2) + " MB";
@@ -140,7 +140,7 @@ function checkStorage() {
   }
 }
 function clearStorage() {
-  chrome.storage.local.clear(function(result) {
+  chrome.storage.local.clear(function (result) {
     checkStorage();
   });
 }

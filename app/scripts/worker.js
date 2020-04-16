@@ -6,7 +6,7 @@ import Levenshtein from "js-levenshtein";
 var id;
 var dmp = new DiffMatchPatch(); // options may be passed to constructor; see below
 
-self.onmessage = function(event) {
+self.onmessage = function (event) {
   id = event.data.id;
   switch (event.data.command) {
     case "process":
@@ -38,20 +38,20 @@ self.onmessage = function(event) {
       tabId = event.data.tabId;
       sortlicenses(event.data.licenses, tabId);
       break;
-    case "generateDiff":
+    case "generateDiff": {
       spdxid = event.data.spdxid;
-      let text = event.data.license;
+      const text = event.data.license;
       var record = event.data.record;
       tabId = event.data.tabId;
       generateDiff(event.data.selection, spdxid, text, record, tabId);
       break;
-
+    }
     default:
   }
 };
 // load files array with list of files to download
 async function getSPDXlist() {
-  for (let type of Object.keys(urls)) {
+  for (const type of Object.keys(urls)) {
     var url = urls[type];
     try {
       var result = await getJSON(url);
@@ -62,23 +62,24 @@ async function getSPDXlist() {
         value: total,
         stage: "Updating " + type,
         id: id,
-        reset: true
+        reset: true,
       });
       postMessage({
         command: "savelicenselist",
         value: result,
         id: id,
-        type: type
+        type: type,
       });
       console.log(id, "Updating: ", result);
-      result[type] = result[type].map(async item => {
+      result[type] = result[type].map(async (item) => {
         try {
           return await getJSON(item.detailsUrl.replace("http:", "https:"));
         } catch (err) {
+          console.log("Error in Update");
           throw err;
         }
       });
-      result[type] = result[type].map(async function(item) {
+      result[type] = result[type].map(async function (item) {
         item = await item;
         // var md5 = require('md5-jkmyers')
         // hash = md5(item)
@@ -86,19 +87,19 @@ async function getSPDXlist() {
           command: "saveitem",
           data: item,
           id: id,
-          type: type
+          type: type,
         });
         postMessage({
           command: "progressbarmax",
           value: total,
           stage: "Updating " + type,
           id: id,
-          reset: true
+          reset: true,
         });
         postMessage({
           command: "progressbarvalue",
           value: index++,
-          id: id
+          id: id,
         });
         // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
       });
@@ -129,7 +130,7 @@ function compareitem(
       stage: "Comparing items",
       id: id,
       reset: true,
-      tabId: tabId
+      tabId: tabId,
     });
   }
   var result = {};
@@ -168,7 +169,7 @@ function compareitem(
       distance: distance,
       text: data,
       percentage: percentage,
-      details: item
+      details: item,
       // patterns: result.patterns
     };
   } else {
@@ -181,7 +182,7 @@ function compareitem(
       distance: difference,
       text: data,
       percentage: 0,
-      details: null // details is unneeded since these will always be end of the list
+      details: null, // details is unneeded since these will always be end of the list
       // patterns: result.patterns
     };
   }
@@ -191,7 +192,7 @@ function compareitem(
       spdxid: spdxid,
       result: result,
       id: id,
-      tabId: tabId
+      tabId: tabId,
     });
   } else {
     postMessage({
@@ -199,7 +200,7 @@ function compareitem(
       spdxid: spdxid,
       result: result,
       id: id,
-      tabId: tabId
+      tabId: tabId,
     });
   }
   // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
@@ -212,7 +213,7 @@ function sortlicenses(licenses, tabId) {
     stage: "Sorting licenses",
     id: id,
     reset: true,
-    tabId: tabId
+    tabId: tabId,
   });
   console.log(
     tabId,
@@ -226,11 +227,11 @@ function sortlicenses(licenses, tabId) {
       distance: licenses[license].distance,
       difftext: licenses[license].text,
       percentage: licenses[license].percentage,
-      details: licenses[license].details
+      details: licenses[license].details,
     });
     postMessage({ command: "next", spdxid: license, id: id, tabId: tabId });
   }
-  sortable.sort(function(a, b) {
+  sortable.sort(function (a, b) {
     return b.percentage - a.percentage;
   });
   postMessage({ command: "sortdone", result: sortable, id: id, tabId: tabId });
@@ -255,7 +256,7 @@ function generateDiff(selection, spdxid, license, record, tabId) {
     result: result,
     record: record,
     id: id,
-    tabId: tabId
+    tabId: tabId,
   });
 }
 
@@ -299,7 +300,7 @@ function processVariables(str) {
   var pattern2 = "";
   var result = {
     data: str,
-    patterns: []
+    patterns: [],
   };
   var match;
   var variable = {};
@@ -333,24 +334,24 @@ function processVariables(str) {
 }
 
 // promisfy gets
-const get = function(url) {
+const get = function (url) {
   return new Promise((resolve, reject) => {
     var x = new XMLHttpRequest();
     x.open("GET", url);
-    x.onload = function() {
+    x.onload = function () {
       if (x.status === 200) {
         resolve(x.response);
       } else {
         reject(Error(x.statusText));
       }
     };
-    x.onerror = function() {
+    x.onerror = function () {
       reject(Error("Network Error"));
     };
     x.send();
   });
 };
 
-const getJSON = async function(url) {
+const getJSON = async function (url) {
   return get(url).then(JSON.parse);
 };
