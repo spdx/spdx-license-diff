@@ -386,6 +386,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
       option.setAttribute("disabled", "disabled");
     }
   }
+  createNewLicenseButton(form);
 }
 
 // Display helper functions for modifying the DOM
@@ -429,6 +430,24 @@ document.addEventListener(
   },
   false
 );
+
+// Add new license button.
+function createNewLicenseButton(form) {
+  if ($("#newLicenseButton").length) return;
+  var button = document.createElement("button");
+  button.innerHTML = "Submit selection as new license";
+  button.type = "button";
+  button.id = "newLicenseButton";
+  form.appendChild(button);
+  form.appendChild(document.createElement("br"));
+  button.addEventListener("click", function() {
+    chrome.runtime.sendMessage({
+      command: "submitNewLicense",
+      selection: selection,
+      url: location.href
+    });
+  });
+}
 
 // Move that bubble to the appropriate location.
 function renderBubble(mouseX, mouseY, selection) {

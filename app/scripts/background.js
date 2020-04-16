@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import _ from "underscore";
-import { spdxkey, defaultoptions, urls } from "./const.js";
+import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
 
 var version = browser.runtime.getManifest().version;
 var list = {};
@@ -187,6 +187,25 @@ function handleMessage(request, sender, sendResponse) {
       status[activeTabId] = "Diffing";
       diffcount[activeTabId] = diffcount[activeTabId] + 1;
       dowork(request);
+      break;
+    case "submitNewLicense":
+      activeTabId = sender.tab.id;
+      let injectCode = `
+          document.getElementById('sourceUrl').value = '${request.url}';
+          document.getElementById('comments').value = 'Prepared by spdx-license-diff ${version}';
+          document.getElementById('text').value = \`${request.selection}\`;
+        `;
+      console.log(
+        "tab %s: Submitting new license with %s:",
+        activeTabId,
+        injectCode,
+        request
+      );
+      browser.tabs.create({ url: newLicenseUrl }).then(() => {
+        browser.tabs.executeScript({
+          code: injectCode
+        });
+      });
       break;
     default:
       // console.log("Proxying to worker", request);

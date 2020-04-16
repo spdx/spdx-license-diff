@@ -20,6 +20,8 @@ const urls = {
   exceptions: "https://spdx.org/licenses/exceptions.json"
 };
 
+const newLicenseUrl = "http://13.57.134.254/app/submit_new_license/";
+
 const spdxkey = {
   licenses: {
     id: "licenseId",
@@ -30,4 +32,4 @@ const spdxkey = {
     text: "licenseExceptionText"
   }
 };
-export { filters, defaultoptions, urls, spdxkey };
+export { filters, defaultoptions, urls, spdxkey, newLicenseUrl };
