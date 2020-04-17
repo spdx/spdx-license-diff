@@ -59,12 +59,6 @@
     ],
     "plugins": [
       "@semantic-release/commit-analyzer",
-      [
-        "@semantic-release/exec",
-        {
-          "verifyConditions": "yarn buildall"
-        }
-      ],
       "@semantic-release/release-notes-generator",
       [
         "@semantic-release/changelog",
@@ -107,7 +101,7 @@
         {
           "prepare": [
             {
-              "path": "dist/chrome",
+              "path": "dist/chrome/",
               "asset": "spdx-license-diff.v${version}.chrome.zip"
             }
           ],
@@ -124,7 +118,7 @@
         {
           "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
           "targetXpi": "spdx-license-diff.v${version}.firefox.xpi.zip",
-          "sourceDir": "dist/firefox",
+          "sourceDir": "dist/firefox/",
           "manifestPath": "manifest.json"
         }
       ]

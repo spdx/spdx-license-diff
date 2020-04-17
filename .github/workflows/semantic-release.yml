@@ -43,6 +43,9 @@ jobs:
       - name: Lint
         run: |
           yarn lint
+      - name: Build
+        run: |
+          yarn buildall
       - name: Semantic Release Action
         id: semantic
         uses: codfish/semantic-release-action@v1
