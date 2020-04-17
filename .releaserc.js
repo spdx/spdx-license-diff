@@ -5,8 +5,8 @@ module.exports = {
     [
       "@semantic-release/exec",
       {
-        verifyReleaseCmd:
-          "cd app && yarn run mversion ${nextRelease.version} && git add manifest.json",
+        // verifyReleaseCmd:
+        //   "cd app && yarn run mversion ${nextRelease.version} && git add manifest.json",
         prepareCmd: "yarn buildall",
       },
     ],
@@ -38,6 +38,49 @@ module.exports = {
           {
             path: "packages/*.opera.crx.zip",
             label: "Opera",
+          },
+        ],
+      },
+    ],
+    [
+      "semantic-release-chrome",
+      {
+        prepare: [
+          {
+            path: "dist/chrome",
+            asset: "spdx-license-diff.v${version}.chrome.zip",
+          },
+        ],
+        publish: [
+          {
+            asset: "spdx-license-diff.v${version}.chrome.zip",
+            extensionId: "kfoadicmilbgnicoldjmccpaicejacdh",
+          },
+        ],
+      },
+    ],
+    [
+      "semantic-release-firefox-add-on",
+      {
+        verifyConditions: [
+          {
+            extensionId: "{95b7d495-ee73-4a03-b918-670a9d77c871}",
+            targetXpi: "spdx-license-diff.v${version}.firefox.xpi.zip",
+            sourceDir: "dist/firefox",
+            manifestPath: "manifest.json",
+          },
+        ],
+        prepare: [
+          {
+            sourceDir: "dist/firefox",
+            manifestPath: "manifest.json",
+          },
+        ],
+        publish: [
+          {
+            targetXpi: "spdx-license-diff.v${version}.firefox.xpi.zip",
+            sourceDir: "dist/firefox",
+            extensionId: "{95b7d495-ee73-4a03-b918-670a9d77c871}",
           },
         ],
       },
