@@ -1,93 +1,51 @@
 # Changelog
 
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
 ### Features
 
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
+- add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
 
 # [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
 
-
 ### Features
 
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
-
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
-### Features
-
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
-
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
-### Features
-
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
-
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
-### Features
-
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
-
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
-### Features
-
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
-
-# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
-
-
-### Features
-
-* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
+- add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
 
 ## [0.3.2](https://github.com/spdx/spdx-license-diff/compare/v0.3.1...v0.3.2) (2019-10-05)
 
-
 ### Bug Fixes
 
-* add timeout for updating state ([853e4bf](https://github.com/spdx/spdx-license-diff/commit/853e4bf))
-* bump firefox min_version ([e84b4b5](https://github.com/spdx/spdx-license-diff/commit/e84b4b5))
-* fix background compares processing ([1c8a585](https://github.com/spdx/spdx-license-diff/commit/1c8a585))
-* fix failure to update completion state ([fd7ef84](https://github.com/spdx/spdx-license-diff/commit/fd7ef84))
-* prevent adding extra compares from same tab ([4887441](https://github.com/spdx/spdx-license-diff/commit/4887441))
-* prevent unnecessary final sorts ([a5898c9](https://github.com/spdx/spdx-license-diff/commit/a5898c9))
+- add timeout for updating state ([853e4bf](https://github.com/spdx/spdx-license-diff/commit/853e4bf))
+- bump firefox min_version ([e84b4b5](https://github.com/spdx/spdx-license-diff/commit/e84b4b5))
+- fix background compares processing ([1c8a585](https://github.com/spdx/spdx-license-diff/commit/1c8a585))
+- fix failure to update completion state ([fd7ef84](https://github.com/spdx/spdx-license-diff/commit/fd7ef84))
+- prevent adding extra compares from same tab ([4887441](https://github.com/spdx/spdx-license-diff/commit/4887441))
+- prevent unnecessary final sorts ([a5898c9](https://github.com/spdx/spdx-license-diff/commit/a5898c9))
 
 ## [0.3.1](https://github.com/spdx/spdx-license-diff/compare/v0.3.0...v0.3.1) (2019-10-04)
 
-
 ### Bug Fixes
 
-* check for exceptions prior to compare ([c39ae36](https://github.com/spdx/spdx-license-diff/commit/c39ae36))
-* fix async steps preventing update completion ([d7a2f8c](https://github.com/spdx/spdx-license-diff/commit/d7a2f8c))
-* fix bug where list not updated with item data ([bdab719](https://github.com/spdx/spdx-license-diff/commit/bdab719))
-* fix bug where saved list would override work due to async ([346dcea](https://github.com/spdx/spdx-license-diff/commit/346dcea))
-* fix case where runningworkers became negative ([7ad83ea](https://github.com/spdx/spdx-license-diff/commit/7ad83ea))
-* force reload of list on update ([9988627](https://github.com/spdx/spdx-license-diff/commit/9988627))
+- check for exceptions prior to compare ([c39ae36](https://github.com/spdx/spdx-license-diff/commit/c39ae36))
+- fix async steps preventing update completion ([d7a2f8c](https://github.com/spdx/spdx-license-diff/commit/d7a2f8c))
+- fix bug where list not updated with item data ([bdab719](https://github.com/spdx/spdx-license-diff/commit/bdab719))
+- fix bug where saved list would override work due to async ([346dcea](https://github.com/spdx/spdx-license-diff/commit/346dcea))
+- fix case where runningworkers became negative ([7ad83ea](https://github.com/spdx/spdx-license-diff/commit/7ad83ea))
+- force reload of list on update ([9988627](https://github.com/spdx/spdx-license-diff/commit/9988627))
 
 # [0.3.0](https://github.com/spdx/spdx-license-diff/compare/v0.2.1...v0.3.0) (2019-10-03)
 
-
 ### Bug Fixes
 
-* remove unsafe innerhtml assignment ([8201ce2](https://github.com/spdx/spdx-license-diff/commit/8201ce2))
-* remove unsupported and unused runtime.onsuspend ([2c9644c](https://github.com/spdx/spdx-license-diff/commit/2c9644c))
-* update icon size ([7c8e7e0](https://github.com/spdx/spdx-license-diff/commit/7c8e7e0))
-
+- remove unsafe innerhtml assignment ([8201ce2](https://github.com/spdx/spdx-license-diff/commit/8201ce2))
+- remove unsupported and unused runtime.onsuspend ([2c9644c](https://github.com/spdx/spdx-license-diff/commit/2c9644c))
+- update icon size ([7c8e7e0](https://github.com/spdx/spdx-license-diff/commit/7c8e7e0))
 
 ### Features
 
-* add initial exceptions support ([22e2891](https://github.com/spdx/spdx-license-diff/commit/22e2891))
+- add initial exceptions support ([22e2891](https://github.com/spdx/spdx-license-diff/commit/22e2891))
 
 ## v0.2.1 (07/07/2019)
+
 - [Update build script to package license info](https://github.com/spdx/spdx-license-diff/commit/e70fcfc3f1dc99d72c2ec45cf07cfad9100cfb37) - @alandtse
 - [Fix typo in markdown for Firefox Add-ons](https://github.com/spdx/spdx-license-diff/commit/ecce4473a336932c83f8c0db62281ddb3fcfeff3) - @alandtse
 - [Bump to 0.2.1](https://github.com/spdx/spdx-license-diff/commit/f9acd8299dc16eb0314cb8deaf4305a23d2072ab) - @alandtse
@@ -104,6 +62,7 @@
 ---
 
 ## v0.2.0 (04/07/2019)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/7e110c20798a6ea84f7aca10bfbd848283de5c59) - @alandtse
 - [Bump version](https://github.com/spdx/spdx-license-diff/commit/e078ca7a58e2d02ab61528edadfac663c1a062d0) - @alandtse
 - [Fix bug where firefox didn't report local storage size](https://github.com/spdx/spdx-license-diff/commit/5f185c6dd910e659d608a6a7e2fe55884bb09ff6) - @alandtse
@@ -122,6 +81,7 @@
 ---
 
 ## v0.1.1 (10/01/2019)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/391bcb60f3e051183f060f086d953f89fa6bca3b) - @alandtse
 - [Add Valid-License-Identifier to LICENSE file](https://github.com/spdx/spdx-license-diff/commit/7ec63f120a3995df908e9c6b774a6b4b28350cba) - @alandtse
 - [Fix infinite spawning of workers by saving options as ints](https://github.com/spdx/spdx-license-diff/commit/b86b944b5eb53cfe915c4e5669df373074cb573e) - @alandtse
@@ -129,6 +89,7 @@
 ---
 
 ## v0.1.0 (21/12/2018)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/adce24d35b3f7e4b287fc8104afeca76852987a3) - @alandtse
 - [Address #5 by changing name and other tasks](https://github.com/spdx/spdx-license-diff/commit/582946059616a8102164719a4d00bcb7a94f60b3) - @alandtse
 - [Convert to eslint](https://github.com/spdx/spdx-license-diff/commit/873f7f43e26e36b0c4982290698298c680c84c0b) - @alandtse
@@ -136,6 +97,7 @@
 ---
 
 ## v0.0.7 (17/12/2018)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/203c4cbb18713314afc6a34f458c6a0048fd5462) - @alandtse
 - [Add changelog](https://github.com/spdx/spdx-license-diff/commit/53f24532dd0b6bfd0e8ac2c9f7586a47eecdd176) - @alandtse
 - [Clean up worker code based on jshint](https://github.com/spdx/spdx-license-diff/commit/4be2fecf01de99dce0f69695c824620785d37108) - @alandtse
@@ -143,6 +105,7 @@
 ---
 
 ## v0.0.6 (15/12/2018)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/4dc28218c7d329229a80c926fe067260fd21a751) - @alandtse
 - [Fix #8 by adding check for content script insertion success](https://github.com/spdx/spdx-license-diff/commit/cd6fbcc613bed6df5b1ffb2f0c9b497b25c8c810) - @alandtse
 - [Refactor handleUpdate for tabs](https://github.com/spdx/spdx-license-diff/commit/6d418234d534f5155cdc6b15350fd192276e47cf) - @alandtse
@@ -153,6 +116,7 @@
 ---
 
 ## v0.0.5 (14/12/2018)
+
 - [add changelog](https://github.com/spdx/spdx-license-diff/commit/6252e14a74187e2b69a6a82032b675fa589dcfb1) - @alandtse
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/c1b2fcec7ed16c802646cc1a0f5df414203d7ddd) - @alandtse
 - [Add further checks to load list prior to compare](https://github.com/spdx/spdx-license-diff/commit/e522eb48ad2fd8db3ed05aa36c5f1e0a94af3d6d) - @alandtse
@@ -160,11 +124,13 @@
 ---
 
 ## v0.0.4 (13/12/2018)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/2737192005a4fd190eaa91b82b882459704cbada) - @alandtse
 
 ---
 
 ## v0.0.3 (08/11/2018)
+
 - [Add changelog generation using gren to tasks](https://github.com/spdx/spdx-license-diff/commit/3f778a63bbb03d08fe00480964e499570af5f16f) - @alandtse
 - [Update changelog](https://github.com/spdx/spdx-license-diff/commit/f4090ab460c128ef771f8f062e10682071ae75e0) - @alandtse
 - [Add gren changelog generation](https://github.com/spdx/spdx-license-diff/commit/0108481dc8e0e3ee4c333d2d6ecc9c259c3537cd) - @alandtse
@@ -173,12 +139,14 @@
 ---
 
 ## v0.0.2 (26/10/2018)
+
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/423df1977216fcdf1de153e05bbbcad616ea65ab) - @alandtse
 - [Move addListeners to top level to resolve #3](https://github.com/spdx/spdx-license-diff/commit/d36deb39316981194782dff1c6e87d28c19cb004) - @alandtse
 
 ---
 
 ## v0.0.1 (15/08/2018)
+
 - [Updating README to add Firefox instructions](https://github.com/spdx/spdx-license-diff/commit/cce82e40ee845cde38607a40a253a8504cadfca4) - @alandtse
 - [bump package version](https://github.com/spdx/spdx-license-diff/commit/7172a0a492e3e53f8f5ee694c2b39f27c1bd3546) - @alandtse
 - [Add Firefox support](https://github.com/spdx/spdx-license-diff/commit/405e6205c9509c3664b9619c4fdcd42f9ad9cee6) - @alandtse
