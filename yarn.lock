@@ -7080,7 +7080,7 @@ marked@^0.7.0:
   resolved "https://registry.yarnpkg.com/marked/-/marked-0.7.0.tgz#b64201f051d271b1edc10a04d1ae9b74bb8e5c0e"
   integrity sha512-c+yYdCZJQrsRjTPhUx7VKkApw9bwDkNbHUKo1ovgcfDjb2kc8rLuRbIFyXL5WOEUwzSSKo3IXpph2K6DqB/KZg==
 
-marked@^0.8.0:
+marked@^0.8.0, marked@^0.8.2:
   version "0.8.2"
   resolved "https://registry.yarnpkg.com/marked/-/marked-0.8.2.tgz#4faad28d26ede351a7a1aaa5fec67915c869e355"
   integrity sha512-EGwzEeCcLniFX51DhTpmTom+dSA/MG/OBUDjnWtHbEnjAH180VzUeAw+oE4+Zv+CoYBWyRlYOTR0N8SO9R1PVw==
@@ -9647,7 +9647,7 @@ schema-utils@^2.6.5:
     ajv "^6.12.0"
     ajv-keywords "^3.4.1"
 
-semantic-release-chrome@^1.1.1:
+semantic-release-chrome@^1.1.3:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/semantic-release-chrome/-/semantic-release-chrome-1.1.3.tgz#9418b6615f7646addf9add30f49cd5e9ff5e149a"
   integrity sha512-UPB0L4cxgfYSTuvBc1CfE6fw5Yr7K6qXIYctpE6/1qnVktItoYu49uXnTpjOV2umtjdgzWuQHmWnHTZRTZZwbQ==
@@ -9657,6 +9657,13 @@ semantic-release-chrome@^1.1.1:
     archiver "3.0.0"
     chrome-webstore-upload "0.2.2"
     fs-extra "7.0.1"
+
+semantic-release-firefox-add-on@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/semantic-release-firefox-add-on/-/semantic-release-firefox-add-on-0.2.5.tgz#f9ec00a0037a2474eb11832de1df1ccca0272324"
+  integrity sha512-1lzwGfqBlC9jt3/Oq1PmX068gbAX8Wz71bEq5TMgQMgZHIxw/Z2KXbILFDaIbYDRkreJrxDxlpf1YCBsctopwg==
+  dependencies:
+    web-ext "^4.0.0"
 
 semantic-release@^17:
   version "17.0.4"
@@ -11425,7 +11432,7 @@ wcwidth@^1.0.0:
   dependencies:
     defaults "^1.0.3"
 
-web-ext@^4.1.0:
+web-ext@^4.0.0, web-ext@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/web-ext/-/web-ext-4.1.0.tgz#7175a539971014d9334017b98d6d7a59aea23ace"
   integrity sha512-nhAeZ3BHI4rCT/J+s7JHg0U3G6qUMV8Bi44ohWm8X6GjlQV8tGcD6rkvN4Zk2zzMGaF9sHUOcRjyN79Ih8P/PQ==
