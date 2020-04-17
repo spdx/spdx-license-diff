@@ -122,27 +122,10 @@
       [
         "semantic-release-firefox-add-on",
         {
-          "verifyConditions": [
-            {
-              "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
-              "targetXpi": "spdx-license-diff.v${version}.firefox.xpi.zip",
-              "sourceDir": "dist/firefox",
-              "manifestPath": "manifest.json"
-            }
-          ],
-          "prepare": [
-            {
-              "sourceDir": "dist/firefox",
-              "manifestPath": "manifest.json"
-            }
-          ],
-          "publish": [
-            {
-              "targetXpi": "spdx-license-diff.v${version}.firefox.xpi.zip",
-              "sourceDir": "dist/firefox",
-              "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}"
-            }
-          ]
+          "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
+          "targetXpi": "spdx-license-diff.v${version}.firefox.xpi.zip",
+          "sourceDir": "dist/firefox",
+          "manifestPath": "manifest.json"
         }
       ]
     ]
