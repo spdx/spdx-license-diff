@@ -47,8 +47,8 @@ jobs:
         run: |
           yarn buildall
       - name: Semantic Release Action
-        id: semantic
-        uses: codfish/semantic-release-action@v1
+        run: |
+          yarn semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
