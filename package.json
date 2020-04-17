@@ -102,12 +102,12 @@
           "prepare": [
             {
               "path": "dist/chrome/",
-              "asset": "spdx-license-diff.v${version}.chrome.zip"
+              "asset": "spdx-license-diff.chrome.zip"
             }
           ],
           "publish": [
             {
-              "asset": "spdx-license-diff.v${version}.chrome.zip",
+              "asset": "spdx-license-diff.chrome.zip",
               "extensionId": "kfoadicmilbgnicoldjmccpaicejacdh"
             }
           ]
@@ -117,7 +117,7 @@
         "semantic-release-firefox-add-on",
         {
           "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
-          "targetXpi": "spdx-license-diff.v${version}.firefox.xpi.zip",
+          "targetXpi": "spdx-license-diff.firefox.xpi.zip",
           "sourceDir": "dist/firefox/",
           "manifestPath": "manifest.json"
         }
