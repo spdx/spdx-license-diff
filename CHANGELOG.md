@@ -21,6 +21,13 @@
 
 * add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
 
+# [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
+
+
+### Features
+
+* add submit new license button ([1b991ac](https://github.com/spdx/spdx-license-diff/commit/1b991acae9f249fa40111bd4d9fe5dea273af0b6)), closes [#19](https://github.com/spdx/spdx-license-diff/issues/19)
+
 ## [0.3.2](https://github.com/spdx/spdx-license-diff/compare/v0.3.1...v0.3.2) (2019-10-05)
 
 
