@@ -11,8 +11,8 @@
     "lint": "eslint app && web-ext lint -s app",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "generate-attribution --production",
-    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge && yarn build firefox -m",
-    "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox -m && yarn build opera && yarn build edge && yarn build firefox",
+    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox -m && yarn build opera && yarn build edge",
+    "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox -m && yarn build opera && yarn build edge",
     "buildall": "yarn clean && yarn attribution && yarn production"
   },
   "standard": {
