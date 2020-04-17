@@ -99,7 +99,7 @@
       [
         "semantic-release-chrome",
         {
-          "path": "dist/chrome",
+          "distFolder": "dist/chrome",
           "asset": "spdx-license-diff.chrome.zip",
           "extensionId": "kfoadicmilbgnicoldjmccpaicejacdh"
         }
