@@ -62,7 +62,7 @@
       [
         "@semantic-release/exec",
         {
-          "prepareCmd": "yarn buildall"
+          "verifyConditions": "yarn buildall"
         }
       ],
       "@semantic-release/release-notes-generator",
