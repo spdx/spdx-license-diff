@@ -35,7 +35,7 @@
     "eslint-plugin-standard": "^4.0.0",
     "eslint-standard": "^1.0.2",
     "github-release-notes": "^0.17.0",
-    "mversion": "^1.13.0",
+    "mversion": "^2.0.0",
     "oss-attribution-generator": "^1.7.1",
     "prettier": "^2.0.4",
     "semantic-release": "^17",
