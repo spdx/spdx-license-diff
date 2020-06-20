@@ -375,6 +375,16 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
       " differences (" +
       percentage +
       "% match)";
+    if (percentage === 100) {
+      text =
+        value +
+        " : " +
+        arr[i].distance +
+        " differences (" +
+        percentage +
+        "% template match) ";
+    }
+
     if (Number(percentage) < Number(minimum)) {
       // No match at all
       break;
