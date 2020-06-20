@@ -23,4 +23,4 @@ Get it from the [Chrome Web Store](https://chrome.google.com/webstore/detail/spd
 
 # License
 
-We are initially [GPL-3.0-or-later](LICENSE) but will move to Apache-2.0 as soon as we [refactor the stackoverflow code](#7).
+We are initially [GPL-3.0-or-later](LICENSE) but will move to Apache-2.0 as soon as we [refactor the stackoverflow code](https://github.com/spdx/spdx-license-diff/issues/7).
