@@ -137,6 +137,7 @@ function compareitem(
   var count2 = selection.length;
   // console.log(id, "Processing selection of " + count2 + " chars.");
   var data = item[spdxkey[type].text];
+  var templateData = item.standardLicenseTemplate;
   var count = data.length;
   var locre = data.match(/\r?\n/g);
   var loc = locre ? locre.length : 0;
@@ -145,26 +146,43 @@ function compareitem(
   var difference = Math.abs(count2 - count);
   var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
+  var templateMatch =
+    typeof templateData !== "undefined"
+      ? processVariables(templateData)
+      : false;
+  var distance = 100;
+  var percentage;
+  if (
+    templateMatch &&
+    cleanText(selection).match(cleanText(templateMatch.matchRegex))
+  ) {
+    distance = 0;
+    percentage = 100;
+    console.log(tabId, id, spdxid + " - Template Match");
+  }
   if (
     difference <= maxLength &&
     (maxLengthDifference === 0 || difference < maxLengthDifference)
   ) {
-    var distance = Levenshtein(cleanText(data), cleanText(selection));
-    var percentage = (((maxLength - distance) / maxLength) * 100).toFixed(1);
-    console.log(
-      tabId,
-      id,
-      spdxid +
-        " - Levenshtein Distance (clean): " +
-        distance +
-        " (" +
-        percentage +
-        "%)" +
-        " Length Difference: " +
-        difference +
-        " LOC Diff:" +
-        locdiff
-    );
+    if (distance !== 0) {
+      // allow process if no match
+      distance = Levenshtein(cleanText(data), cleanText(selection));
+      percentage = (((maxLength - distance) / maxLength) * 100).toFixed(1);
+      console.log(
+        tabId,
+        id,
+        spdxid +
+          " - Levenshtein Distance (clean): " +
+          distance +
+          " (" +
+          percentage +
+          "%)" +
+          " Length Difference: " +
+          difference +
+          " LOC Diff:" +
+          locdiff
+      );
+    }
     result = {
       distance: distance,
       text: data,
@@ -294,42 +312,46 @@ function escapeRegex(str) {
 }
 // eslint-disable-next-line no-unused-vars
 function processVariables(str) {
-  var pattern = /(^|(?:\s*(?!<<)\S+(?!<<)\s*){0,3}?)<<var;(.+?)>>($|(?:\s*(?!<<)\S+(?!<<)\s*){0,3})/g; // Capture up to six words before and after
+  // returns a template that has been processed.
+  // var varPattern = /(^|(?:\s*(?!<<)\S+(?!<<)\s*){0,3}?)<<var;(.+?)>>($|(?:\s*(?!<<)\S+(?!<<)\s*){0,3})/g; // Capture up to six words before and after
+  var varPattern = /<<var;(.+?)>>/g; // Capture up to six words before and after
   // to use this pattern match[1] must be match[2]
   // var pattern = /<<var;(.*?)>>/g; // Do a literal match
-  var pattern2 = "";
   var result = {
-    data: str,
+    matchRegex: escapeRegex(str),
     patterns: [],
+    variables: [],
   };
   var match;
-  var variable = {};
+  var variables = [];
   var patterns = [];
-  while ((match = pattern.exec(str)) != null) {
-    var variablestring = match[2].split(";");
+  var matchPattern = "";
+  while ((match = varPattern.exec(str)) != null) {
+    var variable = {};
+    var variablestring = match[1].split(";");
     // process any variables inside the string for potential later use
     for (var i = 0; i < variablestring.length; i++) {
       var keyvalue = variablestring[i].split("=");
-      variable[keyvalue[0]] = keyvalue[1];
+      variable[
+        String(keyvalue[0]).replace(/^["']/, "").replace(/["']$/, "")
+      ] = String(keyvalue[1]).replace(/^["']/, "").replace(/["']$/, "");
     }
     // pattern2 = match[1] + "<<var;"+variable['match']+">>" + match[3];
-    pattern2 =
-      escapeRegex(match[1]) +
-      "(" +
-      String(variable.match) +
-      "?)" +
-      escapeRegex(match[3]);
-    patterns.push(pattern2);
-    result.data = result.data.replace(
-      new RegExp(pattern2),
-      match[1] + variable.original + match[3]
+    matchPattern = "(" + variable.match + ")";
+    patterns.push(matchPattern);
+    result.matchRegex = result.matchRegex.replace(
+      escapeRegex(match[0]),
+      matchPattern
     );
-    pattern.lastIndex -= match[3].length;
+    variables.push(variable);
   }
+  result.variables = variables;
   result.patterns = patterns;
-  result.data = result.data
-    .replace(/<<beginOptional;.*?>>/g, "")
-    .replace(/<<endOptional>>/g, "");
+  // handle optional tags
+  result.matchRegex = result.matchRegex.replace(
+    /<<beginOptional>>([\s\S]*?)<<endOptional>>/g,
+    "($1)?"
+  );
   return result;
 }
 

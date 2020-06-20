@@ -464,6 +464,7 @@ function workeronmessage(event) {
       if (diffcount[tabId] === 0) {
         status[tabId] = "Done";
         for (const filter of Object.keys(filtered[tabId])) {
+          if (filter === "results") continue;
           for (const item in filtered[tabId][filter]) {
             const type = filtered[tabId][filter][item].type;
             const itemdict = list[type + "dict"][item];
