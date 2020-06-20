@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.5.0](https://github.com/spdx/spdx-license-diff/compare/v0.4.0...v0.5.0) (2020-06-20)
+
+
+### Bug Fixes
+
+* ignore completed items for background compare ([9fb03f8](https://github.com/spdx/spdx-license-diff/commit/9fb03f8b1cf8916f476db34ccee0b46287f8d12f))
+
+
+### Features
+
+* add template matching ([06a21ea](https://github.com/spdx/spdx-license-diff/commit/06a21ea3a880a309a35aacfc8edf58ddd89c1fb1))
+
 # [0.4.0](https://github.com/spdx/spdx-license-diff/compare/v0.3.2...v0.4.0) (2020-04-17)
 
 ### Features
