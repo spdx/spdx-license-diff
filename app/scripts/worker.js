@@ -262,7 +262,7 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   dmp.Diff_Timeout = 0;
   //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
   var msStart = new Date().getTime();
-  var textDiff = dmp.diff_main(data, cleanText(selection, false)); // produces diff array
+  var textDiff = dmp.diff_main(data, selection); // produces diff array
   dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
   // dmp.diff_cleanupEfficiency(textDiff);
   var msEnd = new Date().getTime();
