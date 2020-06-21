@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/spdx/spdx-license-diff/compare/v0.5.0...v0.5.1) (2020-06-21)
+
+
+### Bug Fixes
+
+* fix handling of spaces in corner cases ([beabfaa](https://github.com/spdx/spdx-license-diff/commit/beabfaadb264ee24b98abc055d2e9d8c0e6b7d91))
+* handle nested <<beginOptional>> ([94f47f9](https://github.com/spdx/spdx-license-diff/commit/94f47f96cbefbec5bd0dfa5506b8f3e7131672f7))
+* show actual diff without cleanup ([196c852](https://github.com/spdx/spdx-license-diff/commit/196c85266869bc683ba2029636ef8f5cda32bfdc))
+
 # [0.5.0](https://github.com/spdx/spdx-license-diff/compare/v0.4.0...v0.5.0) (2020-06-20)
 
 
