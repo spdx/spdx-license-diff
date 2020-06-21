@@ -348,10 +348,13 @@ function processVariables(str) {
   result.variables = variables;
   result.patterns = patterns;
   // handle optional tags
-  result.matchRegex = result.matchRegex.replace(
-    /<<beginOptional>>([\s\S]*?)<<endOptional>>/g,
-    "($1)?"
-  );
+  var optionalRegex = /<<beginOptional>>(?:\s*)((?!<<beginOptional>)(?:[\S\s](?!<beginOptional>))*?)(?:\s*)<<endOptional>>/g;
+  while (result.matchRegex.match(optionalRegex)) {
+    result.matchRegex = result.matchRegex.replace(
+      optionalRegex,
+      "(\\s?$1\\s?)?"
+    );
+  }
   return result;
 }
 
