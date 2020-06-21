@@ -40,7 +40,7 @@
     "prettier": "^2.0.4",
     "semantic-release": "^17",
     "semantic-release-chrome": "^1.1.3",
-    "semantic-release-firefox-add-on": "^0.2.5",
+    "semantic-release-firefox": "^1.2.0",
     "standard": "^14.3.3",
     "web-ext": "^4.1.0",
     "webextension-toolbox": "latest"
@@ -81,12 +81,12 @@
         }
       ],
       [
-        "semantic-release-firefox-add-on",
+        "semantic-release-firefox",
         {
-          "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
-          "targetXpi": "spdx-license-diff.firefox.xpi.zip",
-          "sourceDir": "dist/firefox",
-          "manifestPath": "manifest.json"
+          "distFolder": "dist/firefox",
+          "xpiPath": "spdx-license-diff.firefox.xpi",
+          "addOnSlug": "spdx-license-diff",
+          "notesToReviewer": "Please see https://github.com/spdx/spdx-license-diff/blob/master/DEVELOPERS.md for compile instructions."
         }
       ],
       [
