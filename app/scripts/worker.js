@@ -147,14 +147,14 @@ function compareitem(
   var locdiff = Math.abs(loc2 - loc);
   var maxLength = Math.max(count, count2);
   var templateMatch =
-    typeof templateData !== "undefined"
-      ? processVariables(templateData)
-      : false;
+    typeof templateData !== "undefined" ? processTemplate(templateData) : false;
   var distance = 100;
   var percentage;
   if (
     templateMatch &&
-    cleanText(selection).match(cleanText(templateMatch.matchRegex))
+    cleanText(selection).match(
+      new RegExp(cleanText(templateMatch.matchRegex), "i")
+    )
   ) {
     distance = 0;
     percentage = 100;
@@ -262,7 +262,7 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   dmp.Diff_Timeout = 0;
   //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
   var msStart = new Date().getTime();
-  var textDiff = dmp.diff_main(data, cleanText(selection, false)); // produces diff array
+  var textDiff = dmp.diff_main(data, selection); // produces diff array
   dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
   // dmp.diff_cleanupEfficiency(textDiff);
   var msEnd = new Date().getTime();
@@ -311,12 +311,12 @@ function escapeRegex(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); // need to escape regex characters
 }
 // eslint-disable-next-line no-unused-vars
-function processVariables(str) {
-  // returns a template that has been processed.
-  // var varPattern = /(^|(?:\s*(?!<<)\S+(?!<<)\s*){0,3}?)<<var;(.+?)>>($|(?:\s*(?!<<)\S+(?!<<)\s*){0,3})/g; // Capture up to six words before and after
-  var varPattern = /<<var;(.+?)>>/g; // Capture up to six words before and after
-  // to use this pattern match[1] must be match[2]
-  // var pattern = /<<var;(.*?)>>/g; // Do a literal match
+function processTemplate(str) {
+  // processes a template and returns a dictionary
+  // matchRegex contains the regex for matching
+  // patterns lists all replacement match regex for each variable
+  // variables returns all variables discovered the template
+  var varPattern = /<<var;(.+?)>>/g;
   var result = {
     matchRegex: escapeRegex(str),
     patterns: [],
@@ -336,22 +336,32 @@ function processVariables(str) {
         String(keyvalue[0]).replace(/^["']/, "").replace(/["']$/, "")
       ] = String(keyvalue[1]).replace(/^["']/, "").replace(/["']$/, "");
     }
-    // pattern2 = match[1] + "<<var;"+variable['match']+">>" + match[3];
-    matchPattern = "(" + variable.match + ")";
-    patterns.push(matchPattern);
-    result.matchRegex = result.matchRegex.replace(
-      escapeRegex(match[0]),
-      matchPattern
-    );
+    try {
+      matchPattern = variable.match;
+      patterns.push(matchPattern);
+      result.matchRegex = result.matchRegex.replace(
+        escapeRegex(match[0]),
+        "(" + matchPattern + ")"
+      );
+    } catch (e) {
+      console.log("Bad regex detected in " + match + " error: " + e);
+    }
     variables.push(variable);
   }
   result.variables = variables;
   result.patterns = patterns;
   // handle optional tags
-  result.matchRegex = result.matchRegex.replace(
-    /<<beginOptional>>([\s\S]*?)<<endOptional>>/g,
-    "($1)?"
-  );
+  var optionalRegex = /<<beginOptional>>(?:\s*)((?!<<beginOptional>)(?:[\S\s](?!<beginOptional>))*?)(?:\s*)<<endOptional>>/g;
+  while (result.matchRegex.match(optionalRegex)) {
+    result.matchRegex = result.matchRegex.replace(
+      optionalRegex,
+      "(\\s?$1\\s?)?"
+    );
+  }
+  // corner case covering boundary between optionalRegex/matchRegex
+  result.matchRegex = result.matchRegex.replace(/\\s+\?\)\?+ /g, "\\s?)?\\s*");
+  // corner case covering boundary matchRegex and .
+  result.matchRegex = result.matchRegex.replace(/\) \\\./g, ")\\s*\\.");
   return result;
 }
 
