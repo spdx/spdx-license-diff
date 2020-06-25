@@ -153,7 +153,7 @@ function compareitem(
   if (
     templateMatch &&
     cleanText(selection).match(
-      new RegExp(cleanText(templateMatch.matchRegex), "i")
+      new RegExp("^" + cleanText(templateMatch.matchRegex) + "$", "ig")
     )
   ) {
     distance = 0;
@@ -279,14 +279,13 @@ function generateDiff(selection, spdxid, license, record, tabId) {
 }
 
 function cleanText(str, removeNewLines = true) {
-  // this will replace unicode spaces, collapse spaces and then replace newlines
+  // this will replace unicode spaces, collapse spaces and then replace newlines and trim
   if (removeNewLines) {
-    return collapseSpaces(removeLineNumbers(str)).replace(
-      /(\r\n|\n|\r)/gm,
-      " "
-    );
+    return collapseSpaces(removeLineNumbers(str))
+      .replace(/(\r\n|\n|\r)/gm, " ")
+      .trim();
   } else {
-    return collapseSpaces(removeLineNumbers(str));
+    return collapseSpaces(removeLineNumbers(str)).trim();
   }
 }
 
