@@ -57,8 +57,6 @@ jobs:
           GOOGLE_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
           FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
           FIREFOX_SECRET_KEY: ${{ secrets.FIREFOX_API_SECRET }}
-          FIREFOX_EMAIL: ${{ secrets.FIREFOX_EMAIL }}
-          FIREFOX_PASSWORD: ${{ secrets.FIREFOX_PASSWORD }}
       #- name: Force Build Packages
       #  run: |
       #    yarn buildall
