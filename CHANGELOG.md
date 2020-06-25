@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/spdx/spdx-license-diff/compare/v0.5.2...v0.5.3) (2020-06-25)
+
+
+### Reverts
+
+* Revert "ci: change to semantic-release-firefox" ([eb8a23a](https://github.com/spdx/spdx-license-diff/commit/eb8a23af98729ae44736e094684f512d098149d4))
+
 ## [0.5.2](https://github.com/spdx/spdx-license-diff/compare/v0.5.1...v0.5.2) (2020-06-25)
 
 
