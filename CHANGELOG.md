@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/spdx/spdx-license-diff/compare/v0.5.1...v0.5.2) (2020-06-25)
+
+
+### Bug Fixes
+
+* limit template match to entire selection ([52e70b0](https://github.com/spdx/spdx-license-diff/commit/52e70b070665ded6320053067a93205e6918361f)), closes [#58](https://github.com/spdx/spdx-license-diff/issues/58)
+
 ## [0.5.1](https://github.com/spdx/spdx-license-diff/compare/v0.5.0...v0.5.1) (2020-06-21)
 
 
