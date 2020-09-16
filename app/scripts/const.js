@@ -20,7 +20,7 @@ const urls = {
   exceptions: "https://spdx.org/licenses/exceptions.json",
 };
 
-const newLicenseUrl = "http://13.57.134.254/app/submit_new_license/";
+const newLicenseUrl = "https://tools.spdx.org/app/submit_new_license/";
 
 const spdxkey = {
   licenses: {
