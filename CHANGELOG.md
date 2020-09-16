@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/spdx/spdx-license-diff/compare/v0.5.3...v0.5.4) (2020-09-16)
+
+
+### Bug Fixes
+
+* update submission url to new domain ([3c8f380](https://github.com/spdx/spdx-license-diff/commit/3c8f38080038e96e494877cce417d5a626e83d46))
+
 ## [0.5.3](https://github.com/spdx/spdx-license-diff/compare/v0.5.2...v0.5.3) (2020-06-25)
 
 
