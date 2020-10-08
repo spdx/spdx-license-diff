@@ -34,4 +34,13 @@ function getSelectionText() {
   return text;
 }
 
-export { selectRangeCoords, getSelectionText };
+// https://stackoverflow.com/questions/17438354/how-can-i-enable-my-chrome-extension-in-incognito-mode/17443982#17443982
+function checkLocalFileAccess(isAllowedAccess) {
+  if (isAllowedAccess) return;
+  alert(chrome.i18n.getMessage("localPermissionNeeded"));
+  chrome.tabs.create({
+    url: "chrome://extensions/?id=" + chrome.runtime.id,
+  });
+}
+
+export { selectRangeCoords, getSelectionText, checkLocalFileAccess };

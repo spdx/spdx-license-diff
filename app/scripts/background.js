@@ -2,6 +2,7 @@
 
 import _ from "underscore";
 import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
+import { checkLocalFileAccess } from "./cc-by-sa.js";
 
 var version = browser.runtime.getManifest().version;
 var list = {};
@@ -35,6 +36,8 @@ function handleClick(tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
+    chrome.extension.isAllowedFileSchemeAccess(checkLocalFileAccess);
+
     if (!status[activeTabId]) {
       injectContentScript(activeTabId);
     } else {
