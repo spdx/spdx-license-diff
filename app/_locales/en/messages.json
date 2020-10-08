@@ -14,5 +14,9 @@
   "browserActionTitle": {
     "message": "spdx-license-diff",
     "description": "The title of the browser action button"
+  },
+  "localPermissionNeeded": {
+    "message": "Additional permissions required to access local files. Please enable 'Allow access to file URLs' in the following screen and try again.",
+    "description": "The message to display when local file access needed"
   }
 }
