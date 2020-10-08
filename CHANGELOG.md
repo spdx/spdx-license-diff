@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.6.0](https://github.com/spdx/spdx-license-diff/compare/v0.5.4...v0.6.0) (2020-10-08)
+
+
+### Features
+
+* add prompt if local file access needed ([eeb2356](https://github.com/spdx/spdx-license-diff/commit/eeb235616aab2b6943ec9be89e98d708f7ccb767)), closes [#66](https://github.com/spdx/spdx-license-diff/issues/66)
+
 ## [0.5.4](https://github.com/spdx/spdx-license-diff/compare/v0.5.3...v0.5.4) (2020-09-16)
 
 
