@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/spdx/spdx-license-diff/compare/v0.6.0...v0.6.1) (2020-10-12)
+
+
+### Bug Fixes
+
+* only prompt for file access when necessary ([76605a3](https://github.com/spdx/spdx-license-diff/commit/76605a316198ffef7f12a00c560fc905fe6fb6e7))
+
 # [0.6.0](https://github.com/spdx/spdx-license-diff/compare/v0.5.4...v0.6.0) (2020-10-08)
 
 
