@@ -36,8 +36,9 @@ function handleClick(tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
-    chrome.extension.isAllowedFileSchemeAccess(checkLocalFileAccess);
-
+    if (activeTab.url.toLowerCase().startsWith("file:")) {
+      chrome.extension.isAllowedFileSchemeAccess(checkLocalFileAccess);
+    }
     if (!status[activeTabId]) {
       injectContentScript(activeTabId);
     } else {
