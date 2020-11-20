@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "diff-match-patch": "^1.0.0",
+    "fast-dice-coefficient": "^1.0.3",
     "jquery": "^3.2.1",
     "js-levenshtein": "^1.1.6",
     "md5-jkmyers": "^0.0.1",

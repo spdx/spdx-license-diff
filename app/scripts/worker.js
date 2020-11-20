@@ -2,6 +2,7 @@
 import { urls, spdxkey } from "./const.js";
 import DiffMatchPatch from "diff-match-patch";
 import Levenshtein from "js-levenshtein";
+import dice from "fast-dice-coefficient";
 
 var id;
 var dmp = new DiffMatchPatch(); // options may be passed to constructor; see below
@@ -19,6 +20,7 @@ self.onmessage = function (event) {
       var spdxid = event.data.spdxid;
       var itemdict = event.data.itemdict;
       var maxLengthDifference = event.data.maxLengthDifference;
+      var diceCoefficientOption = event.data.diceCoefficient;
       var total = event.data.total;
       var tabId = event.data.tabId;
       var background = event.data.background;
@@ -30,6 +32,7 @@ self.onmessage = function (event) {
         tabId,
         type,
         maxLengthDifference,
+        diceCoefficientOption,
         total,
         background
       );
@@ -120,6 +123,7 @@ function compareitem(
   tabId,
   type,
   maxLengthDifference = 1000,
+  diceCoefficientOption = 0.9,
   total = 0,
   background = false
 ) {
@@ -149,6 +153,7 @@ function compareitem(
   var templateMatch =
     typeof templateData !== "undefined" ? processTemplate(templateData) : false;
   var distance = 100;
+  var diceCoefficient = 0;
   var percentage;
   if (
     templateMatch &&
@@ -160,9 +165,11 @@ function compareitem(
     percentage = 100;
     console.log(tabId, id, spdxid + " - Template Match");
   }
+  diceCoefficient = dice(cleanText(data), cleanText(selection));
   if (
-    difference <= maxLength &&
-    (maxLengthDifference === 0 || difference < maxLengthDifference)
+    (difference <= maxLength &&
+      (maxLengthDifference === 0 || difference < maxLengthDifference)) ||
+    diceCoefficient >= diceCoefficientOption
   ) {
     if (distance !== 0) {
       // allow process if no match
@@ -180,7 +187,9 @@ function compareitem(
           " Length Difference: " +
           difference +
           " LOC Diff:" +
-          locdiff
+          locdiff +
+          " Dice-Coefficient:" +
+          diceCoefficient
       );
     }
     result = {
@@ -188,19 +197,27 @@ function compareitem(
       text: data,
       percentage: percentage,
       details: item,
+      dice: diceCoefficient.toFixed(2),
       // patterns: result.patterns
     };
   } else {
     console.log(
       tabId,
       id,
-      spdxid + " - Length Difference: " + difference + " LOC Diff:" + locdiff
+      spdxid +
+        " - Length Difference: " +
+        difference +
+        " LOC Diff:" +
+        locdiff +
+        " Dice-Coefficient:" +
+        diceCoefficient
     );
     result = {
       distance: difference,
       text: data,
       percentage: 0,
       details: null, // details is unneeded since these will always be end of the list
+      dice: diceCoefficient.toFixed(2),
       // patterns: result.patterns
     };
   }
@@ -246,6 +263,7 @@ function sortlicenses(licenses, tabId) {
       difftext: licenses[license].text,
       percentage: licenses[license].percentage,
       details: licenses[license].details,
+      dice: licenses[license].dice,
     });
     postMessage({ command: "next", spdxid: license, id: id, tabId: tabId });
   }

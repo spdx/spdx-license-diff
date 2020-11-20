@@ -8,6 +8,7 @@ const defaultoptions = {
   updateFrequency: 90,
   showBest: 10,
   minpercentage: 25,
+  diceCoefficient: 0.9,
   maxLengthDifference: 1500,
   maxworkers: 10,
   filters: {
