@@ -891,3 +891,10 @@ chrome.tabs.onActivated.addListener(handleActivate);
 chrome.windows.onFocusChanged.addListener(handleFocusChanged);
 chrome.storage.onChanged.addListener(handleStorageChange);
 chrome.tabs.onUpdated.addListener(handleUpdated);
+
+chrome.contextMenus.onClicked.addListener(handleClick);
+chrome.contextMenus.create({
+  title: "License-Diff selection",
+  contexts: ["selection"],
+  id: "contextId",
+});
