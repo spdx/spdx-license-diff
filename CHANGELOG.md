@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.7.0](https://github.com/spdx/spdx-license-diff/compare/v0.6.1...v0.7.0) (2020-11-20)
+
+
+### Features
+
+* add context menu to diff ([d536f14](https://github.com/spdx/spdx-license-diff/commit/d536f144aafb5af20ba837b4802581de2fa1df8f)), closes [#71](https://github.com/spdx/spdx-license-diff/issues/71)
+
 ## [0.6.1](https://github.com/spdx/spdx-license-diff/compare/v0.6.0...v0.6.1) (2020-10-12)
 
 
