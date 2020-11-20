@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 import { urls, spdxkey } from "./const.js";
 import DiffMatchPatch from "diff-match-patch";
-import Levenshtein from "js-levenshtein";
+import * as fastestlevenshtein from "fastest-levenshtein";
 import dice from "fast-dice-coefficient";
 
 var id;
@@ -173,7 +173,10 @@ function compareitem(
   ) {
     if (distance !== 0) {
       // allow process if no match
-      distance = Levenshtein(cleanText(data), cleanText(selection));
+      distance = fastestlevenshtein.distance(
+        cleanText(data),
+        cleanText(selection)
+      );
       percentage = (((maxLength - distance) / maxLength) * 100).toFixed(1);
       console.log(
         tabId,
