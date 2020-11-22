@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/spdx/spdx-license-diff/compare/v0.8.1...v0.8.2) (2020-11-22)
+
+
+### Bug Fixes
+
+* remove firefox specific settings ([54c5e3e](https://github.com/spdx/spdx-license-diff/commit/54c5e3ef12ef119d561990a3a78e20229a2fecbc))
+
 ## [0.8.1](https://github.com/spdx/spdx-license-diff/compare/v0.8.0...v0.8.1) (2020-11-22)
 
 
