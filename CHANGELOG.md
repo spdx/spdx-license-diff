@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/spdx/spdx-license-diff/compare/v0.8.0...v0.8.1) (2020-11-22)
+
+
+### Bug Fixes
+
+* fix template matching on smart quotes ([7a8d83f](https://github.com/spdx/spdx-license-diff/commit/7a8d83f0999a81af11b87be11139e5692498bc6e))
+
 # [0.8.0](https://github.com/spdx/spdx-license-diff/compare/v0.7.0...v0.8.0) (2020-11-22)
 
 
