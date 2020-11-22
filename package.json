@@ -74,24 +74,6 @@
       ],
       "@semantic-release/git",
       [
-        "semantic-release-chrome",
-        {
-          "distFolder": "dist/chrome",
-          "asset": "spdx-license-diff.chrome.zip",
-          "extensionId": "kfoadicmilbgnicoldjmccpaicejacdh"
-        }
-      ],
-      [
-        "semantic-release-firefox-add-on",
-        {
-          "extensionId": "{95b7d495-ee73-4a03-b918-670a9d77c871}",
-          "targetXpi": "spdx-license-diff.firefox.xpi.zip",
-          "sourceDir": "dist/firefox",
-          "manifestPath": "manifest.json",
-          "channel": "listed"
-        }
-      ],
-      [
         "@semantic-release/github",
         {
           "assets": [
@@ -112,6 +94,14 @@
               "label": "Opera"
             }
           ]
+        }
+      ],
+      [
+        "semantic-release-chrome",
+        {
+          "distFolder": "dist/chrome",
+          "asset": "spdx-license-diff.chrome.zip",
+          "extensionId": "kfoadicmilbgnicoldjmccpaicejacdh"
         }
       ]
     ]
