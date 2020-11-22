@@ -303,16 +303,20 @@ function generateDiff(selection, spdxid, license, record, tabId) {
 function cleanText(str, removeNewLines = true) {
   // this will replace unicode spaces, collapse spaces and then replace newlines and trim
   if (removeNewLines) {
-    return collapseSpaces(removeLineNumbers(str))
+    return replaceSmartQuotes(collapseSpaces(removeLineNumbers(str)))
       .replace(/(\r\n|\n|\r)/gm, " ")
       .trim();
   } else {
-    return collapseSpaces(removeLineNumbers(str)).trim();
+    return replaceSmartQuotes(collapseSpaces(removeLineNumbers(str))).trim();
   }
 }
 
 function collapseSpaces(str) {
   return str.replace(/\s+/g, " ");
+}
+
+function replaceSmartQuotes(str) {
+  return str.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
 }
 
 function removeLineNumbers(str, percentage = 0.8) {
