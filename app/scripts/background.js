@@ -198,6 +198,7 @@ function handleMessage(request, sender, sendResponse) {
     case "submitNewLicense": {
       activeTabId = sender.tab.id;
       const injectCode = `
+          console.log("Receiving injected code from tab:" + ${activeTabId})
           document.getElementById('sourceUrl').value = '${request.url}';
           document.getElementById('comments').value = 'Prepared by spdx-license-diff ${version}';
           document.getElementById('text').value = \`${request.selection}\`;
@@ -208,11 +209,16 @@ function handleMessage(request, sender, sendResponse) {
         injectCode,
         request
       );
-      browser.tabs.create({ url: newLicenseUrl }).then(() => {
-        browser.tabs.executeScript({
-          code: injectCode,
-        });
-      });
+      browser.tabs.create({ url: newLicenseUrl }).then(
+        () => {
+          browser.tabs.executeScript({
+            code: injectCode,
+          });
+        },
+        (error) => {
+          console.log(`Error injecting code: ${error}`);
+        }
+      );
       break;
     }
     default:
