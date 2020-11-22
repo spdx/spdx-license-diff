@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
@@ -368,21 +369,26 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
   for (var i = 0; i < arr.length && i < number; i++) {
     var value = arr[i].spdxid;
     var percentage = arr[i].percentage;
+    var dice = arr[i].dice;
     var text =
       value +
       " : " +
-      arr[i].distance +
-      " differences (" +
       percentage +
-      "% match)";
+      "% match (" +
+      arr[i].distance +
+      " differences / dice-coefficient " +
+      dice +
+      ")";
     if (percentage === 100) {
       text =
         value +
         " : " +
-        arr[i].distance +
-        " differences (" +
         percentage +
-        "% template match) ";
+        "% template match (" +
+        arr[i].distance +
+        " differences / dice-coefficient " +
+        dice +
+        ")";
     }
 
     if (Number(percentage) < Number(minimum)) {

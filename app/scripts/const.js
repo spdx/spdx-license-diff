@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
+// SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+
 const filters = {
   deprecated: "isDeprecatedLicenseId",
   OSIApproved: "isOsiApproved",
@@ -8,6 +11,7 @@ const defaultoptions = {
   updateFrequency: 90,
   showBest: 10,
   minpercentage: 25,
+  diceCoefficient: 0.9,
   maxLengthDifference: 1500,
   maxworkers: 10,
   filters: {

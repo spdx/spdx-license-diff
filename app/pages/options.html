@@ -64,9 +64,15 @@
     <span class="validity"></span>
   </div>
   <div>
+    <label for="diceCoefficient"><a href="https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient">Dice-Coefficient</a></label>
+    <input id="diceCoefficient" type="number" name="maxDifference" step=".05" min="0" max="1.0" value="0.90"
+      title="Force a comparison whenever this Dice-Coefficient value is exceeded regardless of Maximum length difference. Dice-Coefficient measures similarity based on tokens. 0 is no similarity while 1 is a complete match." required>
+    <span class="validity"></span>
+  </div>
+  <div>
     <label for="maxWorkers">Max threads</label>
     <input id="maxWorkers" type="number" name="maxWorkers" step="1" min="1" max="20" value="10"
-      title="Maximum number of worker threads to allow (higher is generally better but dependent on hardware)" required>
+      title="Maximum number of worker threads to allow (higher is generally faster but dependent on hardware)" required>
     <span class="validity"></span>
   </div>
 </fieldset>

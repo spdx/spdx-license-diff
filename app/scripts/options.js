@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 "use strict";
 // Enable chromereload by uncommenting this line:
@@ -13,6 +14,7 @@ function saveOptions() {
   var showBest = document.getElementById("maxComparisons").value;
   var minpercentage = document.getElementById("minpercentage").value;
   var maxLengthDifference = document.getElementById("maxDifference").value;
+  var diceCoefficient = document.getElementById("diceCoefficient").value;
   var maxworkers = document.getElementById("maxWorkers").value;
   var filters = {};
   if (document.getElementById("deprecated").checked) {
@@ -24,6 +26,7 @@ function saveOptions() {
     showBest: parseInt(showBest),
     minpercentage: parseInt(minpercentage),
     maxLengthDifference: parseInt(maxLengthDifference),
+    diceCoefficient: parseFloat(diceCoefficient),
     maxworkers: parseInt(maxworkers),
     filters: filters,
   };
@@ -51,6 +54,8 @@ function restoreOptions() {
       result.options.minpercentage;
     document.getElementById("maxDifference").value =
       result.options.maxLengthDifference;
+    document.getElementById("diceCoefficient").value =
+      result.options.diceCoefficient;
     document.getElementById("maxWorkers").value = result.options.maxworkers;
     showFilters(document.getElementById("exclude"), result);
     // document.getElementById('deprecated').checked = result.options.filters.deprecated

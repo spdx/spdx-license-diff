@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import _ from "underscore";
@@ -478,6 +479,7 @@ function workeronmessage(event) {
               command: "compare",
               selection: selection,
               maxLengthDifference: options.maxLengthDifference,
+              diceCoefficient: options.diceCoefficient,
               spdxid: item,
               itemdict: itemdict,
               total: total,
@@ -674,6 +676,7 @@ function compareSelection(selection, tabId = activeTabId) {
       command: "compare",
       selection: selection,
       maxLengthDifference: options.maxLengthDifference,
+      diceCoefficient: options.diceCoefficient,
       spdxid: item,
       itemdict: itemdict,
       total: total,
