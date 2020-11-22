@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later or CC-BY-SA-3.0)
 
 import $ from "jquery";

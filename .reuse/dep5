@@ -1,0 +1,25 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: spdx-license-diff
+Upstream-Contact: Alan D. Tse <alandtse@gmail.com>
+Source: https://github.com/spdx/spdx-license-diff
+
+Files: images/Firefox* images/Screenshot* app/images/*
+Copyright: Alan D. Tse <alandtse@gmail.com>
+License: CC-BY-SA-4.0
+
+Files: images/*
+Copyright: The Linux Foundation
+License: LicenseRef-Proprietary
+
+Files: oss-attribution/* app/_locales/* yarn.lock .* webextension-toolbox-config.js package.json app/manifest.json
+Copyright: Alan D. Tse <alandtse@gmail.com>
+License: CC0-1.0
+
+Files: *.md
+Copyright: Alan D. Tse <alandtse@gmail.com>
+License: CC-BY-SA-4.0
+
+Files: *.html *.css
+Copyright: Alan D. Tse <alandtse@gmail.com>
+License: GPL-3.0-or-later
+

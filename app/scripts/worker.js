@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 import { urls, spdxkey } from "./const.js";
 import DiffMatchPatch from "diff-match-patch";
