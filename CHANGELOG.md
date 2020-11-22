@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.8.0](https://github.com/spdx/spdx-license-diff/compare/v0.7.0...v0.8.0) (2020-11-22)
+
+
+### Features
+
+* add dice coefficient check ([04081f0](https://github.com/spdx/spdx-license-diff/commit/04081f031446ef35d13b10bfc3cf1da1654cd0d0)), closes [#63](https://github.com/spdx/spdx-license-diff/issues/63)
+
+
+### Performance Improvements
+
+* swap js-levenshtein with fastest-levenshtein ([bfeb99a](https://github.com/spdx/spdx-license-diff/commit/bfeb99ae7e9cb7d5527cee43662b063a927c8e47))
+
 # [0.7.0](https://github.com/spdx/spdx-license-diff/compare/v0.6.1...v0.7.0) (2020-11-20)
 
 
