@@ -98,14 +98,15 @@ function handleUpdated(tabId, changeInfo, tabInfo) {
 }
 function handleFocusChanged(windowid) {
   // Set the active tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function (
-    queryinfo
-  ) {
-    if (queryinfo.length > 0) {
-      activeTabId = queryinfo[0].id;
+  chrome.tabs.query(
+    { active: true, currentWindow: true },
+    function (queryinfo) {
+      if (queryinfo.length > 0) {
+        activeTabId = queryinfo[0].id;
+      }
+      // console.log("ActiveTabId changed", activeTabId)
     }
-    // console.log("ActiveTabId changed", activeTabId)
-  });
+  );
 }
 
 // This function responds to changes to storage
