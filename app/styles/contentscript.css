@@ -13,3 +13,9 @@ progress {
 progress:after {
   content: attr(value) "/" attr(max);
 }
+
+#newTabButton {
+  position:absolute;
+  top:0;
+  right:0;
+}

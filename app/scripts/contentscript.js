@@ -115,6 +115,20 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         updateBubbleText("Displaying diff");
       }
       break;
+    case "newTab":
+      diffs = request.diffs;
+      spdxid = request.spdxid;
+      spdx = request.spdx;
+      console.log("Received newTab request", diffs, spdxid, spdx);
+      updateProgressBar(1, 1, false);
+      addSelectFormFromArray(
+        "licenses",
+        spdx,
+        options.showBest === 0 && spdx ? spdx.length : options.showBest,
+        options.minpercentage
+      );
+      displayDiff(diffs[spdxid].html, diffs[spdxid].time);
+      break;
     case "alive?":
       console.log("Received ping request");
       sendResponse({ status: "1" });
@@ -309,6 +323,7 @@ function showFilters(form) {
   if (document.getElementById("filters")) {
     return;
   }
+  if (window.location.href.endsWith("/popup.html")) return;
   var div = form.appendChild(document.createElement("div"));
   div.id = "filters";
   var label = form.appendChild(document.createElement("label"));
@@ -403,6 +418,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
     }
   }
   createNewLicenseButton(form);
+  createNewTabButton(form, option.value);
 }
 
 // Display helper functions for modifying the DOM
@@ -450,8 +466,9 @@ document.addEventListener(
 // Add new license button.
 function createNewLicenseButton(form) {
   if ($("#newLicenseButton").length) return;
+  if (window.location.href.endsWith("/popup.html")) return;
   var button = document.createElement("button");
-  button.innerHTML = "Submit selection as new license";
+  button.innerHTML = "Submit new license";
   button.type = "button";
   button.id = "newLicenseButton";
   form.appendChild(button);
@@ -461,6 +478,27 @@ function createNewLicenseButton(form) {
       command: "submitNewLicense",
       selection: selection,
       url: location.href,
+    });
+  });
+}
+
+// Add new tab button.
+function createNewTabButton(form, spdxid) {
+  if ($("#newTabButton").length) return;
+  if (window.location.href.endsWith("/popup.html")) return;
+  var button = document.createElement("button");
+  button.innerHTML =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
+  button.type = "button";
+  button.id = "newTabButton";
+  form.appendChild(button);
+  form.appendChild(document.createElement("br"));
+  button.addEventListener("click", function () {
+    chrome.runtime.sendMessage({
+      command: "newTab",
+      diffs: diffs,
+      spdxid: spdxid,
+      spdx: spdx,
     });
   });
 }
