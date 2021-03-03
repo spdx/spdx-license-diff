@@ -211,12 +211,30 @@ function handleMessage(request, sender, sendResponse) {
       );
       browser.tabs.create({ url: newLicenseUrl }).then(
         () => {
-          browser.tabs.executeScript({
-            code: injectCode,
-          });
+          setTimeout(() => {
+            browser.tabs.executeScript({
+              code: injectCode,
+            });
+          }, 250);
         },
         (error) => {
           console.log(`Error injecting code: ${error}`);
+        }
+      );
+      break;
+    }
+    case "newTab": {
+      activeTabId = sender.tab.id;
+      console.log("tab %s: Creating new tab with %s:", activeTabId, request);
+      browser.tabs.create({ url: "/pages/popup.html" }).then(
+        (tab) => {
+          console.log("Tab %s created", tab.id);
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tab.id, request);
+          }, 250);
+        },
+        (error) => {
+          console.log(`Error starting new tab: ${error}`);
         }
       );
       break;
