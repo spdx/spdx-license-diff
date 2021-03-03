@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.9.0](https://github.com/spdx/spdx-license-diff/compare/v0.8.2...v0.9.0) (2021-03-03)
+
+
+### Features
+
+* add fullscreen button ([dcacd9d](https://github.com/spdx/spdx-license-diff/commit/dcacd9de6c52c0d105b72b1678fb72ad06552101))
+
 ## [0.8.2](https://github.com/spdx/spdx-license-diff/compare/v0.8.1...v0.8.2) (2020-11-22)
 
 
