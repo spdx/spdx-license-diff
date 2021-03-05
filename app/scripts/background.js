@@ -226,7 +226,7 @@ function handleMessage(request, sender, sendResponse) {
     }
     case "newTab": {
       activeTabId = sender.tab.id;
-      console.log("tab %s: Creating new tab with %s:", activeTabId, request);
+      console.log("tab %s: Creating new tab with:", activeTabId, request);
       browser.tabs.create({ url: "/pages/popup.html" }).then(
         (tab) => {
           console.log("Tab %s created", tab.id);
