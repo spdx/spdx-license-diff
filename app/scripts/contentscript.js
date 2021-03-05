@@ -294,6 +294,10 @@ function displayDiff(html, time = processTime) {
         time = diffs[spdxid].time;
         details = spdx[this.options.selectedIndex].details;
         updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
+        createNewTabButton(
+          document.getElementById("license_form"),
+          selectedLicense
+        );
       } else {
       }
     },
@@ -418,7 +422,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
     }
   }
   createNewLicenseButton(form);
-  createNewTabButton(form, option.value);
+  createNewTabButton(form, selectedLicense);
 }
 
 // Display helper functions for modifying the DOM
@@ -484,8 +488,20 @@ function createNewLicenseButton(form) {
 
 // Add new tab button.
 function createNewTabButton(form, spdxid) {
-  if ($("#newTabButton").length) return;
   if (window.location.href.endsWith("/popup.html")) return;
+  if ($("#newTabButton").length) {
+    document
+      .getElementById("newTabButton")
+      .addEventListener("click", function () {
+        chrome.runtime.sendMessage({
+          command: "newTab",
+          diffs: diffs,
+          spdxid: spdxid,
+          spdx: spdx,
+        });
+      });
+    return;
+  }
   var button = document.createElement("button");
   button.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
