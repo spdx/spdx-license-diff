@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.9.1](https://github.com/spdx/spdx-license-diff/compare/v0.9.0...v0.9.1) (2021-03-09)
+
+
+### Bug Fixes
+
+* fix duplicate adding of context menu ([f3423b9](https://github.com/spdx/spdx-license-diff/commit/f3423b9ecf4d7bf15b2ec7201243270d22461064)), closes [#82](https://github.com/spdx/spdx-license-diff/issues/82)
+* fix newtab to open selected item ([c0432dc](https://github.com/spdx/spdx-license-diff/commit/c0432dce15043d2d5b7dfb86177c0244a1456ed3))
+* fix newtab to use selected license ([c795559](https://github.com/spdx/spdx-license-diff/commit/c795559ce556d20f18633d81c867b37e2a38defa))
+* fix update for license list 3.12 ([24b23f4](https://github.com/spdx/spdx-license-diff/commit/24b23f481ae35110a5669f101156c7347bd8515f)), closes [#83](https://github.com/spdx/spdx-license-diff/issues/83)
+
 # [0.9.0](https://github.com/spdx/spdx-license-diff/compare/v0.8.2...v0.9.0) (2021-03-03)
 
 
