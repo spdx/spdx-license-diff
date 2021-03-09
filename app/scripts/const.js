@@ -19,9 +19,11 @@ const defaultoptions = {
   },
 };
 
+const baseLicenseUrl = "https://spdx.org/licenses/";
+
 const urls = {
-  licenses: "https://spdx.org/licenses/licenses.json",
-  exceptions: "https://spdx.org/licenses/exceptions.json",
+  licenses: `${baseLicenseUrl}licenses.json`,
+  exceptions: `${baseLicenseUrl}exceptions.json`,
 };
 
 const newLicenseUrl = "https://tools.spdx.org/app/submit_new_license/";
@@ -36,4 +38,11 @@ const spdxkey = {
     text: "licenseExceptionText",
   },
 };
-export { filters, defaultoptions, urls, spdxkey, newLicenseUrl };
+export {
+  filters,
+  defaultoptions,
+  urls,
+  spdxkey,
+  newLicenseUrl,
+  baseLicenseUrl,
+};

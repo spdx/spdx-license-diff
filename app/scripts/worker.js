@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
-import { urls, spdxkey } from "./const.js";
+import { baseLicenseUrl, urls, spdxkey } from "./const.js";
 import DiffMatchPatch from "diff-match-patch";
 import * as fastestlevenshtein from "fastest-levenshtein";
 import dice from "fast-dice-coefficient";
@@ -76,8 +76,17 @@ async function getSPDXlist() {
       });
       console.log(id, "Updating: ", result);
       result[type] = result[type].map(async (item) => {
+        url = item.detailsUrl;
+        var urlRegex = new RegExp("^(?:[a-z]+:)?//", "i");
+        if (urlRegex.test(url)) {
+          url = url.replace("http:", "https:");
+        } else {
+          url = `${baseLicenseUrl}${url}`;
+        }
+        if (url.split(".").pop().toLowerCase() === "html")
+          url = url.replace(".html", ".json");
         try {
-          return await getJSON(item.detailsUrl.replace("http:", "https:"));
+          return await getJSON(url);
         } catch (err) {
           console.log("Error in Update");
           throw err;
