@@ -108,6 +108,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (!diffdisplayed)
           displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
         updateBubbleText("Diffing done");
+        document.getElementById("newTabButton").style.visibility = "visible";
       } else if (bestspdxid === spdxid) {
         console.log("Best diff %s received; we can display", bestspdxid);
         if (!diffdisplayed)
@@ -117,9 +118,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       break;
     case "newTab":
       diffs = request.diffs;
-      spdxid = request.spdxid;
       spdx = request.spdx;
-      console.log("Received newTab request", diffs, spdxid, spdx);
+      selectedLicense =
+        typeof selectedLicense !== "undefined"
+          ? request.selectedLicense
+          : spdx[0].spdxid;
+      console.log("Received newTab request", request);
       updateProgressBar(1, 1, false);
       addSelectFormFromArray(
         "licenses",
@@ -127,7 +131,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         options.showBest === 0 && spdx ? spdx.length : options.showBest,
         options.minpercentage
       );
-      displayDiff(diffs[spdxid].html, diffs[spdxid].time);
+      displayDiff(diffs[selectedLicense].html, diffs[selectedLicense].time);
       break;
     case "alive?":
       console.log("Received ping request");
@@ -283,8 +287,18 @@ function displayDiff(html, time = processTime) {
   }
   var spdxid = spdx[0].spdxid;
   var details = spdx[0].details;
+  if (selectedLicense) {
+    for (var index in spdx) {
+      if (spdx[index].spdxid === selectedLicense) {
+        spdxid = selectedLicense;
+        details = spdx[index].details;
+        break;
+      }
+    }
+  }
   updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
-  document.getElementById("licenses").addEventListener(
+  var licenseElement = document.getElementById("licenses");
+  licenseElement.addEventListener(
     "change",
     function () {
       if (this.value !== selectedLicense) {
@@ -294,11 +308,17 @@ function displayDiff(html, time = processTime) {
         time = diffs[spdxid].time;
         details = spdx[this.options.selectedIndex].details;
         updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
+        createNewTabButton(
+          document.getElementById("license_form"),
+          selectedLicense
+        );
       } else {
       }
     },
     false
   );
+  licenseElement.value = selectedLicense;
+  licenseElement.dispatchEvent(new Event("change"));
 }
 
 // This wraps the diff display
@@ -418,7 +438,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
     }
   }
   createNewLicenseButton(form);
-  createNewTabButton(form, option.value);
+  createNewTabButton(form, selectedLicense);
 }
 
 // Display helper functions for modifying the DOM
@@ -483,23 +503,33 @@ function createNewLicenseButton(form) {
 }
 
 // Add new tab button.
-function createNewTabButton(form, spdxid) {
-  if ($("#newTabButton").length) return;
+function createNewTabButton(form, selectedLicense) {
   if (window.location.href.endsWith("/popup.html")) return;
+  if ($("#newTabButton").length) {
+    document
+      .getElementById("newTabButton")
+      .removeEventListener("click", newTab);
+    document.getElementById("newTabButton").addEventListener("click", newTab);
+    return;
+  }
   var button = document.createElement("button");
   button.innerHTML =
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
   button.type = "button";
   button.id = "newTabButton";
+  button.style.visibility = "hidden";
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
-  button.addEventListener("click", function () {
-    chrome.runtime.sendMessage({
-      command: "newTab",
-      diffs: diffs,
-      spdxid: spdxid,
-      spdx: spdx,
-    });
+  button.addEventListener("click", newTab);
+}
+
+function newTab() {
+  var license = selectedLicense;
+  chrome.runtime.sendMessage({
+    command: "newTab",
+    diffs: diffs,
+    selectedLicense: license,
+    spdx: spdx,
   });
 }
 

@@ -226,7 +226,7 @@ function handleMessage(request, sender, sendResponse) {
     }
     case "newTab": {
       activeTabId = sender.tab.id;
-      console.log("tab %s: Creating new tab with %s:", activeTabId, request);
+      console.log("tab %s: Creating new tab with:", activeTabId, request);
       browser.tabs.create({ url: "/pages/popup.html" }).then(
         (tab) => {
           console.log("Tab %s created", tab.id);
@@ -909,6 +909,13 @@ chrome.runtime.onInstalled.addListener(function (details) {
 function init() {
   console.log("Initializing spdx-license-diff " + version);
   restoreOptions(loadList);
+  chrome.contextMenus.removeAll(function () {
+    chrome.contextMenus.create({
+      title: "License-Diff selection",
+      id: "spdxLicenseDiff",
+      contexts: ["selection"],
+    });
+  });
 }
 
 init();
@@ -919,10 +926,4 @@ chrome.tabs.onActivated.addListener(handleActivate);
 chrome.windows.onFocusChanged.addListener(handleFocusChanged);
 chrome.storage.onChanged.addListener(handleStorageChange);
 chrome.tabs.onUpdated.addListener(handleUpdated);
-
 chrome.contextMenus.onClicked.addListener(handleClick);
-chrome.contextMenus.create({
-  title: "License-Diff selection",
-  contexts: ["selection"],
-  id: "contextId",
-});
