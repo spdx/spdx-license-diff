@@ -50,7 +50,7 @@
     "fast-dice-coefficient": "^1.0.3",
     "fastest-levenshtein": "^1.0.12",
     "jquery": "^3.2.1",
-    "underscore": "^1.9.1"
+    "underscore": "^1.12.1"
   },
   "release": {
     "branches": [
