@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/spdx/spdx-license-diff/compare/v0.9.1...v0.9.2) (2023-07-29)
+
+
+### Bug Fixes
+
+* respect dark mode for selection bubble ([b54f528](https://github.com/spdx/spdx-license-diff/commit/b54f528c9d7fc993de1c7aae8cbf26b9ff308011)), closes [#105](https://github.com/spdx/spdx-license-diff/issues/105)
+
 ## [0.9.1](https://github.com/spdx/spdx-license-diff/compare/v0.9.0...v0.9.1) (2021-03-09)
 
 
