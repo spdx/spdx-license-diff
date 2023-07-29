@@ -4,7 +4,7 @@
   top: 0;
   left: 0;
   border: 1px solid black;
-  background: white;
+  background: inherit;
 }
 progress {
   width: 100%;
