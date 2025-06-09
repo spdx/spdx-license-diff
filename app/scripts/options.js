@@ -89,6 +89,24 @@ function saveOptions() {
     filters.deprecated = document.getElementById("deprecated").value;
   }
 
+  // Get color settings
+  var diffColors = {
+    light: {
+      insertBg: document.getElementById("lightInsertBg").value,
+      insertText: document.getElementById("lightInsertText").value,
+      deleteBg: document.getElementById("lightDeleteBg").value,
+      deleteText: document.getElementById("lightDeleteText").value,
+      equalText: document.getElementById("lightEqualText").value
+    },
+    dark: {
+      insertBg: document.getElementById("darkInsertBg").value,
+      insertText: document.getElementById("darkInsertText").value,
+      deleteBg: document.getElementById("darkDeleteBg").value,
+      deleteText: document.getElementById("darkDeleteText").value,
+      equalText: document.getElementById("darkEqualText").value
+    }
+  };
+
   var options = {
     updateFrequency: parseInt(updateFrequency),
     showBest: parseInt(showBest),
@@ -97,11 +115,16 @@ function saveOptions() {
     diceCoefficient: parseFloat(diceCoefficient),
     maxworkers: parseInt(maxworkers),
     filters: filters,
+    diffColors: diffColors,
   };
   api.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
     var status = document.getElementById("status");
     status.textContent = "Options saved.";
+    
+    // Update the diff colors in the content script
+    updateDiffColors(diffColors);
+    
     setTimeout(function () {
       status.textContent = "";
     }, 1500);
@@ -125,6 +148,20 @@ function restoreOptions() {
     document.getElementById("diceCoefficient").value =
       result.options.diceCoefficient;
     document.getElementById("maxWorkers").value = result.options.maxworkers;
+    
+    // Restore color settings
+    const colors = result.options.diffColors || defaultoptions.diffColors;
+    document.getElementById("lightInsertBg").value = colors.light.insertBg;
+    document.getElementById("lightInsertText").value = colors.light.insertText;
+    document.getElementById("lightDeleteBg").value = colors.light.deleteBg;
+    document.getElementById("lightDeleteText").value = colors.light.deleteText;
+    document.getElementById("lightEqualText").value = colors.light.equalText || defaultoptions.diffColors.light.equalText;
+    document.getElementById("darkInsertBg").value = colors.dark.insertBg;
+    document.getElementById("darkInsertText").value = colors.dark.insertText;
+    document.getElementById("darkDeleteBg").value = colors.dark.deleteBg;
+    document.getElementById("darkDeleteText").value = colors.dark.deleteText;
+    document.getElementById("darkEqualText").value = colors.dark.equalText || defaultoptions.diffColors.dark.equalText;
+    
     showFilters(document.getElementById("exclude"), result);
     // document.getElementById('deprecated').checked = result.options.filters.deprecated
   });
@@ -304,6 +341,156 @@ function showUpdatePermissionError(message) {
   }
 }
 
+// Color management functions
+function updateDiffColors(colors) {
+  // Inject custom CSS with the new colors
+  const customCSS = `
+    ins.diff-insert, .diff-insert {
+      background-color: ${colors.light.insertBg} !important;
+      color: ${colors.light.insertText} !important;
+    }
+    del.diff-delete, .diff-delete {
+      background-color: ${colors.light.deleteBg} !important;
+      color: ${colors.light.deleteText} !important;
+    }
+    span.diff-equal, .diff-equal {
+      color: ${colors.light.equalText} !important;
+    }
+    
+    /* Dark mode via system preference */
+    @media (prefers-color-scheme: dark) {
+      ins.diff-insert, .diff-insert {
+        background-color: ${colors.dark.insertBg} !important;
+        color: ${colors.dark.insertText} !important;
+      }
+      del.diff-delete, .diff-delete {
+        background-color: ${colors.dark.deleteBg} !important;
+        color: ${colors.dark.deleteText} !important;
+      }
+      span.diff-equal, .diff-equal {
+        color: ${colors.dark.equalText} !important;
+      }
+    }
+    
+    /* Dark mode via manual theme toggle (overrides system preference) */
+    .spdx-dark-mode ins.diff-insert,
+    .spdx-dark-mode .diff-insert {
+      background-color: ${colors.dark.insertBg} !important;
+      color: ${colors.dark.insertText} !important;
+    }
+    .spdx-dark-mode del.diff-delete,
+    .spdx-dark-mode .diff-delete {
+      background-color: ${colors.dark.deleteBg} !important;
+      color: ${colors.dark.deleteText} !important;
+    }
+    .spdx-dark-mode span.diff-equal,
+    .spdx-dark-mode .diff-equal {
+      color: ${colors.dark.equalText} !important;
+    }
+    
+    /* Light mode override when not in spdx-dark-mode (for cases where system is dark but user chose light) */
+    .selection_bubble:not(.spdx-dark-mode) ins.diff-insert,
+    .selection_bubble:not(.spdx-dark-mode) .diff-insert {
+      background-color: ${colors.light.insertBg} !important;
+      color: ${colors.light.insertText} !important;
+    }
+    .selection_bubble:not(.spdx-dark-mode) del.diff-delete,
+    .selection_bubble:not(.spdx-dark-mode) .diff-delete {
+      background-color: ${colors.light.deleteBg} !important;
+      color: ${colors.light.deleteText} !important;
+    }
+    .selection_bubble:not(.spdx-dark-mode) span.diff-equal,
+    .selection_bubble:not(.spdx-dark-mode) .diff-equal {
+      color: ${colors.light.equalText} !important;
+    }
+  `;
+  
+  // Store the custom CSS in storage so content scripts can access it
+  api.storage.local.set({ customDiffCSS: customCSS });
+}
+
+function resetColors() {
+  const defaultColors = defaultoptions.diffColors;
+  document.getElementById("lightInsertBg").value = defaultColors.light.insertBg;
+  document.getElementById("lightInsertText").value = defaultColors.light.insertText;
+  document.getElementById("lightDeleteBg").value = defaultColors.light.deleteBg;
+  document.getElementById("lightDeleteText").value = defaultColors.light.deleteText;
+  document.getElementById("lightEqualText").value = defaultColors.light.equalText;
+  document.getElementById("darkInsertBg").value = defaultColors.dark.insertBg;
+  document.getElementById("darkInsertText").value = defaultColors.dark.insertText;
+  document.getElementById("darkDeleteBg").value = defaultColors.dark.deleteBg;
+  document.getElementById("darkDeleteText").value = defaultColors.dark.deleteText;
+  document.getElementById("darkEqualText").value = defaultColors.dark.equalText;
+  
+  // Update preview if visible
+  const preview = document.getElementById("colorPreview");
+  if (preview.style.display !== "none") {
+    updateColorPreview();
+  }
+}
+
+function updateColorPreview() {
+  const lightColors = {
+    insertBg: document.getElementById("lightInsertBg").value,
+    insertText: document.getElementById("lightInsertText").value,
+    deleteBg: document.getElementById("lightDeleteBg").value,
+    deleteText: document.getElementById("lightDeleteText").value,
+    equalText: document.getElementById("lightEqualText").value
+  };
+  
+  const darkColors = {
+    insertBg: document.getElementById("darkInsertBg").value,
+    insertText: document.getElementById("darkInsertText").value,
+    deleteBg: document.getElementById("darkDeleteBg").value,
+    deleteText: document.getElementById("darkDeleteText").value,
+    equalText: document.getElementById("darkEqualText").value
+  };
+  
+  // Update light mode preview
+  const lightInsert = document.querySelector("#lightPreview .preview-insert");
+  const lightDelete = document.querySelector("#lightPreview .preview-delete");
+  const lightEqual = document.querySelector("#lightPreview .preview-equal");
+  if (lightInsert) {
+    lightInsert.style.backgroundColor = lightColors.insertBg;
+    lightInsert.style.color = lightColors.insertText;
+  }
+  if (lightDelete) {
+    lightDelete.style.backgroundColor = lightColors.deleteBg;
+    lightDelete.style.color = lightColors.deleteText;
+  }
+  if (lightEqual) {
+    lightEqual.style.color = lightColors.equalText;
+  }
+  
+  // Update dark mode preview
+  const darkInsert = document.querySelector("#darkPreview .preview-insert-dark");
+  const darkDelete = document.querySelector("#darkPreview .preview-delete-dark");
+  const darkEqual = document.querySelector("#darkPreview .preview-equal-dark");
+  if (darkInsert) {
+    darkInsert.style.backgroundColor = darkColors.insertBg;
+    darkInsert.style.color = darkColors.insertText;
+  }
+  if (darkDelete) {
+    darkDelete.style.backgroundColor = darkColors.deleteBg;
+    darkDelete.style.color = darkColors.deleteText;
+  }
+  if (darkEqual) {
+    darkEqual.style.color = darkColors.equalText;
+  }
+}
+
+function toggleColorPreview() {
+  const preview = document.getElementById("colorPreview");
+  if (preview.style.display === "none" || preview.style.display === "") {
+    preview.style.display = "block";
+    updateColorPreview();
+    document.getElementById("previewColors").textContent = "Hide Preview";
+  } else {
+    preview.style.display = "none";
+    document.getElementById("previewColors").textContent = "Preview Colors";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", restoreOptions);
 document.addEventListener("DOMContentLoaded", loadList);
 document.addEventListener("DOMContentLoaded", checkStorage);
@@ -314,6 +501,20 @@ document.getElementById("reset").addEventListener("click", reset);
 document.getElementById("update").addEventListener("click", updateList);
 document.getElementById("save").addEventListener("click", saveOptions);
 document.getElementById("clearstorage").addEventListener("click", clearStorage);
+document.getElementById("resetColors").addEventListener("click", resetColors);
+document.getElementById("previewColors").addEventListener("click", toggleColorPreview);
+
+// Add event listeners for color inputs to update preview in real-time
+["lightInsertBg", "lightInsertText", "lightDeleteBg", "lightDeleteText", "lightEqualText",
+ "darkInsertBg", "darkInsertText", "darkDeleteBg", "darkDeleteText", "darkEqualText"].forEach(id => {
+  document.getElementById(id).addEventListener("input", function() {
+    // Update preview if visible
+    const preview = document.getElementById("colorPreview");
+    if (preview.style.display !== "none") {
+      updateColorPreview();
+    }
+  });
+});
 
 // Permission button event listeners
 document.addEventListener("DOMContentLoaded", function() {

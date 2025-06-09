@@ -20,6 +20,28 @@ progress:after {
   right:0;
 }
 
+#themeToggleSelect {
+  position: absolute;
+  top: 0;
+  right: 32px;
+  background: white;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 24px;
+  z-index: 1000;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+  color: #333;
+}
+
+#themeToggleSelect:hover {
+  opacity: 1;
+  border-color: #007bff;
+}
+
 /* Diff display styles with dark mode support */
 .diff-content {
   font-family: monospace;
@@ -27,35 +49,54 @@ progress:after {
   line-height: 1.4;
 }
 
-.diff-insert {
+/* Target the actual HTML elements generated */
+ins.diff-insert, .diff-insert {
   background-color: #d4edda;
   color: #155724;
   text-decoration: none;
 }
 
-.diff-delete {
+del.diff-delete, .diff-delete {
   background-color: #f8d7da;
   color: #721c24;
   text-decoration: line-through;
 }
 
-.diff-equal {
-  color: inherit;
+span.diff-equal, .diff-equal {
+  color: #333333;
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .diff-insert {
+  ins.diff-insert, .diff-insert {
     background-color: #0d4920;
     color: #7dd3fc;
   }
   
-  .diff-delete {
+  del.diff-delete, .diff-delete {
     background-color: #5a1e1e;
     color: #fca5a5;
   }
   
-  .diff-equal {
+  span.diff-equal, .diff-equal {
     color: #e5e7eb;
   }
+}
+
+/* Dark mode override styles using spdx-dark-mode class */
+.spdx-dark-mode ins.diff-insert,
+.spdx-dark-mode .diff-insert {
+  background-color: #0d4920 !important;
+  color: #7dd3fc !important;
+}
+
+.spdx-dark-mode del.diff-delete,
+.spdx-dark-mode .diff-delete {
+  background-color: #5a1e1e !important;
+  color: #fca5a5 !important;
+}
+
+.spdx-dark-mode span.diff-equal,
+.spdx-dark-mode .diff-equal {
+  color: #e5e7eb !important;
 }

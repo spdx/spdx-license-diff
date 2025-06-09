@@ -23,6 +23,27 @@ var options;
 var msStart;
 var selectedfilters;
 
+// Function to apply custom diff colors from storage
+function applyCustomDiffColors() {
+  api.storage.local.get(['customDiffCSS'], function(result) {
+    if (result.customDiffCSS) {
+      // Remove any existing custom style element
+      const existingStyle = document.getElementById('spdx-custom-diff-colors');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+      
+      // Create new style element with custom colors
+      const styleElement = document.createElement('style');
+      styleElement.id = 'spdx-custom-diff-colors';
+      styleElement.textContent = result.customDiffCSS;
+      document.head.appendChild(styleElement);
+      
+      console.log('Applied custom diff colors');
+    }
+  });
+}
+
 // Show permission error with helpful links for different browsers
 function showPermissionErrorDialog(message) {
   const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
@@ -484,6 +505,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
   }
   createNewLicenseButton(form);
   createNewTabButton(form, selectedLicense);
+  createThemeToggleButton(form);
 }
 
 // Display helper functions for modifying the DOM
@@ -536,6 +558,7 @@ function createNewLicenseButton(form) {
   button.innerHTML = "Submit new license";
   button.type = "button";
   button.id = "newLicenseButton";
+  button.title = "Submit this text as a new license to SPDX.org";
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
   button.addEventListener("click", function () {
@@ -562,10 +585,86 @@ function createNewTabButton(form, selectedLicense) {
     '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
   button.type = "button";
   button.id = "newTabButton";
+  button.title = "Open diff results in a new tab (fullscreen view)";
   button.style.visibility = "hidden";
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
   button.addEventListener("click", newTab);
+}
+
+// Add theme toggle dropdown.
+function createThemeToggleButton(form) {
+  if (window.location.href.endsWith("/popup.html")) return;
+  if ($("#themeToggleSelect").length) {
+    return; // Dropdown already exists
+  }
+  
+  var select = document.createElement("select");
+  select.id = "themeToggleSelect";
+  select.title = "Select theme for diff display";
+  select.style.position = "absolute";
+  select.style.top = "0";
+  select.style.right = "32px"; // Position to the left of the full screen button
+  select.style.background = "white";
+  select.style.border = "1px solid #ccc";
+  select.style.cursor = "pointer";
+  select.style.padding = "4px 8px";
+  select.style.borderRadius = "4px";
+  select.style.fontSize = "12px";
+  select.style.height = "24px";
+  select.style.zIndex = "1000";
+  
+  // Create theme options
+  var lightOption = document.createElement("option");
+  lightOption.value = "light";
+  lightOption.text = "Light";
+  select.appendChild(lightOption);
+  
+  var darkOption = document.createElement("option");
+  darkOption.value = "dark";
+  darkOption.text = "Dark";
+  select.appendChild(darkOption);
+  
+  form.appendChild(select);
+  
+  // Check current theme state and set the selected option
+  const bubbleDOM = document.getElementById("license_bubble");
+  const isDarkMode = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+  select.value = isDarkMode ? "dark" : "light";
+  
+  select.addEventListener("change", function() {
+    const shouldBeDark = this.value === "dark";
+    const currentlyDark = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+    
+    if (shouldBeDark !== currentlyDark) {
+      toggleDiffTheme();
+    }
+  });
+}
+
+// Toggle between light and dark mode for diff display
+function toggleDiffTheme() {
+  const bubbleDOM = document.getElementById("license_bubble");
+  const select = document.getElementById("themeToggleSelect");
+  
+  if (!bubbleDOM) return;
+  
+  const isDarkMode = bubbleDOM.classList.contains('spdx-dark-mode');
+  
+  if (isDarkMode) {
+    // Switch to light mode
+    bubbleDOM.classList.remove('spdx-dark-mode');
+    if (select) select.value = "light";
+  } else {
+    // Switch to dark mode
+    bubbleDOM.classList.add('spdx-dark-mode');
+    if (select) select.value = "dark";
+  }
+  
+  // Reapply custom colors to ensure they work with the new theme
+  applyCustomDiffColors();
+  
+  console.log('Theme toggled to:', isDarkMode ? 'light' : 'dark');
 }
 
 function newTab() {
@@ -597,18 +696,9 @@ function renderBubble(mouseX, mouseY, selection) {
 
 function updateBubbleText(text, target = "#bubble_text") {
   var bubbleDOMText = $(target)[0];
-  // convert html to xhtml
-  // concept from https://stackoverflow.com/a/12092919 and
-  // https://devtidbits.com/2017/12/06/quick-fix-the-unsafe_var_assignment-warning-in-javascript/
-  text = new XMLSerializer().serializeToString(
-    new DOMParser().parseFromString(text, "text/html")
-  );
-  text = new DOMParser().parseFromString(text, "application/xml");
-  const tags = text.getElementsByTagName(`body`);
-  bubbleDOMText.innerHTML = ``;
-  for (const tag of tags) {
-    bubbleDOMText.appendChild(tag);
-  }
+  // Directly set innerHTML to preserve HTML structure and CSS classes
+  // The XML serialization was breaking diff CSS classes
+  bubbleDOMText.innerHTML = text;
 }
 
 // max will increase if > 0; value will be set if not null and >=0
@@ -636,5 +726,16 @@ function restoreOptions() {
     }
   });
 }
+
+// Listen for storage changes to update colors dynamically
+api.storage.onChanged.addListener(function(changes, area) {
+  if (area === 'local' && changes.customDiffCSS) {
+    applyCustomDiffColors();
+  }
+});
+
+// Initialize the content script
+restoreOptions();
+applyCustomDiffColors();
 
 console.log("Spdx-license-diff " + version + " ContentScript injected");

@@ -49,6 +49,66 @@ input:valid + span:after {
   background-color: #0056b3;
 }
 
+/* Color picker styles */
+.color-picker-section h4 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.color-picker-section label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.color-picker-section input[type="color"] {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.color-picker-section input[type="color"]:hover {
+  border-color: #007bff;
+}
+
+#resetColors, #previewColors {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+#resetColors:hover, #previewColors:hover {
+  background-color: #545b62;
+}
+
+/* Color preview styles */
+.preview-insert, .preview-insert-dark {
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+}
+
+.preview-delete, .preview-delete-dark {
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+}
+
+.preview-equal, .preview-equal-dark {
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+}
+
 .permission-warning #openPermissions {
   background-color: #dc3545;
 }

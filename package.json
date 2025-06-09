@@ -51,7 +51,7 @@
     "webpack": "^5.98.0"
   },
   "dependencies": {
-    "diff-match-patch": "latest",
+    "@sanity/diff-match-patch": "^3.2.0",
     "fast-dice-coefficient": "latest",
     "fastest-levenshtein": "latest",
     "jquery": "latest",
