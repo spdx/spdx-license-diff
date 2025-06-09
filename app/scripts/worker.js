@@ -290,14 +290,27 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   // postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {};
   var data = license;
-  dmp.Diff_Timeout = 0;
-  //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
-  var msStart = new Date().getTime();
-  var textDiff = dmp.diff_main(data, selection); // produces diff array
-  dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
-  // dmp.diff_cleanupEfficiency(textDiff);
-  var msEnd = new Date().getTime();
-  result = { html: dmp.diff_prettyHtml(textDiff), time: msEnd - msStart };
+  
+  try {
+    dmp.Diff_Timeout = 0;
+    //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
+    var msStart = new Date().getTime();
+    var textDiff = dmp.diff_main(data, selection); // produces diff array
+    
+    if (textDiff && textDiff.length > 0) {
+      dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
+      // dmp.diff_cleanupEfficiency(textDiff);
+      var msEnd = new Date().getTime();
+      result = { html: dmp.diff_prettyHtml(textDiff), time: msEnd - msStart };
+    } else {
+      console.warn("Empty diff result for", spdxid);
+      result = { html: "No differences found", time: 0 };
+    }
+  } catch (error) {
+    console.error("Error generating diff for", spdxid, ":", error);
+    result = { html: "Error generating diff: " + error.message, time: 0 };
+  }
+  
   console.log("%s %s: %s diff:%o", tabId, id, spdxid, result);
   postMessage({
     command: "diffnext",

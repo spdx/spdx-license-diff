@@ -1067,10 +1067,14 @@ function initDirectWorkers() {
     const worker = new Worker(chrome.runtime.getURL("scripts/worker.js"));
     
     worker.onmessage = function(event) {
-      // Use the same handler as offscreen
-      handleWorkerResponse(event.data);
-      if (event.data.id !== undefined) {
-        processDirectWorkerQueue(event.data.id);
+      try {
+        // Use the same handler as offscreen
+        handleWorkerResponse(event.data);
+        if (event.data.id !== undefined) {
+          processDirectWorkerQueue(event.data.id);
+        }
+      } catch (error) {
+        console.error('Error handling worker message:', error, event.data);
       }
     };
     
