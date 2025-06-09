@@ -914,8 +914,7 @@ function restoreOptions(callbackFunction = null) {
 async function ensureOffscreenDocument() {
   if (offscreenReady) return;
 
-  // Check if offscreen API is available (Chrome)
-  if (typeof chrome !== 'undefined' && chrome.offscreen) {
+  if (chrome.offscreen) {
     try {
       await chrome.offscreen.createDocument({
         url: chrome.runtime.getURL("pages/offscreen.html"),
@@ -928,8 +927,6 @@ async function ensureOffscreenDocument() {
       offscreenReady = true;
     }
   } else {
-    // Firefox: Use event page directly - initialize workers in background
-    console.log("Using Firefox event page approach - initializing workers directly");
     initDirectWorkers();
     offscreenReady = true;
   }
@@ -938,14 +935,12 @@ async function ensureOffscreenDocument() {
 function processqueue(priority = 0) {
   if (!offscreenReady) return;
   
-  if (typeof chrome !== 'undefined' && chrome.offscreen) {
-    // Chrome: Send message to offscreen document
+  if (chrome.offscreen) {
     chrome.runtime.sendMessage({
       command: "processQueue",
       priority: priority,
     });
   } else {
-    // Firefox: Process direct worker queues
     for (let i = 0; i < directWorkers.length; i++) {
       processDirectWorkerQueue(i);
     }
@@ -956,9 +951,7 @@ function dowork(message) {
   ensureOffscreenDocument().then(() => {
     setTimeout(() => {
       try {
-        // Check if we're using offscreen (Chrome) or direct workers (Firefox)
-        if (typeof chrome !== 'undefined' && chrome.offscreen) {
-          // Chrome: Send to offscreen document
+        if (chrome.offscreen) {
           chrome.runtime.sendMessage({
             command: "initWorkerManager",
             options: options,
@@ -969,7 +962,6 @@ function dowork(message) {
             workMessage: message,
           });
         } else {
-          // Firefox: Send work directly to workers
           sendWorkDirectly(message);
         }
       } catch (error) {
@@ -1074,18 +1066,17 @@ function initDirectWorkers() {
           processDirectWorkerQueue(event.data.id);
         }
       } catch (error) {
-        console.error('Error handling worker message:', error, event.data);
+        console.error('Worker message error:', error);
       }
     };
     
     worker.onerror = function(error) {
-      console.error('Direct worker error:', error);
+      console.error('Worker error:', error);
     };
     
     directWorkers.push(worker);
     directWorkerQueues.push([]);
   }
-  console.log('Direct workers initialized:', directWorkers.length);
 }
 
 function processDirectWorkerQueue(workerIndex) {
@@ -1096,11 +1087,8 @@ function processDirectWorkerQueue(workerIndex) {
 }
 
 function sendWorkDirectly(message) {
-  if (directWorkers.length === 0) {
-    initDirectWorkers();
-  }
+  if (directWorkers.length === 0) initDirectWorkers();
   
-  // Find worker with shortest queue
   let workerindex = 0;
   let mininqueue = directWorkerQueues[0].length;
   for (let i = 0; i < directWorkerQueues.length; i++) {

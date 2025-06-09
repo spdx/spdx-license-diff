@@ -287,28 +287,24 @@ function sortlicenses(licenses, tabId) {
 }
 
 function generateDiff(selection, spdxid, license, record, tabId) {
-  // postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {};
   var data = license;
   
   try {
     dmp.Diff_Timeout = 0;
-    //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
     var msStart = new Date().getTime();
     var textDiff = dmp.diff_main(data, selection); // produces diff array
     
     if (textDiff && textDiff.length > 0) {
-      dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
-      // dmp.diff_cleanupEfficiency(textDiff);
+      dmp.diff_cleanupSemantic(textDiff);
       var msEnd = new Date().getTime();
       result = { html: dmp.diff_prettyHtml(textDiff), time: msEnd - msStart };
     } else {
-      console.warn("Empty diff result for", spdxid);
       result = { html: "No differences found", time: 0 };
     }
   } catch (error) {
-    console.error("Error generating diff for", spdxid, ":", error);
-    result = { html: "Error generating diff: " + error.message, time: 0 };
+    console.error("Diff generation error:", spdxid, error);
+    result = { html: "Error generating diff", time: 0 };
   }
   
   console.log("%s %s: %s diff:%o", tabId, id, spdxid, result);
@@ -348,7 +344,6 @@ function removeLineNumbers(str, percentage = 0.8) {
   var linenumbersre = str.match(/((\n|^)\s*)\d+/g);
   var linenumbercount = linenumbersre ? linenumbersre.length : 0;
   if (linenumbercount / loc > percentage) {
-    // TODO: Replace .8 with option
     str = str.replace(/((\n|^)\s*)\d+/g, "$2");
   }
   return str;
