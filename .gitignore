@@ -9,3 +9,4 @@ dist/
 packages/
 license-list/
 *.code-workspace
+package-lock.json
