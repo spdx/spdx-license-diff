@@ -128,8 +128,56 @@ function handleStorageChange(changes, area) {
   }
 }
 
-// respond to content script
+// respond to content script and offscreen document
 function handleMessage(request, sender, sendResponse) {
+  // Handle messages from offscreen document (if no tab, it's from offscreen)
+  if (!sender.tab) {
+    // Message from offscreen document
+    if (request.command === "workerResponse") {
+      // Handle worker response from offscreen document
+      handleWorkerResponse(request.data);
+      return;
+    }
+    if (request.command === "workerProcessQueue") {
+      processqueue(request.priority);
+      return;
+    }
+    if (request.command === "forwardToTab") {
+      forwardMessageToTab(request.data);
+      return;
+    }
+    if (request.command === "workerStore") {
+      handleWorkerStore(request.data);
+      return;
+    }
+    if (request.command === "workerSaveLicenseList") {
+      handleWorkerSaveLicenseList(request.data);
+      return;
+    }
+    if (request.command === "workerSaveItem") {
+      handleWorkerSaveItem(request.data);
+      return;
+    }
+    if (request.command === "workerSortComplete") {
+      handleWorkerSortComplete(request.data);
+      return;
+    }
+    if (request.command === "workerUpdateDone") {
+      handleWorkerUpdateDone(request.data);
+      return;
+    }
+    if (request.command === "workerCompareComplete") {
+      handleWorkerCompareComplete(request.data);
+      return;
+    }
+    if (request.command === "workerDiffComplete") {
+      handleWorkerDiffComplete(request.data);
+      return;
+    }
+    return; // Offscreen message handled
+  }
+
+  // Handle regular content script messages
   switch (request.command) {
     case "focused":
       activeTabId = sender.tab.id;
@@ -221,11 +269,19 @@ function handleMessage(request, sender, sendResponse) {
         injectCode,
         request
       );
-      browser.tabs.create({ url: newLicenseUrl }).then(
+      chrome.tabs.create({ url: newLicenseUrl }).then(
         () => {
           setTimeout(() => {
-            browser.tabs.executeScript({
-              code: injectCode,
+            chrome.scripting.executeScript({
+              target: { tabId: activeTabId },
+              func: function (activeTabId, url, version, selection) {
+                console.log("Receiving injected code from tab:" + activeTabId);
+                document.getElementById("sourceUrl").value = url;
+                document.getElementById("comments").value =
+                  "Prepared by spdx-license-diff " + version;
+                document.getElementById("text").value = selection;
+              },
+              args: [activeTabId, request.url, version, request.selection],
             });
           }, 250);
         },
@@ -238,7 +294,7 @@ function handleMessage(request, sender, sendResponse) {
     case "newTab": {
       activeTabId = sender.tab.id;
       console.log("tab %s: Creating new tab with:", activeTabId, request);
-      browser.tabs.create({ url: "/pages/popup.html" }).then(
+      chrome.tabs.create({ url: "/pages/popup.html" }).then(
         (tab) => {
           console.log("Tab %s created", tab.id);
           setTimeout(() => {
@@ -258,71 +314,173 @@ function handleMessage(request, sender, sendResponse) {
   }
 }
 
-// Workerqueue functions
-// These functions are for allowing multiple workers.
-function workeronmessage(event) {
-  processqueue(
-    status[activeTabId] && status[activeTabId] !== "Done" && activeTabId
-      ? activeTabId
-      : 0
-  ); // Message received so see if queue can be cleared.
+// Offscreen worker message handlers
+function handleWorkerResponse(data) {
+  // Process worker response from offscreen document
+  // This is essentially the workeronmessage function adapted for offscreen communication
   var result;
   var threadid;
   var type;
   var item;
+  var tabId;
+  var spdxid;
+  
+  switch (data.command) {
+    case "license":
+      spdxid = data.spdxid;
+      break;
+    case "savelicenselist":
+      handleWorkerSaveLicenseList(data);
+      break;
+    case "saveitem":
+      handleWorkerSaveItem(data);
+      break;
+    case "updatedone":
+      handleWorkerUpdateDone(data);
+      break;
+    case "comparenext":
+      handleWorkerCompareComplete(data);
+      break;
+    case "sortdone":
+      handleWorkerSortComplete(data);
+      break;
+    case "diffnext":
+      handleWorkerDiffComplete(data);
+      break;
+    default:
+      console.log("Unknown worker response command:", data.command);
+      break;
+  }
+}
+
+function forwardMessageToTab(data) {
+  var tabId = data.tabId !== undefined ? data.tabId : activeTabId;
+  if (pendingcompare) {
+    // broadcast to all
+    for (var i = 0; i < comparequeue.length; i++) {
+      chrome.tabs.sendMessage(comparequeue[i].tabId, data);
+    }
+  } else if (tabId !== undefined && tabId) {
+    chrome.tabs.sendMessage(tabId, data);
+  }
+}
+
+function handleWorkerStore(data) {
+  var obj = {};
+  obj[data.spdxid] = {
+    hash: data.hash,
+    raw: data.raw,
+    processed: data.processed,
+    patterns: data.patterns,
+  };
+  setStorage(obj);
+}
+
+function handleWorkerSaveLicenseList(data) {
+  workeronmessage({ data: data });
+}
+
+function handleWorkerSaveItem(data) {
+  workeronmessage({ data: data });
+}
+
+function handleWorkerSortComplete(data) {
+  var threadid = data.id;
+  var tabId = data.tabId;
+  var result = data.result;
+  
+  chrome.tabs.sendMessage(tabId, {
+    command: "sortdone",
+    result: result,
+    id: threadid,
+  });
+}
+
+function handleWorkerUpdateDone(data) {
+  checkUpdateDone();
+}
+
+function handleWorkerCompareComplete(data) {
+  var threadid = data.id;
+  var tabId = data.tabId;
+  var result = data.result;
+  var spdxid = data.spdxid;
+  
+  chrome.tabs.sendMessage(tabId, {
+    command: "next",
+    spdxid: spdxid,
+    id: threadid,
+  });
+  
+  unsorted[tabId][spdxid] = result;
+  completedcompares++;
+  
+  if (completedcompares === Object.keys(unsorted[tabId]).length) {
+    console.log(
+      "Requesting final sort of %s for tab %s",
+      Object.keys(unsorted[tabId]).length,
+      tabId
+    );
+    status[tabId] = "Sorting";
+    dowork({
+      command: "sortlicenses",
+      licenses: unsorted[tabId],
+      tabId: tabId,
+    });
+    diffcount[tabId] = 0;
+  }
+}
+
+function handleWorkerDiffComplete(data) {
+  var threadid = data.id;
+  var tabId = data.tabId;
+  var result = data.result;
+  var spdxid = data.spdxid;
+  var record = data.record;
+  
+  chrome.tabs.sendMessage(tabId, {
+    command: "diffnext",
+    spdxid: spdxid,
+    result: result,
+    record: record,
+    id: threadid,
+  });
+  
+  diffcount[tabId] = diffcount[tabId] - 1;
+  if (diffcount[tabId] === 0) {
+    status[tabId] = "Done";
+    // Handle filtered licenses in background if any
+    for (const filter of Object.keys(filtered[tabId])) {
+      if (filter === "results") continue;
+      for (const item in filtered[tabId][filter]) {
+        const type = filtered[tabId][filter][item].type;
+        const itemdict = list[type + "dict"][item];
+        status[tabId] = "Background comparing";
+        chrome.tabs.sendMessage(tabId, {
+          command: "background",
+          stage: "Comparing filtered licenses",
+          spdxid: item,
+          type: type,
+        });
+      }
+    }
+  }
+}
+
+// Workerqueue functions
+// These functions are for allowing multiple workers.
+function workeronmessage(event) {
+  // Simplified function - most processing now handled by offscreen document
+  var result;
+  var threadid;
+  var type;
+  var item;
+  var tabId;
+  var spdxid;
   switch (event.data.command) {
-    case "progressbarmax":
-      var tabId =
-        event.data.tabId !== undefined ? event.data.tabId : activeTabId;
-      if (pendingcompare) {
-        // broadcast to all
-        for (var i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
-        }
-      } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
-      }
-      break;
-    case "progressbarvalue":
-      tabId = event.data.tabId !== undefined ? event.data.tabId : activeTabId;
-      if (pendingcompare) {
-        // broadcast to all
-        for (i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
-        }
-      } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
-      }
-      break;
-    case "next":
-      tabId = event.data.tabId !== undefined ? event.data.tabId : activeTabId;
-      if (pendingcompare) {
-        // broadcast to all
-        for (i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
-        }
-      } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
-      }
-
-      break;
-    case "store":
-      // This path is intended to store a hash of a comparison. TODO: Complete
-      // updateProgressBar(-1, -1)
-      var obj = {};
-      obj[event.data.spdxid] = {
-        hash: event.data.hash,
-        raw: event.data.raw,
-        processed: event.data.processed,
-        patterns: event.data.patterns,
-      };
-
-      setStorage(obj);
-
-      break;
     case "license":
       // This path is intended to determine if comparison already done. TODO: Complete
-      var spdxid = event.data.spdxid;
+      spdxid = event.data.spdxid;
       // var hash = event.data.hash
       // chrome.storage.local.get(spdxid, function(result) {
       //       if (result[spdxid] && result[spdxid].hash != hash){
