@@ -5,7 +5,8 @@ import _ from "underscore";
 import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
 import { checkLocalFileAccess } from "./cc-by-sa.js";
 
-var version = browser.runtime.getManifest().version;
+const api = typeof browser !== "undefined" ? browser : chrome;
+const version = api.runtime.getManifest().version;
 var list = {};
 var options;
 var lastupdate;
@@ -26,9 +27,11 @@ var pendingload = false;
 var filtered = {};
 var total = 0;
 var completedcompares = 0;
+var workersInitialized = false;
+var workersInitializing = false;
 
-chrome.browserAction.setBadgeText({
-  text: `Diff`,
+chrome.action.setBadgeText({
+  text: "Diff"
 });
 
 function handleClick(tab) {
@@ -38,7 +41,9 @@ function handleClick(tab) {
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
     if (activeTab.url.toLowerCase().startsWith("file:")) {
-      chrome.extension.isAllowedFileSchemeAccess(checkLocalFileAccess);
+      // Note: chrome.extension.isAllowedFileSchemeAccess is deprecated in MV3
+      // We'll handle this differently by just trying to inject and handling errors
+      console.log("File URL detected, attempting injection");
     }
     if (!status[activeTabId]) {
       injectContentScript(activeTabId);
@@ -53,18 +58,25 @@ function handleClick(tab) {
 }
 
 function injectContentScript(activeTabId) {
-  chrome.tabs.insertCSS(activeTabId, { file: "/styles/contentscript.css" });
-  chrome.tabs.executeScript(
-    activeTabId,
-    { file: "/scripts/contentscript.js" },
-    function (result) {
-      chrome.tabs.sendMessage(
-        activeTabId,
-        { command: "clicked_browser_action" },
-        messageResponse
-      );
-    }
-  );
+  chrome.scripting.insertCSS({
+    target: { tabId: activeTabId },
+    files: ["/styles/contentscript.css"]
+  }).then(() => {
+    return chrome.scripting.executeScript({
+      target: { tabId: activeTabId },
+      files: ["/scripts/contentscript.js"]
+    });
+  }).then((result) => {
+    chrome.tabs.sendMessage(
+      activeTabId,
+      { command: "clicked_browser_action" },
+      messageResponse
+    );
+  }).catch((error) => {
+    console.error("Failed to inject content script:", error);
+    // Mark the tab as failed so we don't try to inject again
+    status[activeTabId] = null;
+  });
 }
 function messageResponse(response) {
   console.log("Processing message response from " + activeTabId, response);
@@ -119,6 +131,14 @@ function handleStorageChange(changes, area) {
 
 // respond to content script
 function handleMessage(request, sender, sendResponse) {
+  // Handle messages from offscreen document workers
+  if (request.source === 'offscreen-worker') {
+    // Add the workerId to the data so workeronmessage can access it
+    const eventData = { ...request.data, id: request.workerId };
+    workeronmessage({ data: eventData });
+    return;
+  }
+  
   switch (request.command) {
     case "focused":
       activeTabId = sender.tab.id;
@@ -210,11 +230,15 @@ function handleMessage(request, sender, sendResponse) {
         injectCode,
         request
       );
-      browser.tabs.create({ url: newLicenseUrl }).then(
-        () => {
+      chrome.tabs.create({ url: newLicenseUrl }).then(
+        (tab) => {
           setTimeout(() => {
-            browser.tabs.executeScript({
-              code: injectCode,
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (code) => {
+                eval(code);
+              },
+              args: [injectCode]
             });
           }, 250);
         },
@@ -227,7 +251,7 @@ function handleMessage(request, sender, sendResponse) {
     case "newTab": {
       activeTabId = sender.tab.id;
       console.log("tab %s: Creating new tab with:", activeTabId, request);
-      browser.tabs.create({ url: "/pages/popup.html" }).then(
+      chrome.tabs.create({ url: "/pages/popup.html" }).then(
         (tab) => {
           console.log("Tab %s created", tab.id);
           setTimeout(() => {
@@ -742,23 +766,94 @@ function restoreOptions(callbackFunction = null) {
     if (options === undefined) {
       options = defaultoptions;
     }
+    // Initialize workers after options are loaded, but only if not already initialized
+    if (!workersInitialized && !workersInitializing) {
+      spawnWorkers();
+    }
     if (callbackFunction !== null) callbackFunction();
   });
 }
 
-// Workerqueue functions
-// These functions are for allowing multiple workers.
-function spawnworkers() {
-  if (workers.length >= options.maxworkers) {
+// Initialize workers through offscreen document
+async function spawnWorkers() {
+  // Prevent multiple simultaneous initialization attempts
+  if (workersInitialized || workersInitializing) {
+    console.log('Workers already initialized or initializing, skipping');
     return;
   }
-  console.log("Spawning %s workers", options.maxworkers);
-  for (var i = 0; i < options.maxworkers; i++) {
-    var worker = new Worker(chrome.runtime.getURL("scripts/worker.js"));
-    worker.onmessage = workeronmessage;
-    workers[i] = [worker, false];
+  
+  workersInitializing = true;
+  
+  try {
+    // Check if offscreen document already exists
+    const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
+    if (clients.length === 0) {
+      console.log('Creating offscreen document for workers');
+      await chrome.offscreen.createDocument({
+        url: "pages/offscreen.html",
+        reasons: ["WORKERS"],
+        justification: "Needed for running Web Workers."
+      });
+      // Give the offscreen document time to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } else {
+      console.log('Using existing offscreen document');
+    }
+    
+    await chrome.runtime.sendMessage({
+      target: 'offscreen',
+      action: 'spawnWorkers',
+      options: options
+    }).then((response) => {
+      console.log('spawnWorkers response:', response);
+    });
+    
+    // Initialize workers array for tracking
+    workers = [];
+    for (let i = 0; i < options.maxworkers; i++) {
+      workers[i] = [null, false]; // [worker_reference, busy_status]
+    }
+    
+    workersInitialized = true;
+    workersInitializing = false;
+    console.log(`Initialized ${options.maxworkers} workers via offscreen document`);
+    
+    // Process any queued work now that workers are ready
+    processqueue();
+  } catch (error) {
+    console.error('Failed to spawn workers:', error);
+    workersInitializing = false;
+    
+    // If offscreen document creation fails due to existing document, try to continue
+    if (error.message && error.message.includes('Only a single offscreen document')) {
+      try {
+        console.log('Retrying with existing offscreen document');
+        await chrome.runtime.sendMessage({
+          target: 'offscreen',
+          action: 'spawnWorkers',
+          options: options
+        }).then((response) => {
+          console.log('spawnWorkers retry response:', response);
+        });
+        
+        // Initialize workers array for tracking
+        workers = [];
+        for (let i = 0; i < options.maxworkers; i++) {
+          workers[i] = [null, false]; // [worker_reference, busy_status]
+        }
+        
+        workersInitialized = true;
+        console.log(`Initialized ${options.maxworkers} workers via existing offscreen document`);
+        
+        // Process any queued work now that workers are ready
+        processqueue();
+      } catch (retryError) {
+        console.error('Failed to spawn workers on retry:', retryError);
+      }
+    }
   }
 }
+
 // queue and start work
 // priority defines a tabId to search for
 function processqueue(priority = 0) {
@@ -789,8 +884,15 @@ function processqueue(priority = 0) {
   }
 }
 function dowork(message) {
-  spawnworkers();
   runningworkers = runningworkers >= 0 ? runningworkers : 0;
+  
+  // Ensure workers array is initialized
+  if (!workersInitialized) {
+    console.log('Workers not initialized, queueing work');
+    queuework(message);
+    return;
+  }
+  
   var offset = options.maxworkers - runningworkers;
   if (options.maxworkers > runningworkers) {
     for (
@@ -798,12 +900,26 @@ function dowork(message) {
       i < options.maxworkers + offset - 1;
       i = (i + 1) % options.maxworkers
     ) {
-      if (!workers[i][1]) {
+      if (workers[i] && !workers[i][1]) {
         // worker is available
         message.id = i;
-        var worker = workers[i][0];
         workers[i][1] = true;
-        worker.postMessage(message);
+        
+        // Send work to offscreen document instead of direct worker
+        chrome.runtime.sendMessage({
+          target: 'offscreen',
+          action: 'postToWorker',
+          workerId: i,
+          data: message
+        }).catch((error) => {
+          console.error('Failed to send message to offscreen worker:', error);
+          // Mark worker as not busy if message fails
+          if (workers[i]) {
+            workers[i][1] = false;
+          }
+          runningworkers--;
+        });
+        
         runningworkers++;
         break;
       } else {
@@ -830,8 +946,10 @@ function queuework(message) {
 }
 
 function workerdone(id) {
-  workers[id][1] = false;
-  runningworkers--;
+  if (workers && workers[id]) {
+    workers[id][1] = false;
+    runningworkers--;
+  }
 }
 
 // promisfy gets
@@ -921,9 +1039,22 @@ function init() {
 init();
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onMessage.addListener(handleMessage);
-chrome.browserAction.onClicked.addListener(handleClick);
+chrome.action.onClicked.addListener(handleClick);
 chrome.tabs.onActivated.addListener(handleActivate);
 chrome.windows.onFocusChanged.addListener(handleFocusChanged);
 chrome.storage.onChanged.addListener(handleStorageChange);
 chrome.tabs.onUpdated.addListener(handleUpdated);
 chrome.contextMenus.onClicked.addListener(handleClick);
+chrome.runtime.onInstalled.addListener(async () => {
+  // Cleanup any existing offscreen documents on install/reload
+  try {
+    const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
+    if (clients.length > 0) {
+      console.log("Cleaning up existing offscreen documents");
+      // Close existing offscreen documents
+      await chrome.offscreen.closeDocument();
+    }
+  } catch (error) {
+    console.log("No existing offscreen document to clean up:", error.message);
+  }
+});

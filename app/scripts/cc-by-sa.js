@@ -38,7 +38,7 @@ function getSelectionText() {
 // https://stackoverflow.com/questions/17438354/how-can-i-enable-my-chrome-extension-in-incognito-mode/17443982#17443982
 function checkLocalFileAccess(isAllowedAccess) {
   if (isAllowedAccess) return;
-  alert(chrome.i18n.getMessage("localPermissionNeeded"));
+  alert("This extension needs access to file URLs to work with local files. Please enable 'Allow access to file URLs' in the extension settings.");
   chrome.tabs.create({
     url: "chrome://extensions/?id=" + chrome.runtime.id,
   });

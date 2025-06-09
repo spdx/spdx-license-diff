@@ -6,7 +6,8 @@ import { filters, defaultoptions } from "./const.js";
 import $ from "jquery";
 import _ from "underscore";
 
-var version = browser.runtime.getManifest().version;
+const api = typeof browser !== "undefined" ? browser : chrome;
+var version = api.runtime.getManifest().version;
 var selectedLicense = "";
 var spdx = null;
 var rawspdx = null;
