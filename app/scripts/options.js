@@ -116,7 +116,7 @@ function updateList() {
   chrome.storage.local.remove(["list"], function (result) {
     chrome.runtime.sendMessage({
       command: "updatelicenselist",
-      url: chrome.extension.getURL(""),
+      url: chrome.runtime.getURL(""),
       remote: true,
     });
   });
@@ -134,7 +134,8 @@ function checkStorage() {
   } catch (err) {
     // Necessary since Firefox doesn't support getBytesInUse
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1385832
-    browser.storage.local.get(function (items) {
+    // Use chrome API instead of browser for V3 compatibility
+    chrome.storage.local.get(function (items) {
       var result = JSON.stringify(items).length;
       if (result) {
         status.textContent = (result / 1024 / 1024).toFixed(2) + " MB";

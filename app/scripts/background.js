@@ -600,14 +600,12 @@ function workeronmessage(event) {
       }
       break;
     case "updatedone":
-      workerdone(event.data.id);
       type = event.data.type;
       console.log("Received worker update completion for %s", type);
       checkUpdateDone();
       break;
     case "comparenext":
       threadid = event.data.id;
-      workerdone(threadid);
       tabId = event.data.tabId;
       result = event.data.result;
       spdxid = event.data.spdxid;
@@ -636,7 +634,6 @@ function workeronmessage(event) {
       break;
     case "sortdone":
       threadid = event.data.id;
-      workerdone(threadid);
       tabId = event.data.tabId;
       result = event.data.result;
       chrome.tabs.sendMessage(tabId, {
@@ -647,7 +644,6 @@ function workeronmessage(event) {
       break;
     case "diffnext":
       threadid = event.data.id;
-      workerdone(threadid);
       tabId = event.data.tabId;
       result = event.data.result;
       spdxid = event.data.spdxid;
@@ -687,7 +683,6 @@ function workeronmessage(event) {
       break;
     case "backgroundcomparenext":
       threadid = event.data.id;
-      workerdone(threadid);
       tabId = event.data.tabId;
       result = event.data.result;
       spdxid = event.data.spdxid;
@@ -878,7 +873,7 @@ function compareSelection(selection, tabId = activeTabId) {
       type: type,
     });
     chrome.tabs.sendMessage(tabId, {
-      message: "progressbarmax",
+      command: "progressbarmax",
       value: total,
       stage: "Comparing licenses",
       reset: true,
@@ -915,92 +910,55 @@ function restoreOptions(callbackFunction = null) {
   });
 }
 
-// Workerqueue functions
-// These functions are for allowing multiple workers.
-function spawnworkers() {
-  if (workers.length >= options.maxworkers) {
-    return;
+// Offscreen document functions (replaces worker management)
+async function ensureOffscreenDocument() {
+  if (offscreenReady) return;
+
+  try {
+    await chrome.offscreen.createDocument({
+      url: chrome.runtime.getURL("pages/offscreen.html"),
+      reasons: ["WORKERS"],
+      justification: "Manage Web Workers for license comparison processing",
+    });
+    offscreenReady = true;
+  } catch (error) {
+    console.log("Offscreen document already exists or error:", error);
+    offscreenReady = true;
   }
-  console.log("Spawning %s workers", options.maxworkers);
-  for (var i = 0; i < options.maxworkers; i++) {
-    var worker = new Worker(chrome.runtime.getURL("scripts/worker.js"));
-    worker.onmessage = workeronmessage;
-    workers[i] = [worker, false];
-  }
-}
-// queue and start work
-// priority defines a tabId to search for
-function processqueue(priority = 0) {
-  var work = null;
-  while (workqueuelength > 0 && options.maxworkers > runningworkers) {
-    if (
-      priority > 0 &&
-      workqueue[priority] &&
-      (work = workqueue[priority].shift())
-    ) {
-      dowork(work);
-      workqueuelength--;
-      console.log(
-        "Prioritizing tab %s work with %s items, total queue %s items",
-        priority,
-        workqueue[priority].length,
-        workqueuelength
-      );
-    } else {
-      for (var tabId in workqueue) {
-        work = workqueue[tabId].shift();
-        if (work) {
-          dowork(work);
-          workqueuelength--;
-        }
-      }
-    }
-  }
-}
-function dowork(message) {
-  spawnworkers();
-  runningworkers = runningworkers >= 0 ? runningworkers : 0;
-  var offset = options.maxworkers - runningworkers;
-  if (options.maxworkers > runningworkers) {
-    for (
-      var i = runningworkers % options.maxworkers;
-      i < options.maxworkers + offset - 1;
-      i = (i + 1) % options.maxworkers
-    ) {
-      if (!workers[i][1]) {
-        // worker is available
-        message.id = i;
-        var worker = workers[i][0];
-        workers[i][1] = true;
-        worker.postMessage(message);
-        runningworkers++;
-        break;
-      } else {
-        continue;
-      }
-    }
-  } else {
-    // queue up work
-    queuework(message);
-  }
-}
-function queuework(message) {
-  var tabId;
-  if (!message.tabId) {
-    tabId = 0;
-  } else {
-    tabId = message.tabId;
-  }
-  if (!workqueue[tabId]) {
-    workqueue[tabId] = [];
-  }
-  workqueue[tabId].push(message);
-  workqueuelength++;
 }
 
-function workerdone(id) {
-  workers[id][1] = false;
-  runningworkers--;
+function processqueue(priority = 0) {
+  if (!offscreenReady) return;
+  // Send message to offscreen document
+  chrome.runtime.sendMessage({
+    command: "processQueue",
+    priority: priority,
+  });
+}
+
+function dowork(message) {
+  ensureOffscreenDocument().then(() => {
+    // Initialize and send work to offscreen document
+    setTimeout(() => {
+      try {
+        // Initialize worker manager if not done yet
+        chrome.runtime.sendMessage({
+          command: "initWorkerManager",
+          options: options,
+        });
+        
+        // Send the actual work
+        chrome.runtime.sendMessage({
+          command: "doWork",
+          workMessage: message,
+        });
+      } catch (error) {
+        console.error("Error in dowork:", error);
+      }
+    }, 50);
+  }).catch((error) => {
+    console.error("Error ensuring offscreen document:", error);
+  });
 }
 
 // promisfy gets
@@ -1077,7 +1035,11 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 function init() {
   console.log("Initializing spdx-license-diff " + version);
-  restoreOptions(loadList);
+  restoreOptions(() => {
+    ensureOffscreenDocument().then(() => {
+      loadList();
+    });
+  });
   chrome.contextMenus.removeAll(function () {
     chrome.contextMenus.create({
       title: "License-Diff selection",
@@ -1090,7 +1052,7 @@ function init() {
 init();
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onMessage.addListener(handleMessage);
-chrome.browserAction.onClicked.addListener(handleClick);
+chrome.action.onClicked.addListener(handleClick);
 chrome.tabs.onActivated.addListener(handleActivate);
 chrome.windows.onFocusChanged.addListener(handleFocusChanged);
 chrome.storage.onChanged.addListener(handleStorageChange);

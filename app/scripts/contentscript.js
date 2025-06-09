@@ -6,7 +6,7 @@ import { filters, defaultoptions } from "./const.js";
 import $ from "jquery";
 import _ from "underscore";
 
-var version = browser.runtime.getManifest().version;
+var version = chrome.runtime.getManifest().version;
 var selectedLicense = "";
 var spdx = null;
 var rawspdx = null;
@@ -138,7 +138,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       sendResponse({ status: "1" });
       break;
     default:
-      return true;
+      break;
   }
 });
 
@@ -185,6 +185,7 @@ function processLicenses(showBest, processTime = 0) {
     license = spdx[0].spdxid;
     if (diffs[license] !== undefined) {
       displayDiff(diffs[license].html, diffs[license].time);
+      document.getElementById("newTabButton").style.visibility = "visible";
     }
   } else {
     diffsdue = 0;
@@ -233,6 +234,7 @@ function processLicenses(showBest, processTime = 0) {
     license = spdx[0].spdxid;
     if (diffs[license] !== undefined) {
       displayDiff(diffs[license].html, diffs[license].time);
+      document.getElementById("newTabButton").style.visibility = "visible";
     }
   }
   if (diffsdue <= diffsdone) {
@@ -308,10 +310,6 @@ function displayDiff(html, time = processTime) {
         time = diffs[spdxid].time;
         details = spdx[this.options.selectedIndex].details;
         updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
-        createNewTabButton(
-          document.getElementById("license_form"),
-          selectedLicense
-        );
       } else {
       }
     },
@@ -506,10 +504,7 @@ function createNewLicenseButton(form) {
 function createNewTabButton(form, selectedLicense) {
   if (window.location.href.endsWith("/popup.html")) return;
   if ($("#newTabButton").length) {
-    document
-      .getElementById("newTabButton")
-      .removeEventListener("click", newTab);
-    document.getElementById("newTabButton").addEventListener("click", newTab);
+    // Button already exists, just update its visibility if needed
     return;
   }
   var button = document.createElement("button");
