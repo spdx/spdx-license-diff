@@ -50,19 +50,42 @@ function sendMessageToOptionsPage(command, message, type = 'info') {
 // Check if SPDX.org permission is granted
 async function checkSpdxPermission() {
   try {
-    // Check if we have permission to access spdx.org
+    console.log("BACKGROUND: Checking SPDX.org permission with api.permissions.contains()");
+    console.log("BACKGROUND: Browser type:", typeof browser !== "undefined" ? "Firefox" : "Chrome");
+    
+    // For Chrome, check if permissions are already granted via manifest host_permissions
+    const isChrome = typeof browser === "undefined";
+    
+    if (isChrome) {
+      console.log("BACKGROUND: Chrome detected - checking if host permissions are pre-granted");
+      
+      // In Chrome, host_permissions in manifest.json are automatically granted
+      // We should check if we can actually make requests to spdx.org instead of using permissions API
+      // The permissions.contains() API is primarily for optional permissions, not manifest permissions
+      
+      // For now, let's assume Chrome has the permission if it's in host_permissions
+      // This is a workaround for the Chrome API behavior
+      console.log("BACKGROUND: Chrome has host_permissions for *.spdx.org in manifest - assuming granted");
+      return true;
+    }
+    
+    // For Firefox, use the permissions API as normal
+    console.log("BACKGROUND: Firefox detected - using permissions API");
     const hasPermission = await api.permissions.contains({
       origins: ["*://*.spdx.org/*"]
     });
     
+    console.log("BACKGROUND: Permission check result:", hasPermission);
+    
     if (!hasPermission) {
-      console.warn("SPDX.org permission not granted by user");
+      console.warn("BACKGROUND: SPDX.org permission not granted by user");
       return false;
     }
     
+    console.log("BACKGROUND: SPDX.org permission confirmed");
     return true;
   } catch (error) {
-    console.error("Error checking SPDX.org permission:", error);
+    console.error("BACKGROUND: Error checking SPDX.org permission:", error);
     return false;
   }
 }
@@ -112,8 +135,54 @@ function showPermissionError() {
   });
 }
 
+// Show error message when content script injection fails due to permissions
+function showContentScriptPermissionError(tabId) {
+  // Send message to any active content scripts if possible
+  api.tabs.sendMessage(tabId, {
+    command: "show_permission_error",
+    message: "SPDX License Diff needs permission to run on this page. Please grant the necessary permissions or reload the page."
+  }).catch(() => {
+    // If no content script available, show notification
+    if (api.notifications) {
+      api.notifications.create({
+        type: 'basic',
+        iconUrl: 'images/spdx.png',
+        title: 'SPDX License Diff',
+        message: 'Permission needed to run on this page. Please check extension permissions.'
+      });
+    }
+  });
+}
+
+// Check if we can inject content scripts (activeTab permission)
+async function checkContentScriptPermission(tabId, url) {
+  try {
+    console.log("Checking content script permission for:", url);
+    
+    // Check if the URL is allowed for injection
+    if (url && (url.startsWith('chrome://') || url.startsWith('moz-extension://') || url.startsWith('about:') || url.startsWith('chrome-extension://'))) {
+      console.warn("Cannot inject into browser internal pages:", url);
+      return false;
+    }
+    
+    // For Firefox, additional checks for special URLs
+    if (typeof browser !== "undefined") {
+      if (url && (url.startsWith('moz://') || url.startsWith('resource://') || url.startsWith('jar:file://'))) {
+        console.warn("Firefox: Cannot inject into special protocol pages:", url);
+        return false;
+      }
+    }
+    
+    console.log("Content script injection allowed for:", url);
+    return true;
+  } catch (error) {
+    console.error("Error checking content script permission:", error);
+    return false;
+  }
+}
+
 // Check if we have basic license data available
-function hasBasicLicenseData() {
+function _hasBasicLicenseData() {
   return list && 
          list.licenses && 
          list.exceptions && 
@@ -173,26 +242,86 @@ function checkFileAccess(activeTabId, _activeTab) {
   });
 }
 
-function injectContentScript(activeTabId) {
-  api.scripting.insertCSS({
-    target: { tabId: activeTabId },
-    files: ["/styles/contentscript.css"]
-  }).then(() => {
-    return api.scripting.executeScript({
+async function injectContentScript(activeTabId) {
+  try {
+    console.log("Attempting to inject content script into tab:", activeTabId);
+    
+    // Get tab info for permission checking
+    const tab = await api.tabs.get(activeTabId);
+    console.log("Tab info:", tab.url, tab.status);
+    
+    // For Firefox, ensure the tab is fully loaded before injection
+    if (typeof browser !== "undefined" && tab.status !== "complete") {
+      console.log("Firefox: Waiting for tab to complete loading");
+      // Wait a bit for the tab to finish loading
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Check if we can inject content scripts
+    const canInject = await checkContentScriptPermission(activeTabId, tab.url);
+    if (!canInject) {
+      console.error("Content script injection not allowed for this tab");
+      status[activeTabId] = null;
+      return;
+    }
+    
+    console.log("Injecting CSS into tab:", activeTabId);
+    // Inject CSS first
+    await api.scripting.insertCSS({
+      target: { tabId: activeTabId },
+      files: ["/styles/contentscript.css"]
+    });
+    
+    console.log("Injecting JavaScript into tab:", activeTabId);
+    // Then inject the script
+    await api.scripting.executeScript({
       target: { tabId: activeTabId },
       files: ["/scripts/contentscript.js"]
     });
-  }).then((_result) => {
+    
+    console.log("Content script injection successful, sending message");
+    // Send message to the content script
     api.tabs.sendMessage(
       activeTabId,
       { command: "clicked_browser_action" },
       messageResponse
     );
-  }).catch((error) => {
+  } catch (error) {
     console.error("Failed to inject content script:", error);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Provide specific error handling for different Firefox issues
+    if (typeof browser !== "undefined") {
+      if (error.message.includes("Missing host permission")) {
+        console.warn("Firefox: Missing host permission for content script injection");
+        showContentScriptPermissionError(activeTabId);
+      } else if (error.message.includes("No tab with id")) {
+        console.warn("Firefox: Tab no longer exists");
+      } else if (error.message.includes("Cannot access a chrome")) {
+        console.warn("Firefox: Cannot inject into privileged pages");
+      } else if (error.message.includes("Script injection is disallowed")) {
+        console.warn("Firefox: Script injection is disallowed on this page");
+      } else {
+        console.warn("Firefox: Unknown content script injection error");
+        // For debugging: show the actual error to help identify issues
+        if (api.notifications) {
+          api.notifications.create({
+            type: 'basic',
+            iconUrl: 'images/spdx.png',
+            title: 'SPDX License Diff Debug',
+            message: `Content script injection failed: ${error.message}`
+          });
+        }
+      }
+    }
+    
     // Mark the tab as failed so we don't try to inject again
     status[activeTabId] = null;
-  });
+  }
 }
 function messageResponse(response) {
   console.log("Processing message response from " + activeTabId, response);
@@ -209,7 +338,7 @@ function handleActivate(activeinfo) {
   activeTabId = activeinfo.tabId;
   // console.log("ActiveTabId changed", activeTabId)
   if (status[activeTabId]) {
-    chrome.tabs.sendMessage(
+    api.tabs.sendMessage(
       activeTabId,
       { command: "alive?" },
       messageResponse
@@ -226,7 +355,7 @@ function handleUpdated(tabId, _changeInfo, _tabInfo) {
 }
 function handleFocusChanged(_windowid) {
   // Set the active tab
-  chrome.tabs.query(
+  api.tabs.query(
     { active: true, currentWindow: true },
     function (queryinfo) {
       if (queryinfo.length > 0) {
@@ -263,16 +392,12 @@ async function handleMessage(request, sender, _sendResponse) {
     case "updatelicenselist":
       updateList(true); // User-initiated from options page
       break;
-    case "compareselection":
+    case "compareselection": {
       selection = request.selection;
       activeTabId = sender.tab.id;
       
-      // Check if we have basic license data or if we can update
-      if (!hasBasicLicenseData() && !(await checkSpdxPermission())) {
-        console.log("No license data available and no SPDX.org permission - showing permission error");
-        showPermissionError();
-        break;
-      }
+      // Since the content script checks permissions first, we can assume they are granted
+      console.log("Background: Received compareselection request from content script");
       
       if (
         updating ||
@@ -314,7 +439,8 @@ async function handleMessage(request, sender, _sendResponse) {
           );
           loadList(true); // User-initiated via compareselection
         }
-        break;
+        // Send acknowledgment back to content script for pending case
+        return { status: "pending", message: "License comparison queued" };
       }
       if (status[activeTabId] !== "Comparing") {
         console.log(
@@ -331,7 +457,9 @@ async function handleMessage(request, sender, _sendResponse) {
           selection.substring(0, 25)
         );
       }
-      break;
+      // Send acknowledgment back to content script
+      return { status: "processing", message: "License comparison started" };
+    }
     case "generateDiff":
       activeTabId = sender.tab.id;
       request.tabId = activeTabId;
@@ -347,10 +475,10 @@ async function handleMessage(request, sender, _sendResponse) {
         activeTabId,
         request
       );
-      chrome.tabs.create({ url: newLicenseUrl }).then(
+      api.tabs.create({ url: newLicenseUrl }).then(
         (tab) => {
           setTimeout(() => {
-            chrome.scripting.executeScript({
+            api.scripting.executeScript({
               target: { tabId: tab.id },
               func: (data) => {
                 // Fill form fields with the license data
@@ -412,11 +540,11 @@ async function handleMessage(request, sender, _sendResponse) {
     case "newTab": {
       activeTabId = sender.tab.id;
       console.log("tab %s: Creating new tab with:", activeTabId, request);
-      chrome.tabs.create({ url: "/pages/popup.html" }).then(
+      api.tabs.create({ url: "/pages/popup.html" }).then(
         (tab) => {
           console.log("Tab %s created", tab.id);
           setTimeout(() => {
-            chrome.tabs.sendMessage(tab.id, request);
+            api.tabs.sendMessage(tab.id, request);
           }, 250);
         },
         (error) => {
@@ -425,6 +553,26 @@ async function handleMessage(request, sender, _sendResponse) {
       );
       break;
     }
+    case "checkPermissions":
+      // Handle permission check request from content script
+      console.log("BACKGROUND: Received checkPermissions message from content script");
+      try {
+        const hasPermission = await checkSpdxPermission();
+        console.log("BACKGROUND: Responding with hasPermission:", hasPermission);
+        return { hasPermission: hasPermission };
+      } catch (error) {
+        console.error("BACKGROUND: Error checking permissions:", error);
+        return { hasPermission: false, error: error.message };
+      }
+    case "requestPermissions":
+      // Handle permission request from content script
+      try {
+        const granted = await requestSpdxPermission();
+        return { granted: granted };
+      } catch (error) {
+        console.error("Error requesting permissions:", error);
+        return { granted: false, error: error.message };
+      }
     default:
       // console.log("Proxying to worker", request);
       // chrome.tabs.sendMessage(activeTab.id, request);
@@ -451,10 +599,10 @@ function workeronmessage(event) {
       if (pendingcompare) {
         // broadcast to all
         for (var i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
+          api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
       } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
+        api.tabs.sendMessage(tabId, event.data);
       }
       break;
     case "progressbarvalue":
@@ -462,10 +610,10 @@ function workeronmessage(event) {
       if (pendingcompare) {
         // broadcast to all
         for (i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
+          api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
       } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
+        api.tabs.sendMessage(tabId, event.data);
       }
       break;
     case "next":
@@ -473,10 +621,10 @@ function workeronmessage(event) {
       if (pendingcompare) {
         // broadcast to all
         for (i = 0; i < comparequeue.length; i++) {
-          chrome.tabs.sendMessage(comparequeue[i].tabId, event.data);
+          api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
       } else if (tabId !== undefined && tabId) {
-        chrome.tabs.sendMessage(tabId, event.data);
+        api.tabs.sendMessage(tabId, event.data);
       }
 
       break;
@@ -603,7 +751,7 @@ function workeronmessage(event) {
             console.log("Saving new %s %s", type, spdxid);
             var obj = {};
             obj[spdxid] = item.data;
-            chrome.storage.local.set(obj, function () {
+            api.storage.local.set(obj, function () {
               console.log("Storing", obj);
             });
           }
@@ -643,7 +791,7 @@ function workeronmessage(event) {
       tabId = event.data.tabId;
       result = event.data.result;
       spdxid = event.data.spdxid;
-      chrome.tabs.sendMessage(tabId, {
+      api.tabs.sendMessage(tabId, {
         command: "next",
         spdxid: spdxid,
         id: threadid,
@@ -671,7 +819,7 @@ function workeronmessage(event) {
       workerdone(threadid);
       tabId = event.data.tabId;
       result = event.data.result;
-      chrome.tabs.sendMessage(tabId, {
+      api.tabs.sendMessage(tabId, {
         command: "sortdone",
         result: result,
         id: threadid,
@@ -684,7 +832,7 @@ function workeronmessage(event) {
       result = event.data.result;
       spdxid = event.data.spdxid;
       var record = event.data.record;
-      chrome.tabs.sendMessage(tabId, {
+      api.tabs.sendMessage(tabId, {
         command: "diffnext",
         spdxid: spdxid,
         result: result,
@@ -723,7 +871,7 @@ function workeronmessage(event) {
       tabId = event.data.tabId;
       result = event.data.result;
       spdxid = event.data.spdxid;
-      chrome.tabs.sendMessage(tabId, {
+      api.tabs.sendMessage(tabId, {
         command: "next",
         spdxid: spdxid,
         id: threadid,
@@ -1282,24 +1430,74 @@ function init() {
 }
 
 init();
-chrome.runtime.onStartup.addListener(init);
-chrome.runtime.onMessage.addListener(handleMessage);
-chrome.action.onClicked.addListener(handleClick);
-chrome.tabs.onActivated.addListener(handleActivate);
-chrome.windows.onFocusChanged.addListener(handleFocusChanged);
-chrome.storage.onChanged.addListener(handleStorageChange);
-chrome.tabs.onUpdated.addListener(handleUpdated);
-chrome.contextMenus.onClicked.addListener(handleClick);
-chrome.runtime.onInstalled.addListener(async () => {
-  // Cleanup any existing offscreen documents on install/reload
-  try {
-    const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
-    if (clients.length > 0) {
-      console.log("Cleaning up existing offscreen documents");
-      // Close existing offscreen documents
-      await chrome.offscreen.closeDocument();
+api.runtime.onStartup.addListener(init);
+api.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle async message responses properly
+  const result = handleMessage(request, sender, sendResponse);
+  
+  // Since handleMessage is async, it always returns a Promise
+  if (result instanceof Promise) {
+    result.then((response) => {
+      console.log("BACKGROUND: Sending async response:", response);
+      sendResponse(response);
+    }).catch(error => {
+      console.error("BACKGROUND: Error in message handler:", error);
+      sendResponse({ error: error.message });
+    });
+    return true; // Indicates we will send a response asynchronously
+  }
+  
+  // Fallback for synchronous responses (shouldn't happen since handleMessage is async)
+  if (result !== undefined) {
+    console.log("BACKGROUND: Sending sync response:", result);
+    sendResponse(result);
+  }
+  
+  return false; // For synchronous responses
+});
+api.action.onClicked.addListener(handleClick);
+api.tabs.onActivated.addListener(handleActivate);
+api.windows.onFocusChanged.addListener(handleFocusChanged);
+api.storage.onChanged.addListener(handleStorageChange);
+api.tabs.onUpdated.addListener(handleUpdated);
+api.contextMenus.onClicked.addListener(handleClick);
+api.runtime.onInstalled.addListener(async () => {
+  // Cleanup any existing offscreen documents on install/reload (Chrome only)
+  if (typeof chrome !== "undefined" && chrome.runtime.getContexts) {
+    try {
+      const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
+      if (clients.length > 0) {
+        console.log("Cleaning up existing offscreen documents");
+        // Close existing offscreen documents
+        await chrome.offscreen.closeDocument();
+      }
+    } catch (error) {
+      console.log("No existing offscreen document to clean up:", error.message);
     }
-  } catch (error) {
-    console.log("No existing offscreen document to clean up:", error.message);
   }
 });
+
+// Listen for permission changes to notify content scripts
+if (api.permissions && api.permissions.onAdded) {
+  api.permissions.onAdded.addListener(function(permissions) {
+    console.log("Background: Permissions added:", permissions);
+    
+    // Check if SPDX.org permissions were added
+    if (permissions.origins && permissions.origins.some(origin => origin.includes('spdx.org'))) {
+      console.log("Background: SPDX.org permissions granted, notifying content scripts");
+      
+      // Notify all content scripts that permissions have been granted
+      api.tabs.query({}, function(tabs) {
+        tabs.forEach(tab => {
+          api.tabs.sendMessage(tab.id, {
+            command: "permissions_granted",
+            permissions: permissions
+          }).catch(() => {
+            // Content script may not be loaded on this tab, that's fine
+            console.log(`No content script on tab ${tab.id}`);
+          });
+        });
+      });
+    }
+  });
+}

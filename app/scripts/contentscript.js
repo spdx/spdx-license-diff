@@ -22,6 +22,8 @@ var diffs = {};
 var options;
 var msStart;
 var selectedfilters;
+var permissionDialogShown = false; // Flag to prevent repeated permission prompts
+var pendingSelection = null; // Store selection for later processing when permissions are granted
 
 // Function to apply custom diff colors from storage
 function applyCustomDiffColors() {
@@ -46,6 +48,14 @@ function applyCustomDiffColors() {
 
 // Show permission error with helpful links for different browsers
 function showPermissionErrorDialog(message) {
+  // Prevent repeated permission dialogs in the same session
+  if (permissionDialogShown) {
+    console.log("CONTENT SCRIPT: Permission dialog already shown, skipping repeated prompt");
+    return;
+  }
+  
+  permissionDialogShown = true;
+  
   const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
   const extensionId = api.runtime.id;
   
@@ -69,15 +79,16 @@ function showPermissionErrorDialog(message) {
     `For detailed setup instructions, visit:\n${specificReadmeUrl}\n\n` +
     `Click OK to open the setup instructions, or Cancel to dismiss this message.`;
   
-  updateBubbleText(helpfulMessage);
+  // Show as browser alert dialog instead of in bubble
+  const userWantsHelp = window.confirm(helpfulMessage);
   
-  // Open README instructions when user clicks OK
-  if (window.confirm(helpfulMessage)) {
+  if (userWantsHelp) {
     try {
       window.open(specificReadmeUrl, '_blank');
     } catch (error) {
       console.log('Could not open README instructions:', error);
-      updateBubbleText(`Please manually visit: ${specificReadmeUrl}`);
+      // Fallback: show a more prominent alert
+      alert(`Please manually visit: ${specificReadmeUrl}`);
     }
   }
 }
@@ -90,41 +101,23 @@ createBubble();
 
 // This function responds to the UI and background.js
 api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  console.log("CONTENT SCRIPT: Received message:", request.command);
   switch (request.command) {
     case "clicked_browser_action":
+      console.log("CONTENT SCRIPT: Processing clicked_browser_action");
       sendResponse({ status: "1" }); // send receipt confirmation
       selection = getSelectionText();
+      console.log("CONTENT SCRIPT: Selection text:", selection ? `"${selection.substring(0, 50)}..."` : "NONE");
       if (selection.length > 0) {
-        createBubble();
-        var selectCoords = selectRangeCoords();
-        var posX = selectCoords[0];
-        var posY = selectCoords[1];
-        renderBubble(posX, posY, selection);
-        if (spdx && selection === lastselection) {
-          // diff previously done on selection
-          updateProgressBar(1, 1, false);
-          updateBubbleText("Done");
-          processLicenses(
-            options.showBest === 0 && spdx ? spdx.length : options.showBest,
-            processTime
-          );
-          return;
-        } else {
-          // Clear all previous data including template matches
-          rawspdx = null;
-          spdx = null;
-          diffdisplayed = false;
-          selectedLicense = "";
-          diffsdue = 0;
-          diffsdone = 0;
-          diffs = {};
-        }
-        msStart = new Date().getTime();
-        compareSelection(selection);
+        // Check permissions first before proceeding with bubble creation and license comparison
+        checkPermissionsAndProceed(selection);
         lastselection = selection;
       } else {
+        console.log("CONTENT SCRIPT: No selection found, showing message");
+        createBubble();
         updateBubbleText("No selection to compare; please select");
       }
+      console.log("CONTENT SCRIPT: clicked_browser_action processing complete");
       break;
     case "progressbarmax":
       updateProgressBar(request.value, null);
@@ -204,13 +197,25 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       showPermissionErrorDialog(request.message || "Permission denied: Cannot access SPDX.org. Please grant permission in extension settings or browser toolbar.");
       updateProgressBar(1, 1, false);
       break;
+    case "permissions_granted":
+      console.log("CONTENT SCRIPT: Permissions granted notification received");
+      // Reset the permission dialog flag so user can try again
+      permissionDialogShown = false;
+      
+      // If we have a pending selection, process it now
+      if (pendingSelection) {
+        console.log("CONTENT SCRIPT: Processing pending selection after permission grant");
+        checkPermissionsAndProceed(pendingSelection);
+        pendingSelection = null;
+      }
+      break;
     default:
       return true;
   }
 });
 
 // This function responds to changes to storage
-chrome.storage.onChanged.addListener(function (changes, area) {
+api.storage.onChanged.addListener(function (changes, area) {
   if (area === "local" && "options" in changes) {
     console.log("Detected changed options; reloading");
     restoreOptions();
@@ -218,13 +223,93 @@ chrome.storage.onChanged.addListener(function (changes, area) {
 });
 
 // processing phase functions (these are called by the workeronmessage in order)
+// Check permissions first, then proceed with license comparison if permissions are OK
+async function checkPermissionsAndProceed(selection) {
+  console.log("CONTENT SCRIPT: Checking permissions before proceeding");
+  
+  try {
+    // Ask background script to check permissions since Firefox doesn't expose permissions API to content scripts
+    const permissionResponse = await api.runtime.sendMessage({
+      command: "checkPermissions",
+      origins: ["*://*.spdx.org/*"]
+    });
+    
+    console.log("CONTENT SCRIPT: Permission check response:", permissionResponse);
+    
+    if (!permissionResponse.hasPermission) {
+      console.log("CONTENT SCRIPT: No SPDX.org permissions - requesting permission");
+      
+      // Ask background script to request permissions
+      const requestResponse = await api.runtime.sendMessage({
+        command: "requestPermissions",
+        origins: ["*://*.spdx.org/*"]
+      });
+      
+      console.log("CONTENT SCRIPT: Permission request response:", requestResponse);
+      
+      if (!requestResponse.granted) {
+        console.log("CONTENT SCRIPT: Permissions denied - storing selection for later and showing error dialog");
+        // Store the selection so we can process it later if permissions are granted
+        pendingSelection = selection;
+        showPermissionErrorDialog("SPDX License Diff needs permission to access spdx.org to download license data. Please grant permission to continue.");
+        return;
+      }
+    }
+    
+    // If we have permissions, proceed with the normal license comparison flow
+    console.log("CONTENT SCRIPT: Permissions OK - creating bubble and proceeding with license comparison");
+    
+    // Create and render bubble
+    console.log("CONTENT SCRIPT: Creating and rendering bubble");
+    createBubble();
+    var selectCoords = selectRangeCoords();
+    var posX = selectCoords[0];
+    var posY = selectCoords[1];
+    console.log("CONTENT SCRIPT: Bubble position:", posX, posY);
+    renderBubble(posX, posY, selection);
+    
+    // Check if we already have results for this selection
+    if (spdx && selection === lastselection) {
+      // diff previously done on selection
+      updateProgressBar(1, 1, false);
+      updateBubbleText("Done");
+      processLicenses(
+        options.showBest === 0 && spdx ? spdx.length : options.showBest,
+        processTime
+      );
+      return;
+    } else {
+      // Clear all previous data including template matches
+      rawspdx = null;
+      spdx = null;
+      diffdisplayed = false;
+      selectedLicense = "";
+      diffsdue = 0;
+      diffsdone = 0;
+      diffs = {};
+    }
+    
+    msStart = new Date().getTime();
+    compareSelection(selection);
+    
+  } catch (error) {
+    console.error("CONTENT SCRIPT: Error checking permissions:", error);
+    showPermissionErrorDialog("Unable to check permissions. Please try again or check your browser settings.");
+  }
+}
+
 // Compare selection against a fully populated license list (must be loaded in list)
-// This is the first phase to determine edit distance and return a sorted list
-// for display in spdx
+// This is the second phase after permissions are confirmed
+// This determines edit distance and returns a sorted list for display in spdx
 function compareSelection(selection) {
-  chrome.runtime.sendMessage({
+  console.log("CONTENT SCRIPT: Sending compareselection message to background script");
+  api.runtime.sendMessage({
     command: "compareselection",
     selection: selection,
+  }).then((response) => {
+    console.log("CONTENT SCRIPT: Background script responded to compareselection:", response);
+  }).catch((error) => {
+    console.error("CONTENT SCRIPT: Failed to send compareselection message:", error);
   });
 }
 
@@ -280,7 +365,7 @@ function processLicenses(showBest, processTime = 0) {
       }
       if (diffs[license] === undefined) {
         diffsdue++;
-        chrome.runtime.sendMessage({
+        api.runtime.sendMessage({
           command: "generateDiff",
           selection: selection,
           spdxid: license,
@@ -554,7 +639,14 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
 
 // Add bubble to the top of the page.
 function createBubble() {
-  if ($("#license_bubble").length) return;
+  // Remove any existing bubble before creating a new one
+  var existingBubble = $("#license_bubble")[0];
+  if (existingBubble) {
+    console.log("CONTENT SCRIPT: Removing existing bubble before creating new one");
+    existingBubble.remove();
+  }
+  
+  console.log("CONTENT SCRIPT: Creating new bubble");
   var bubbleDOM = document.createElement("div");
   bubbleDOM.setAttribute("class", "selection_bubble");
   bubbleDOM.setAttribute("id", "license_bubble");
@@ -570,6 +662,7 @@ function createBubble() {
   var resultText = document.createElement("div");
   resultText.setAttribute("id", "result_text");
   bubbleDOM.appendChild(resultText);
+  console.log("CONTENT SCRIPT: Bubble created successfully");
 }
 // Close the bubble when we click on the screen.
 document.addEventListener(
@@ -604,7 +697,7 @@ function createNewLicenseButton(form) {
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
   button.addEventListener("click", function () {
-    chrome.runtime.sendMessage({
+    api.runtime.sendMessage({
       command: "submitNewLicense",
       selection: selection,
       url: location.href,
@@ -711,7 +804,7 @@ function toggleDiffTheme() {
 
 function newTab() {
   var license = selectedLicense;
-  chrome.runtime.sendMessage({
+  api.runtime.sendMessage({
     command: "newTab",
     diffs: diffs,
     selectedLicense: license,
@@ -761,7 +854,7 @@ function updateProgressBar(max, value, visible = true) {
 }
 
 function restoreOptions() {
-  chrome.storage.local.get(["options"], function (result) {
+  api.storage.local.get(["options"], function (result) {
     options = result.options;
     if (options === undefined) {
       options = defaultoptions;

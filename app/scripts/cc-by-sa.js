@@ -5,16 +5,45 @@ import $ from "jquery";
 
 // https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
 function selectRangeCoords() {
-  var node = window.getSelection();
-  var $span = $("<span/>");
-  var newRange = document.createRange();
-  newRange.setStart(node.focusNode, 0);
-  newRange.insertNode($span[0]); // using 'range' here instead of newRange unselects or causes flicker on chrome/webkit
+  var selection = window.getSelection();
+  
+  // Check if there's a valid selection
+  if (!selection || selection.rangeCount === 0) {
+    console.log("No selection found, using default coordinates");
+    return [100, 100]; // Default position if no selection
+  }
+  
+  var range = selection.getRangeAt(0);
+  if (!range || !range.startContainer) {
+    console.log("Invalid range, using default coordinates");
+    return [100, 100];
+  }
+  
+  try {
+    var $span = $("<span/>");
+    var newRange = document.createRange();
+    
+    // Ensure we have a valid node to set the start
+    var startNode = range.startContainer;
+    if (startNode.nodeType === 3 && startNode.parentNode) { // TEXT_NODE = 3
+      newRange.setStart(startNode, 0);
+    } else if (startNode.nodeType === 1) { // ELEMENT_NODE = 1
+      newRange.setStart(startNode, 0);
+    } else {
+      console.log("Unable to create valid range, using default coordinates");
+      return [100, 100];
+    }
+    
+    newRange.insertNode($span[0]); // using 'range' here instead of newRange unselects or causes flicker on chrome/webkit
 
-  var posX = $span.offset().left;
-  var posY = $span.offset().top;
-  $span.remove();
-  return [posX, posY];
+    var posX = $span.offset().left;
+    var posY = $span.offset().top;
+    $span.remove();
+    return [posX, posY];
+  } catch (error) {
+    console.error("Error getting selection coordinates:", error);
+    return [100, 100]; // Fallback position
+  }
 }
 
 // https://stackoverflow.com/questions/5379120/get-the-highlighted-selected-text

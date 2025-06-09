@@ -217,8 +217,21 @@ function loadList() {
     }
   });
 }
-function updateList() {
-  showUpdateStatus("Checking permissions and updating license list...", "info");
+async function updateList() {
+  showUpdateStatus("Checking permissions...", "info");
+  
+  // Check if we have permission to access spdx.org
+  const hasPermission = await checkSpdxPermission();
+  if (!hasPermission) {
+    showUpdateStatus("Requesting permission to access spdx.org...", "info");
+    const granted = await requestSpdxPermission();
+    if (!granted) {
+      showUpdatePermissionError("Permission denied to access spdx.org. License list update requires access to spdx.org to download the latest license data.");
+      return;
+    }
+  }
+  
+  showUpdateStatus("Updating license list...", "info");
   api.storage.local.remove(["list"], function (result) {
     api.runtime.sendMessage({
       command: "updatelicenselist",
