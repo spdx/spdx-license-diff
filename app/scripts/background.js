@@ -914,44 +914,64 @@ function restoreOptions(callbackFunction = null) {
 async function ensureOffscreenDocument() {
   if (offscreenReady) return;
 
-  try {
-    await chrome.offscreen.createDocument({
-      url: chrome.runtime.getURL("pages/offscreen.html"),
-      reasons: ["WORKERS"],
-      justification: "Manage Web Workers for license comparison processing",
-    });
-    offscreenReady = true;
-  } catch (error) {
-    console.log("Offscreen document already exists or error:", error);
+  // Check if offscreen API is available (Chrome)
+  if (typeof chrome !== 'undefined' && chrome.offscreen) {
+    try {
+      await chrome.offscreen.createDocument({
+        url: chrome.runtime.getURL("pages/offscreen.html"),
+        reasons: ["WORKERS"],
+        justification: "Manage Web Workers for license comparison processing",
+      });
+      offscreenReady = true;
+    } catch (error) {
+      console.log("Offscreen document already exists or error:", error);
+      offscreenReady = true;
+    }
+  } else {
+    // Firefox: Use event page directly - initialize workers in background
+    console.log("Using Firefox event page approach - initializing workers directly");
+    initDirectWorkers();
     offscreenReady = true;
   }
 }
 
 function processqueue(priority = 0) {
   if (!offscreenReady) return;
-  // Send message to offscreen document
-  chrome.runtime.sendMessage({
-    command: "processQueue",
-    priority: priority,
-  });
+  
+  if (typeof chrome !== 'undefined' && chrome.offscreen) {
+    // Chrome: Send message to offscreen document
+    chrome.runtime.sendMessage({
+      command: "processQueue",
+      priority: priority,
+    });
+  } else {
+    // Firefox: Process direct worker queues
+    for (let i = 0; i < directWorkers.length; i++) {
+      processDirectWorkerQueue(i);
+    }
+  }
 }
 
 function dowork(message) {
   ensureOffscreenDocument().then(() => {
-    // Initialize and send work to offscreen document
     setTimeout(() => {
       try {
-        // Initialize worker manager if not done yet
-        chrome.runtime.sendMessage({
-          command: "initWorkerManager",
-          options: options,
-        });
-        
-        // Send the actual work
-        chrome.runtime.sendMessage({
-          command: "doWork",
-          workMessage: message,
-        });
+        // Check if we're using offscreen (Chrome) or direct workers (Firefox)
+        if (typeof chrome !== 'undefined' && chrome.offscreen) {
+          // Chrome: Send to offscreen document
+          chrome.runtime.sendMessage({
+            command: "initWorkerManager",
+            options: options,
+          });
+          
+          chrome.runtime.sendMessage({
+            command: "doWork",
+            workMessage: message,
+          });
+        } else {
+          // Firefox: Send work directly to workers
+          sendWorkDirectly(message);
+        }
       } catch (error) {
         console.error("Error in dowork:", error);
       }
@@ -1032,6 +1052,64 @@ chrome.runtime.onInstalled.addListener(function (details) {
     restoreOptions(updateList);
   }
 });
+
+// Firefox-compatible worker management
+let directWorkers = [];
+let directWorkerQueues = [];
+
+function initDirectWorkers() {
+  if (directWorkers.length > 0) return; // Already initialized
+  
+  console.log('Initializing direct workers for Firefox');
+  const maxworkers = options?.maxworkers || 10;
+  
+  for (let i = 0; i < maxworkers; i++) {
+    const worker = new Worker(chrome.runtime.getURL("scripts/worker.js"));
+    
+    worker.onmessage = function(event) {
+      // Use the same handler as offscreen
+      handleWorkerResponse(event.data);
+      if (event.data.id !== undefined) {
+        processDirectWorkerQueue(event.data.id);
+      }
+    };
+    
+    worker.onerror = function(error) {
+      console.error('Direct worker error:', error);
+    };
+    
+    directWorkers.push(worker);
+    directWorkerQueues.push([]);
+  }
+  console.log('Direct workers initialized:', directWorkers.length);
+}
+
+function processDirectWorkerQueue(workerIndex) {
+  if (directWorkerQueues[workerIndex].length > 0) {
+    const message = directWorkerQueues[workerIndex].shift();
+    directWorkers[workerIndex].postMessage(message);
+  }
+}
+
+function sendWorkDirectly(message) {
+  if (directWorkers.length === 0) {
+    initDirectWorkers();
+  }
+  
+  // Find worker with shortest queue
+  let workerindex = 0;
+  let mininqueue = directWorkerQueues[0].length;
+  for (let i = 0; i < directWorkerQueues.length; i++) {
+    if (directWorkerQueues[i].length < mininqueue) {
+      mininqueue = directWorkerQueues[i].length;
+      workerindex = i;
+    }
+  }
+  
+  message.id = workerindex;
+  directWorkerQueues[workerindex].push(message);
+  processDirectWorkerQueue(workerindex);
+}
 
 function init() {
   console.log("Initializing spdx-license-diff " + version);

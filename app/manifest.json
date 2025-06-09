@@ -10,7 +10,8 @@
     "128": "images/128.png"
   },
   "background": {
-    "service_worker": "scripts/background.js"
+    "service_worker": "scripts/background.js",
+    "scripts": ["scripts/background.js"]
   },
   "action": {
     "default_icon": {
