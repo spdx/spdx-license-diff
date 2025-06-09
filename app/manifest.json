@@ -3,16 +3,16 @@
   "short_name": "__MSG_appShortName__",
   "description": "__MSG_appDescription__",
   "version": "0.4.0",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "default_locale": "en",
   "icons": {
     "32": "images/spdx.png",
     "128": "images/128.png"
   },
   "background": {
-    "scripts": ["scripts/background.js"]
+    "service_worker": "scripts/background.js"
   },
-  "browser_action": {
+  "action": {
     "default_icon": {
       "32": "images/spdx.png"
     }
@@ -26,6 +26,10 @@
     "unlimitedStorage",
     "contextMenus",
     "activeTab",
+    "scripting",
+    "offscreen"
+  ],
+  "host_permissions": [
     "*://*.spdx.org/*"
   ]
 }
