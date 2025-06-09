@@ -366,9 +366,8 @@ function processTemplate(str) {
     // process any variables inside the string for potential later use
     for (var i = 0; i < variablestring.length; i++) {
       var keyvalue = variablestring[i].split("=");
-      variable[
-        String(keyvalue[0]).replace(/^["']/, "").replace(/["']$/, "")
-      ] = String(keyvalue[1]).replace(/^["']/, "").replace(/["']$/, "");
+      variable[String(keyvalue[0]).replace(/^["']/, "").replace(/["']$/, "")] =
+        String(keyvalue[1]).replace(/^["']/, "").replace(/["']$/, "");
     }
     try {
       matchPattern = variable.match;
@@ -385,7 +384,8 @@ function processTemplate(str) {
   result.variables = variables;
   result.patterns = patterns;
   // handle optional tags
-  var optionalRegex = /<<beginOptional>>(?:\s*)((?!<<beginOptional>)(?:[\S\s](?!<beginOptional>))*?)(?:\s*)<<endOptional>>/g;
+  var optionalRegex =
+    /<<beginOptional>>(?:\s*)((?!<<beginOptional>)(?:[\S\s](?!<beginOptional>))*?)(?:\s*)<<endOptional>>/g;
   while (result.matchRegex.match(optionalRegex)) {
     result.matchRegex = result.matchRegex.replace(
       optionalRegex,
