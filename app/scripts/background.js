@@ -342,16 +342,9 @@ async function handleMessage(request, sender, _sendResponse) {
       break;
     case "submitNewLicense": {
       activeTabId = sender.tab.id;
-      const injectCode = `
-          console.log("Receiving injected code from tab:" + ${activeTabId})
-          document.getElementById('sourceUrl').value = '${request.url}';
-          document.getElementById('comments').value = 'Prepared by spdx-license-diff ${version}';
-          document.getElementById('text').value = \`${request.selection}\`;
-        `;
       console.log(
-        "tab %s: Submitting new license with %s:",
+        "tab %s: Submitting new license:",
         activeTabId,
-        injectCode,
         request
       );
       chrome.tabs.create({ url: newLicenseUrl }).then(
@@ -359,15 +352,59 @@ async function handleMessage(request, sender, _sendResponse) {
           setTimeout(() => {
             chrome.scripting.executeScript({
               target: { tabId: tab.id },
-              func: (code) => {
-                eval(code);
+              func: (data) => {
+                // Fill form fields with the license data
+                try {
+                  console.log("Filling form with data:", data);
+                  
+                  // Try common field names for source URL
+                  const sourceUrlFields = ['sourceUrl', 'source_url', 'url', 'licenseUrl'];
+                  for (const fieldName of sourceUrlFields) {
+                    const field = document.getElementById(fieldName) || document.querySelector(`input[name="${fieldName}"]`);
+                    if (field) {
+                      field.value = data.url;
+                      console.log(`Set ${fieldName} to:`, data.url);
+                      break;
+                    }
+                  }
+                  
+                  // Try common field names for comments
+                  const commentFields = ['comments', 'comment', 'description', 'notes'];
+                  for (const fieldName of commentFields) {
+                    const field = document.getElementById(fieldName) || document.querySelector(`textarea[name="${fieldName}"]`);
+                    if (field) {
+                      field.value = `Prepared by spdx-license-diff ${data.version}`;
+                      console.log(`Set ${fieldName} to version info`);
+                      break;
+                    }
+                  }
+                  
+                  // Try common field names for license text
+                  const textFields = ['text', 'licenseText', 'license_text', 'content'];
+                  for (const fieldName of textFields) {
+                    const field = document.getElementById(fieldName) || document.querySelector(`textarea[name="${fieldName}"]`);
+                    if (field) {
+                      field.value = data.selection;
+                      console.log(`Set ${fieldName} to license text (${data.selection.length} chars)`);
+                      break;
+                    }
+                  }
+                  
+                  console.log("Form filling completed");
+                } catch (error) {
+                  console.error("Error filling form:", error);
+                }
               },
-              args: [injectCode]
+              args: [{
+                url: request.url,
+                selection: request.selection,
+                version: version
+              }]
             });
-          }, 250);
+          }, 1000); // Increased timeout to allow page to load
         },
         (error) => {
-          console.log(`Error injecting code: ${error}`);
+          console.log(`Error creating tab: ${error}`);
         }
       );
       break;
