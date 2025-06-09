@@ -3,17 +3,23 @@
 
 import _ from "underscore";
 import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
-import { checkLocalFileAccess } from "./cc-by-sa.js";
 
-var version = browser.runtime.getManifest().version;
+// Service worker compatible version of checkLocalFileAccess
+function checkLocalFileAccess(isAllowedAccess) {
+  if (isAllowedAccess) return;
+  console.log(chrome.i18n.getMessage("localPermissionNeeded"));
+  chrome.tabs.create({
+    url: "chrome://extensions/?id=" + chrome.runtime.id,
+  });
+}
+
+var version = chrome.runtime.getManifest().version;
 var list = {};
 var options;
 var lastupdate;
 var updating = false;
-var runningworkers = 0;
-var workers = [];
-var workqueue = {};
-var workqueuelength = 0;
+// Offscreen document management
+var offscreenReady = false;
 var pendingcompare = false;
 var comparequeue = [];
 var activeTabId = null;
@@ -27,7 +33,7 @@ var filtered = {};
 var total = 0;
 var completedcompares = 0;
 
-chrome.browserAction.setBadgeText({
+chrome.action.setBadgeText({
   text: `Diff`,
 });
 
@@ -53,10 +59,15 @@ function handleClick(tab) {
 }
 
 function injectContentScript(activeTabId) {
-  chrome.tabs.insertCSS(activeTabId, { file: "/styles/contentscript.css" });
-  chrome.tabs.executeScript(
-    activeTabId,
-    { file: "/scripts/contentscript.js" },
+  chrome.scripting.insertCSS({
+    target: { tabId: activeTabId },
+    files: ["/styles/contentscript.css"],
+  });
+  chrome.scripting.executeScript(
+    {
+      target: { tabId: activeTabId },
+      files: ["/scripts/contentscript.js"],
+    },
     function (result) {
       chrome.tabs.sendMessage(
         activeTabId,
