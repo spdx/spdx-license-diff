@@ -7,7 +7,9 @@ There are two kinds of entryfiles.
  1. All js-files in the root of the `./app/scripts` directory
  2. All css-,scss- and less-files in the root of the `./app/styles` directory
 
-The main logic is in `/app/scripts/background.js`, `/app/scripts/contentscript.js` and `app/scripts/worker.js`.
+The main logic is in `/app/scripts/background.js` (service worker), `/app/scripts/contentscript.js` and `app/scripts/worker.js` (web workers via offscreen document).
+
+**Note**: This extension uses Manifest V3 with an offscreen document architecture for web workers. The `/app/scripts/offscreen.js` file manages worker lifecycle and message forwarding between the service worker and web workers.
 
 ## Adding dependencies
 
@@ -46,6 +48,10 @@ The main logic is in `/app/scripts/background.js`, `/app/scripts/contentscript.j
       - Load `dist/firefox/manifest.json`
 
 [![Firefox Addons](https://img.youtube.com/vi/cer9EUKegG4/0.jpg)](https://www.youtube.com/watch?v=cer9EUKegG4)
+
+### Testing
+
+For comprehensive testing instructions including permission handling, cross-browser compatibility, and functionality verification, see the [Testing Guide](TESTING.md).
 
 ## Environment
 

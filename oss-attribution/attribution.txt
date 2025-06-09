@@ -213,7 +213,7 @@ authors: undefined
 ******************************
 
 fastest-levenshtein
-1.0.12 <https://github.com/ka-weihe/fastest-levenshtein>
+1.0.16 <https://github.com/ka-weihe/fastest-levenshtein>
 MIT License
 
 Copyright (c) 2020 Kasper Unn Weihe
@@ -239,8 +239,8 @@ SOFTWARE.
 ******************************
 
 jquery
-3.5.1 <https://github.com/jquery/jquery>
-Copyright JS Foundation and other contributors, https://js.foundation/
+3.7.1 <https://github.com/jquery/jquery>
+Copyright OpenJS Foundation and other contributors, https://openjsf.org/
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -264,17 +264,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ******************************
 
-md5-jkmyers
-0.0.1 <https://github.com/AndreasPizsa/md5-jkmyers>
-license: MIT
-authors: Andreas Pizsa (http://facebook.com/AndreasPizsa/)
-
-******************************
-
 underscore
-1.5.2 <https://github.com/jashkenas/underscore>
-Copyright (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative
-Reporters & Editors
+1.13.7 <https://github.com/jashkenas/underscore>
+Copyright (c) 2009-2022 Jeremy Ashkenas, Julian Gonggrijp, and DocumentCloud and Investigative Reporters & Editors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
