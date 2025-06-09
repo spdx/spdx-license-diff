@@ -46,7 +46,6 @@ export default [
                 $: "readonly",
                 jQuery: "readonly",
                 _: "readonly",
-                DiffMatchPatch: "readonly",
                 Levenshtein: "readonly",
                 dice: "readonly",
                 

@@ -1,12 +1,47 @@
 // SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 import { baseLicenseUrl, urls, spdxkey } from "./const.js";
-import DiffMatchPatch from "diff-match-patch";
+import { makeDiff, cleanupSemantic, DIFF_DELETE, DIFF_INSERT, DIFF_EQUAL } from "@sanity/diff-match-patch";
 import * as fastestlevenshtein from "fastest-levenshtein";
 import dice from "fast-dice-coefficient";
 
+/**
+ * Convert a diff array into a pretty HTML report with dark mode support.
+ * @param {Array} diffs Array of diff tuples.
+ * @return {string} HTML representation.
+ */
+function diff_prettyHtml(diffs) {
+  const html = [];
+  const pattern_amp = /&/g;
+  const pattern_lt = /</g;
+  const pattern_gt = />/g;
+  const pattern_para = /\n/g;
+  
+  for (let x = 0; x < diffs.length; x++) {
+    const op = diffs[x][0]; // Operation (insert, delete, equal)
+    const data = diffs[x][1]; // Text of change.
+    let text = data.replace(pattern_amp, '&amp;')
+                   .replace(pattern_lt, '&lt;')
+                   .replace(pattern_gt, '&gt;')
+                   .replace(pattern_para, '&para;<br>');
+    
+    switch (op) {
+      case DIFF_INSERT:
+        html[x] = '<ins class="diff-insert">' + text + '</ins>';
+        break;
+      case DIFF_DELETE:
+        html[x] = '<del class="diff-delete">' + text + '</del>';
+        break;
+      case DIFF_EQUAL:
+        html[x] = '<span class="diff-equal">' + text + '</span>';
+        break;
+    }
+  }
+  
+  return '<div class="diff-content">' + html.join('') + '</div>';
+}
+
 var id;
-var dmp = new DiffMatchPatch(); // options may be passed to constructor; see below
 
 self.onmessage = function (event) {
   id = event.data.id;
@@ -307,14 +342,12 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   // postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {};
   var data = license;
-  dmp.Diff_Timeout = 0;
-  //    dmp.Diff_Timeout = parseFloat(document.getElementById('timeout').value);
+  // Note: @sanity/diff-match-patch doesn't have timeout option like original
   var msStart = new Date().getTime();
-  var textDiff = dmp.diff_main(data, selection); // produces diff array
-  dmp.diff_cleanupSemantic(textDiff); // semantic cleanup
-  // dmp.diff_cleanupEfficiency(textDiff);
+  var textDiff = makeDiff(data, selection); // produces diff array
+  cleanupSemantic(textDiff); // semantic cleanup
   var msEnd = new Date().getTime();
-  result = { html: dmp.diff_prettyHtml(textDiff), time: msEnd - msStart };
+  result = { html: diff_prettyHtml(textDiff), time: msEnd - msStart };
   console.log("%s %s: %s diff:%o", tabId, id, spdxid, result);
   postMessage({
     command: "diffnext",

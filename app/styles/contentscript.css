@@ -19,3 +19,43 @@ progress:after {
   top:0;
   right:0;
 }
+
+/* Diff display styles with dark mode support */
+.diff-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.diff-insert {
+  background-color: #d4edda;
+  color: #155724;
+  text-decoration: none;
+}
+
+.diff-delete {
+  background-color: #f8d7da;
+  color: #721c24;
+  text-decoration: line-through;
+}
+
+.diff-equal {
+  color: inherit;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .diff-insert {
+    background-color: #0d4920;
+    color: #7dd3fc;
+  }
+  
+  .diff-delete {
+    background-color: #5a1e1e;
+    color: #fca5a5;
+  }
+  
+  .diff-equal {
+    color: #e5e7eb;
+  }
+}
