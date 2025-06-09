@@ -21,7 +21,7 @@ Pull requests are the best way to propose changes to the codebase (we use [Githu
 We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/spdx/spdx-license-diff/issues/new); it's that easy!
 
 ## Get coding!
-[Start here](DEVELOPERS.md)
+[Start here](docs/DEVELOPMENT.md)
 
 ## Use a Consistent Coding Style
 
