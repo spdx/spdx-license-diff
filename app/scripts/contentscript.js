@@ -111,7 +111,6 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       if (selection.length > 0) {
         // Check permissions first before proceeding with bubble creation and license comparison
         checkPermissionsAndProceed(selection);
-        lastselection = selection;
       } else {
         console.log("CONTENT SCRIPT: No selection found, showing message");
         createBubble();
@@ -291,6 +290,9 @@ async function checkPermissionsAndProceed(selection) {
     
     msStart = new Date().getTime();
     compareSelection(selection);
+    
+    // Set lastselection only after we've successfully started the comparison process
+    lastselection = selection;
     
   } catch (error) {
     console.error("CONTENT SCRIPT: Error checking permissions:", error);
