@@ -7,6 +7,14 @@
 </head>
 <body>
   <form id="options">
+<!-- Permission Warning Section -->
+<div id="permissionWarning" class="permission-warning" style="display: none;">
+  <h3>⚠️ Permission Required</h3>
+  <p>The extension needs permission to access SPDX.org to download license data.</p>
+  <div id="permissionInstructions"></div>
+  <button id="checkPermissions" type="button">Check Permissions Again</button>
+</div>
+
 <fieldset>
   <legend><a href='https://spdx.org/licenses/'>SPDX License List</a> Options</legend>
   <div>

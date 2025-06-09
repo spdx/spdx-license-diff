@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+/* eslint-disable no-empty, no-unused-vars */
 
 import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
-import { filters, defaultoptions } from "./const.js";
+import { filters, defaultoptions, readmePermissionsUrl, readmePermissionsUrls } from "./const.js";
 import $ from "jquery";
 import _ from "underscore";
 
@@ -22,6 +23,44 @@ var options;
 var msStart;
 var selectedfilters;
 
+// Show permission error with helpful links for different browsers
+function showPermissionErrorDialog(message) {
+  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+  const extensionId = api.runtime.id;
+  
+  let permissionUrl = '';
+  let browserName = '';
+  let specificReadmeUrl = '';
+  
+  if (isFirefox) {
+    // Firefox uses about:addons URL format
+    permissionUrl = `about:addons`;
+    browserName = 'Firefox';
+    specificReadmeUrl = readmePermissionsUrls.firefox;
+  } else {
+    // Chrome, Edge, Opera use chrome://extensions URL format
+    permissionUrl = `chrome://extensions/?id=${extensionId}`;
+    browserName = 'Chrome/Edge';
+    specificReadmeUrl = readmePermissionsUrls.chrome;
+  }
+  
+  const helpfulMessage = `${message}\n\n` +
+    `For detailed setup instructions, visit:\n${specificReadmeUrl}\n\n` +
+    `Click OK to open the setup instructions, or Cancel to dismiss this message.`;
+  
+  updateBubbleText(helpfulMessage);
+  
+  // Open README instructions when user clicks OK
+  if (window.confirm(helpfulMessage)) {
+    try {
+      window.open(specificReadmeUrl, '_blank');
+    } catch (error) {
+      console.log('Could not open README instructions:', error);
+      updateBubbleText(`Please manually visit: ${specificReadmeUrl}`);
+    }
+  }
+}
+
 // init functions
 restoreOptions();
 createBubble();
@@ -29,7 +68,7 @@ createBubble();
 // Event driven functions
 
 // This function responds to the UI and background.js
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   switch (request.command) {
     case "clicked_browser_action":
       sendResponse({ status: "1" }); // send receipt confirmation
@@ -137,6 +176,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     case "alive?":
       console.log("Received ping request");
       sendResponse({ status: "1" });
+      break;
+    case "show_permission_error":
+      console.log("Showing permission error to user");
+      showPermissionErrorDialog(request.message || "Permission denied: Cannot access SPDX.org. Please grant permission in extension settings or browser toolbar.");
+      updateProgressBar(1, 1, false);
       break;
     default:
       return true;
