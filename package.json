@@ -9,11 +9,11 @@
     "dev": "webextension-toolbox dev",
     "build": "webextension-toolbox build",
     "firefox": "web-ext run -s dist/firefox --bc -u https://www.apache.org/licenses/LICENSE-2.0 -u https://www.gnu.org/licenses/gpl-3.0.en.html",
-    "lint": "eslint app && web-ext lint -s app",
+    "lint": "eslint app",
     "changelog": "gren c --generate --override -B -t all",
-    "at`tribution": "generate-attribution --production",
-    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox -m && yarn build opera && yarn build edge",
-    "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox -m && yarn build opera && yarn build edge",
+    "attribution": "npx generate-attribution --production",
+    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
+    "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
     "buildall": "yarn clean && yarn attribution && yarn production"
   },
   "standard": {
@@ -24,11 +24,30 @@
   "devDependencies": {
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/npm": "^11.0.2",
+    "@semantic-release/release-notes-generator": "^12.1.0",
+    "@webextension-toolbox/webextension-toolbox": "^7.1.1",
     "babel-loader": "^10.0.0",
     "eslint": "^9.22.0",
+    "eslint-config-prettier": "^10.1.5",
     "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^17.19.0",
     "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-promise": "^7.2.1",
+    "github-release-notes": "^0.17.3",
+    "globals": "^16.2.0",
+    "oss-attribution-generator": "^1.7.1",
+    "prettier": "^3.5.3",
     "semantic-release": "^24.2.3",
+    "semantic-release-chrome": "^3.2.0",
+    "semantic-release-firefox": "^2.0.6",
+    "semantic-release-replace-plugin": "^1.2.7",
+    "web-ext": "^8.7.1",
     "webpack": "^5.98.0"
   },
   "dependencies": {
@@ -57,26 +76,59 @@
           "npmPublish": false
         }
       ],
-      "@semantic-release/git",
+      [
+        "semantic-release-replace-plugin",
+        {
+          "replacements": [
+            {
+              "files": [
+                "app/manifest.json"
+              ],
+              "from": "\"version\": \".*\"",
+              "to": "\"version\": \"${nextRelease.version}\"",
+              "results": [
+                {
+                  "file": "app/manifest.json",
+                  "hasChanged": true,
+                  "numMatches": 1,
+                  "numReplacements": 1
+                }
+              ],
+              "countMatches": true
+            }
+          ]
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "app/manifest.json",
+            "CHANGELOG.md"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ],
       [
         "@semantic-release/github",
         {
           "assets": [
             {
-              "path": "spdx-license-diff.chrome.zip",
-              "label": "Chrome"
+              "path": "packages/*.chrome.zip",
+              "label": "Chrome Extension"
             },
             {
-              "path": "spdx-license-diff.firefox.xpi.zip",
-              "label": "Firefox"
+              "path": "packages/*.firefox.xpi",
+              "label": "Firefox Extension"
             },
             {
               "path": "packages/*.edge.zip",
-              "label": "Edge"
+              "label": "Edge Extension"
             },
             {
-              "path": "packages/*.opera.crx.zip",
-              "label": "Opera"
+              "path": "packages/*.opera.crx",
+              "label": "Opera Extension"
             }
           ]
         }
@@ -85,7 +137,7 @@
         "semantic-release-chrome",
         {
           "distFolder": "dist/chrome",
-          "asset": "spdx-license-diff.chrome.zip",
+          "asset": "packages/spdx-license-diff.v${nextRelease.version}.chrome.zip",
           "extensionId": "kfoadicmilbgnicoldjmccpaicejacdh"
         }
       ],
@@ -93,7 +145,7 @@
         "semantic-release-firefox",
         {
           "distFolder": "dist/firefox",
-          "xpiPath": "spdx-license-diff.firefox.xpi.zip",
+          "xpiPath": "packages/spdx-license-diff.v${nextRelease.version}.firefox.xpi",
           "addOnSlug": "spdx-license-diff",
           "notesToReviewer": "Please see https://github.com/spdx/spdx-license-diff/blob/master/DEVELOPERS.md for compile instructions."
         }
