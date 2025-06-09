@@ -44,9 +44,23 @@ progress:after {
 
 /* Diff display styles with dark mode support */
 .diff-content {
-  font-family: monospace;
-  white-space: pre-wrap;
-  line-height: 1.4;
+  font-family: monospace !important;
+  white-space: pre-wrap !important;
+  line-height: 1.4 !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure diff content is not affected by table styles */
+.diff-content table,
+.diff-content th,
+.diff-content td {
+  font-family: monospace !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
 }
 
 /* Target the actual HTML elements generated */
@@ -99,4 +113,142 @@ span.diff-equal, .diff-equal {
 .spdx-dark-mode span.diff-equal,
 .spdx-dark-mode .diff-equal {
   color: #e5e7eb !important;
+}
+
+/* Template table styles - scoped to avoid affecting diff content */
+.template-info {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 10px 0;
+  font-family: inherit;
+}
+
+.template-info h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.template-info .template-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background-color: white;
+  font-family: inherit;
+}
+
+.template-info .template-table th {
+  background-color: #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid #dee2e6;
+  font-family: inherit;
+}
+
+.template-info .template-table td {
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
+  color: #212529;
+  vertical-align: top;
+  font-family: inherit;
+}
+
+.template-info .template-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.template-info .template-table tr:hover {
+  background-color: #e2e6ea;
+}
+
+.template-info .template-table code {
+  background-color: #f1f3f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+}
+
+/* Dark mode support for template table */
+@media (prefers-color-scheme: dark) {
+  .template-info {
+    background-color: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .template-info h4 {
+    color: #e2e8f0;
+  }
+  
+  .template-info .template-table {
+    background-color: #1a202c;
+  }
+  
+  .template-info .template-table th {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+  
+  .template-info .template-table td {
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .template-info .template-table tr:nth-child(even) {
+    background-color: #2d3748;
+  }
+  
+  .template-info .template-table tr:hover {
+    background-color: #4a5568;
+  }
+  
+  .template-info .template-table code {
+    background-color: #4a5568;
+    color: #e2e8f0;
+  }
+}
+
+/* Dark mode override styles using spdx-dark-mode class */
+.spdx-dark-mode .template-info {
+  background-color: #2d3748 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info h4 {
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .template-info .template-table {
+  background-color: #1a202c !important;
+}
+
+.spdx-dark-mode .template-info .template-table th {
+  background-color: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table td {
+  border-color: #4a5568 !important;
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:nth-child(even) {
+  background-color: #2d3748 !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:hover {
+  background-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table code {
+  background-color: #4a5568 !important;
+  color: #e2e8f0 !important;
 }

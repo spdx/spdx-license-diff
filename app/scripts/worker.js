@@ -263,6 +263,7 @@ function compareitem(
       percentage: percentage,
       details: item,
       dice: diceCoefficient.toFixed(2),
+      templateMatch: templateMatch
       // patterns: result.patterns
     };
   } else {
@@ -283,6 +284,7 @@ function compareitem(
       percentage: 0,
       details: null, // details is unneeded since these will always be end of the list
       dice: diceCoefficient.toFixed(2),
+      templateMatch: templateMatch
       // patterns: result.patterns
     };
   }
@@ -329,6 +331,7 @@ function sortlicenses(licenses, tabId) {
       percentage: licenses[license].percentage,
       details: licenses[license].details,
       dice: licenses[license].dice,
+      templateMatch: licenses[license].templateMatch,
     });
     postMessage({ command: "next", spdxid: license, id: id, tabId: tabId });
   }

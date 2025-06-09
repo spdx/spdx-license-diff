@@ -110,6 +110,7 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           );
           return;
         } else {
+          // Clear all previous data including template matches
           rawspdx = null;
           spdx = null;
           diffdisplayed = false;
@@ -387,6 +388,32 @@ function displayDiff(html, time = processTime) {
   licenseElement.dispatchEvent(new Event("change"));
 }
 
+// This formats template variables as an HTML table
+function formatTemplateTable(templateMatch) {
+  if (!templateMatch || !templateMatch.variables || templateMatch.variables.length === 0) {
+    return "";
+  }
+  
+  var tableHtml = '<div class="template-info"><h4>Template Variables:</h4><table class="template-table">';
+  tableHtml += '<thead><tr><th>Variable</th><th>Matched Text</th><th>Regex Pattern</th></tr></thead><tbody>';
+  
+  for (var i = 0; i < templateMatch.variables.length; i++) {
+    var variable = templateMatch.variables[i];
+    var name = variable.name || "Variable " + (i + 1);
+    var pattern = variable.match || "";
+    var description = variable.original || variable.description || "";
+    
+    tableHtml += '<tr>';
+    tableHtml += '<td><code>' + _.escape(name) + '</code></td>';
+    tableHtml += '<td>' + _.escape(description) + '</td>';
+    tableHtml += '<td><code>' + _.escape(pattern) + '</code></td>';
+    tableHtml += '</tr>';
+  }
+  
+  tableHtml += '</tbody></table></div><hr />';
+  return tableHtml;
+}
+
 // This wraps the diff display
 function prepDiff(spdxid, time, html, details) {
   var hoverInfo = "tags: ";
@@ -401,7 +428,22 @@ function prepDiff(spdxid, time, html, details) {
   var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`;
   var timehtml =
     " processed in " + (time + processTime) / 1000 + "s<br /><hr />";
-  return title + timehtml + html;
+  
+  // Find templateMatch data for this license - only show for actual template matches
+  var templateTable = "";
+  if (spdx) {
+    for (var i = 0; i < spdx.length; i++) {
+      if (spdx[i].spdxid === spdxid && 
+          spdx[i].templateMatch && 
+          spdx[i].percentage === 100 && 
+          spdx[i].distance === 0) {
+        templateTable = formatTemplateTable(spdx[i].templateMatch);
+        break;
+      }
+    }
+  }
+  
+  return title + timehtml + templateTable + html;
 }
 
 // This shows available filters as checkboxes
