@@ -77,8 +77,8 @@ function showPermissionErrorDialog(message) {
   
   const helpfulMessage = `${message}\n\n` +
     `For detailed setup instructions, visit:\n${specificReadmeUrl}\n\n` +
-    `Click OK to open the setup instructions, or Cancel to dismiss this message.`;
-  
+    `License Diff will continue automatically once permissions are granted.\n\n` +
+    `Click OK to open the setup instructions, or Cancel to dismiss this message.\n\n`;
   // Show as browser alert dialog instead of in bubble
   const userWantsHelp = window.confirm(helpfulMessage);
   
