@@ -28,6 +28,14 @@ const urls = {
 
 const newLicenseUrl = "https://tools.spdx.org/app/submit_new_license/";
 
+const readmePermissionsUrl = "https://github.com/spdx/spdx-license-diff#granting-permissions";
+
+const readmePermissionsUrls = {
+  firefox: "https://github.com/spdx/spdx-license-diff#firefox",
+  chrome: "https://github.com/spdx/spdx-license-diff#chrome-edge-opera",
+  fallback: readmePermissionsUrl
+};
+
 const spdxkey = {
   licenses: {
     id: "licenseId",
@@ -45,4 +53,6 @@ export {
   spdxkey,
   newLicenseUrl,
   baseLicenseUrl,
+  readmePermissionsUrl,
+  readmePermissionsUrls,
 };

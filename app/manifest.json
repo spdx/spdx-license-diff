@@ -2,7 +2,7 @@
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
   "description": "__MSG_appDescription__",
-  "version": "0.4.0",
+  "version": "0.9.2",
   "manifest_version": 3,
   "default_locale": "en",
   "icons": {
@@ -10,7 +10,8 @@
     "128": "images/128.png"
   },
   "background": {
-    "service_worker": "scripts/background.js",
+    "__chrome|edge|opera__service_worker": "scripts/background.js",
+    "__firefox__scripts": ["scripts/background.js"],
     "type": "module"
   },
   "action": {
@@ -27,8 +28,22 @@
     "unlimitedStorage",
     "contextMenus",
     "activeTab",
+    "scripting"
+  ],
+  "__chrome|edge|opera__permissions": [
+    "storage",
+    "unlimitedStorage",
+    "contextMenus", 
+    "activeTab",
     "scripting",
     "offscreen"
+  ],
+  "__firefox__permissions": [
+    "storage",
+    "unlimitedStorage",
+    "contextMenus",
+    "activeTab", 
+    "scripting"
   ],
   "host_permissions": [
     "*://*.spdx.org/*"

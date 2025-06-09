@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
+// SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+/* eslint-disable no-unused-vars */
+
 var workers = []; // Store workers in an array
 
 // Listen for messages from the service worker

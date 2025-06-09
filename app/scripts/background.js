@@ -30,25 +30,114 @@ var completedcompares = 0;
 var workersInitialized = false;
 var workersInitializing = false;
 
-chrome.action.setBadgeText({
+api.action.setBadgeText({
   text: "Diff"
 });
 
-function handleClick(tab) {
+// Send messages to options page if it's open
+function sendMessageToOptionsPage(command, message, type = 'info') {
+  // Try to send message to all extension pages (including options page)
+  api.runtime.sendMessage({
+    command: command,
+    message: message,
+    type: type
+  }).catch(() => {
+    // Options page may not be open, that's fine
+    console.log('Options page not open, skipping status message');
+  });
+}
+
+// Check if SPDX.org permission is granted
+async function checkSpdxPermission() {
+  try {
+    // Check if we have permission to access spdx.org
+    const hasPermission = await api.permissions.contains({
+      origins: ["*://*.spdx.org/*"]
+    });
+    
+    if (!hasPermission) {
+      console.warn("SPDX.org permission not granted by user");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error checking SPDX.org permission:", error);
+    return false;
+  }
+}
+
+// Request SPDX.org permission from user
+async function requestSpdxPermission() {
+  try {
+    const granted = await api.permissions.request({
+      origins: ["*://*.spdx.org/*"]
+    });
+    
+    if (granted) {
+      console.log("SPDX.org permission granted by user");
+      return true;
+    } else {
+      console.warn("SPDX.org permission denied by user");
+      // Show helpful message to user
+      showPermissionError();
+      return false;
+    }
+  } catch (error) {
+    console.error("Error requesting SPDX.org permission:", error);
+    return false;
+  }
+}
+
+// Show error message when SPDX.org permission is missing
+function showPermissionError() {
+  // Send message to any active content scripts
+  api.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    if (tabs.length > 0) {
+      api.tabs.sendMessage(tabs[0].id, {
+        command: "show_permission_error",
+        message: "SPDX License Diff needs permission to access spdx.org to download license data. Please grant permission in the extension popup or settings."
+      }).catch(() => {
+        // If no content script, show notification
+        if (api.notifications) {
+          api.notifications.create({
+            type: 'basic',
+            iconUrl: 'images/spdx.png',
+            title: 'SPDX License Diff',
+            message: 'Permission needed to access spdx.org for license data. Please check extension settings.'
+          });
+        }
+      });
+    }
+  });
+}
+
+// Check if we have basic license data available
+function hasBasicLicenseData() {
+  return list && 
+         list.licenses && 
+         list.exceptions && 
+         list.licensesdict && 
+         list.exceptionsdict &&
+         Object.keys(list.licensesdict).length > 0;
+}
+
+function handleClick(_tab) {
   // Send a message to the active tab
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tab) {
+  api.tabs.query({ active: true, currentWindow: true }, function (tab) {
     var activeTab = tab[0];
     activeTabId = activeTab.id;
     console.log("Click detected", status[activeTabId]);
     if (activeTab.url.toLowerCase().startsWith("file:")) {
-      // Note: chrome.extension.isAllowedFileSchemeAccess is deprecated in MV3
-      // We'll handle this differently by just trying to inject and handling errors
-      console.log("File URL detected, attempting injection");
+      // In Manifest V3, we try injection and handle permission errors
+      console.log("File URL detected, checking permissions");
+      checkFileAccess(activeTabId, activeTab);
+      return;
     }
     if (!status[activeTabId]) {
       injectContentScript(activeTabId);
     } else {
-      chrome.tabs.sendMessage(
+      api.tabs.sendMessage(
         activeTabId,
         { command: "clicked_browser_action" },
         messageResponse
@@ -57,17 +146,44 @@ function handleClick(tab) {
   });
 }
 
-function injectContentScript(activeTabId) {
-  chrome.scripting.insertCSS({
+function checkFileAccess(activeTabId, _activeTab) {
+  // In Manifest V3, we try to inject and handle permission errors
+  // First attempt to inject CSS to test access
+  api.scripting.insertCSS({
     target: { tabId: activeTabId },
     files: ["/styles/contentscript.css"]
   }).then(() => {
-    return chrome.scripting.executeScript({
+    // If CSS injection succeeds, file access is allowed
+    console.log("File access confirmed, proceeding with injection");
+    return api.scripting.executeScript({
       target: { tabId: activeTabId },
       files: ["/scripts/contentscript.js"]
     });
-  }).then((result) => {
-    chrome.tabs.sendMessage(
+  }).then((_result) => {
+    api.tabs.sendMessage(
+      activeTabId,
+      { command: "clicked_browser_action" },
+      messageResponse
+    );
+  }).catch((error) => {
+    console.error("File access denied:", error);
+    // Call the checkLocalFileAccess function to show user guidance
+    checkLocalFileAccess(false);
+    status[activeTabId] = null;
+  });
+}
+
+function injectContentScript(activeTabId) {
+  api.scripting.insertCSS({
+    target: { tabId: activeTabId },
+    files: ["/styles/contentscript.css"]
+  }).then(() => {
+    return api.scripting.executeScript({
+      target: { tabId: activeTabId },
+      files: ["/scripts/contentscript.js"]
+    });
+  }).then((_result) => {
+    api.tabs.sendMessage(
       activeTabId,
       { command: "clicked_browser_action" },
       messageResponse
@@ -101,14 +217,14 @@ function handleActivate(activeinfo) {
   }
 }
 
-function handleUpdated(tabId, changeInfo, tabInfo) {
+function handleUpdated(tabId, _changeInfo, _tabInfo) {
   // console.log(tabId + " updated.");
   if (status[tabId]) {
     // reset status so we will inject content script again
     status[tabId] = null;
   }
 }
-function handleFocusChanged(windowid) {
+function handleFocusChanged(_windowid) {
   // Set the active tab
   chrome.tabs.query(
     { active: true, currentWindow: true },
@@ -130,7 +246,7 @@ function handleStorageChange(changes, area) {
 }
 
 // respond to content script
-function handleMessage(request, sender, sendResponse) {
+async function handleMessage(request, sender, _sendResponse) {
   // Handle messages from offscreen document workers
   if (request.source === 'offscreen-worker') {
     // Add the workerId to the data so workeronmessage can access it
@@ -145,11 +261,19 @@ function handleMessage(request, sender, sendResponse) {
       console.log("activeTabId", activeTabId);
       break;
     case "updatelicenselist":
-      updateList();
+      updateList(true); // User-initiated from options page
       break;
     case "compareselection":
       selection = request.selection;
       activeTabId = sender.tab.id;
+      
+      // Check if we have basic license data or if we can update
+      if (!hasBasicLicenseData() && !(await checkSpdxPermission())) {
+        console.log("No license data available and no SPDX.org permission - showing permission error");
+        showPermissionError();
+        break;
+      }
+      
       if (
         updating ||
         list.licenses === undefined ||
@@ -181,14 +305,14 @@ function handleMessage(request, sender, sendResponse) {
             (timeElapsed / 1000).toFixed(2),
             comparequeue.length
           );
-          loadList();
+          loadList(true); // User-initiated via compareselection
         } else {
           console.log(
             "License load needed; queing compare for tab %s; %s queued",
             activeTabId,
             comparequeue.length
           );
-          loadList();
+          loadList(true); // User-initiated via compareselection
         }
         break;
       }
@@ -460,6 +584,22 @@ function workeronmessage(event) {
       console.log("Received worker update completion for %s", type);
       checkUpdateDone();
       break;
+    case "updateerror": {
+      workerdone(event.data.id);
+      const updateType = event.data.type;
+      const errorMessage = event.data.error;
+      console.error("Update error for %s: %s", updateType, errorMessage);
+      
+      // Reset updating flag
+      updating = false;
+      
+      // Send error message to options page
+      sendMessageToOptionsPage("update_permission_error", `Failed to update ${updateType} licenses: ${errorMessage}`);
+      
+      // Show error to user
+      showPermissionError();
+      break;
+    }
     case "comparenext":
       threadid = event.data.id;
       workerdone(threadid);
@@ -588,7 +728,7 @@ function storeList(externallicenselist) {
   };
   setStorage(obj);
 }
-function loadList() {
+function loadList(userInitiated = false) {
   if (pendingload) {
     console.log("Ignoring redundant loadList request");
   } else {
@@ -614,7 +754,7 @@ function loadList() {
             "Last update was over %s days ago; update required",
             options.updateFrequency
           );
-          updateList();
+          updateList(userInitiated);
         } else {
           for (const type of Object.keys(urls)) {
             if (!list[type]) {
@@ -646,7 +786,7 @@ function loadList() {
                     "%s not found in storage; requesting update",
                     item
                   );
-                  updateList();
+                  updateList(userInitiated);
                 }
                 if (
                   types.every((type) => {
@@ -668,18 +808,46 @@ function loadList() {
       } else {
         pendingload = false;
         console.log("No license list found in storage; requesting update");
-        updateList();
+        updateList(userInitiated);
       }
     });
   }
 }
 
-function updateList() {
+async function updateList(userInitiated = false) {
   if (updating) {
     console.log("Ignoring redundant update request");
+    if (userInitiated) {
+      // Notify options page that update is already in progress
+      sendMessageToOptionsPage("update_status", "Update already in progress...", "info");
+    }
   } else {
+    // Check if we have permission to access spdx.org
+    const hasPermission = await checkSpdxPermission();
+    if (!hasPermission) {
+      if (userInitiated) {
+        // Only try to request permission if this is a user-initiated action
+        console.log("User-initiated update: attempting to request SPDX.org permission");
+        sendMessageToOptionsPage("update_status", "Requesting permission to access SPDX.org...", "info");
+        const granted = await requestSpdxPermission();
+        if (!granted) {
+          console.error("Cannot update license list: SPDX.org permission denied by user");
+          sendMessageToOptionsPage("update_permission_error", "Cannot update license list: Permission to access SPDX.org was denied. The extension needs access to SPDX.org to download license data.");
+          showPermissionError();
+          return;
+        }
+      } else {
+        // For automatic updates, just skip silently
+        console.log("Automatic update skipped: SPDX.org permission not granted");
+        return;
+      }
+    }
+    
     updating = Date.now();
     licensesLoaded = 0;
+    if (userInitiated) {
+      sendMessageToOptionsPage("update_status", "Starting license list download...", "info");
+    }
     dowork({ command: "updatelicenselist" });
   }
 }
@@ -774,7 +942,7 @@ function restoreOptions(callbackFunction = null) {
   });
 }
 
-// Initialize workers through offscreen document
+// Initialize workers through offscreen document or direct worker creation
 async function spawnWorkers() {
   // Prevent multiple simultaneous initialization attempts
   if (workersInitialized || workersInitializing) {
@@ -785,38 +953,63 @@ async function spawnWorkers() {
   workersInitializing = true;
   
   try {
-    // Check if offscreen document already exists
-    const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
-    if (clients.length === 0) {
-      console.log('Creating offscreen document for workers');
-      await chrome.offscreen.createDocument({
-        url: "pages/offscreen.html",
-        reasons: ["WORKERS"],
-        justification: "Needed for running Web Workers."
+    // Check if browser supports offscreen documents (Chrome/Edge)
+    if (typeof chrome !== 'undefined' && chrome.offscreen) {
+      // Check if offscreen document already exists
+      const clients = await chrome.runtime.getContexts({ contextTypes: ["OFFSCREEN_DOCUMENT"] });
+      if (clients.length === 0) {
+        console.log('Creating offscreen document for workers');
+        await chrome.offscreen.createDocument({
+          url: "pages/offscreen.html",
+          reasons: ["WORKERS"],
+          justification: "Needed for running Web Workers."
+        });
+        // Give the offscreen document time to load
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        console.log('Using existing offscreen document');
+      }
+      
+      await chrome.runtime.sendMessage({
+        target: 'offscreen',
+        action: 'spawnWorkers',
+        options: options
+      }).then((response) => {
+        console.log('spawnWorkers response:', response);
       });
-      // Give the offscreen document time to load
-      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Initialize workers array for tracking
+      workers = [];
+      for (let i = 0; i < options.maxworkers; i++) {
+        workers[i] = [null, false]; // [worker_reference, busy_status]
+      }
+      
+      workersInitialized = true;
+      workersInitializing = false;
+      console.log(`Initialized ${options.maxworkers} workers via offscreen document`);
     } else {
-      console.log('Using existing offscreen document');
+      // Firefox fallback: create workers directly in background script
+      console.log('Offscreen documents not supported, creating workers directly');
+      workers = [];
+      for (let i = 0; i < options.maxworkers; i++) {
+        try {
+          const worker = new Worker(api.runtime.getURL("scripts/worker.js"), { type: 'module' });
+          worker.onmessage = (event) => {
+            // Add the workerId to the data so workeronmessage can access it
+            const eventData = { ...event.data, id: i };
+            workeronmessage({ data: eventData });
+          };
+          workers[i] = [worker, false]; // [worker_reference, busy_status]
+        } catch (error) {
+          console.error(`Failed to create worker ${i}:`, error);
+          workers[i] = [null, false];
+        }
+      }
+      
+      workersInitialized = true;
+      workersInitializing = false;
+      console.log(`Initialized ${options.maxworkers} workers directly`);
     }
-    
-    await chrome.runtime.sendMessage({
-      target: 'offscreen',
-      action: 'spawnWorkers',
-      options: options
-    }).then((response) => {
-      console.log('spawnWorkers response:', response);
-    });
-    
-    // Initialize workers array for tracking
-    workers = [];
-    for (let i = 0; i < options.maxworkers; i++) {
-      workers[i] = [null, false]; // [worker_reference, busy_status]
-    }
-    
-    workersInitialized = true;
-    workersInitializing = false;
-    console.log(`Initialized ${options.maxworkers} workers via offscreen document`);
     
     // Process any queued work now that workers are ready
     processqueue();
@@ -905,20 +1098,33 @@ function dowork(message) {
         message.id = i;
         workers[i][1] = true;
         
-        // Send work to offscreen document instead of direct worker
-        chrome.runtime.sendMessage({
-          target: 'offscreen',
-          action: 'postToWorker',
-          workerId: i,
-          data: message
-        }).catch((error) => {
-          console.error('Failed to send message to offscreen worker:', error);
-          // Mark worker as not busy if message fails
-          if (workers[i]) {
+        // Check if we're using offscreen documents or direct workers
+        if (typeof chrome !== 'undefined' && chrome.offscreen) {
+          // Send work to offscreen document
+          chrome.runtime.sendMessage({
+            target: 'offscreen',
+            action: 'postToWorker',
+            workerId: i,
+            data: message
+          }).catch((error) => {
+            console.error('Failed to send message to offscreen worker:', error);
+            // Mark worker as not busy if message fails
+            if (workers[i]) {
+              workers[i][1] = false;
+            }
+            runningworkers--;
+          });
+        } else {
+          // Send work directly to worker (Firefox)
+          if (workers[i][0]) {
+            workers[i][0].postMessage(message);
+          } else {
+            console.error('Worker not available:', i);
             workers[i][1] = false;
+            runningworkers--;
+            break;
           }
-          runningworkers--;
-        });
+        }
         
         runningworkers++;
         break;
@@ -992,6 +1198,8 @@ const checkUpdateDone = function () {
     ) {
       console.log("Update completed");
       updating = false;
+      // Notify options page of successful update
+      sendMessageToOptionsPage("update_status", "License list updated successfully!", "success");
       launchPendingCompares();
     } else {
       types.map((type) => {

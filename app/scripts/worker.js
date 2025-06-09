@@ -122,6 +122,23 @@ async function getSPDXlist() {
     } catch (err) {
       // catch any error that happened along the way
       console.log("Error: " + err.message);
+      
+      // Check if this is a permission/network error
+      if (err.message.includes("Network Error") || err.message.includes("Failed to fetch") || err.message.includes("403") || err.message.includes("ERR_BLOCKED_BY_CLIENT")) {
+        postMessage({
+          command: "updateerror",
+          error: "Permission or network error accessing SPDX.org. Please check that you have granted permission to access spdx.org in your browser extension settings.",
+          id: id,
+          type: type
+        });
+      } else {
+        postMessage({
+          command: "updateerror", 
+          error: `Failed to update ${type}: ${err.message}`,
+          id: id,
+          type: type
+        });
+      }
     }
   }
 }
@@ -344,7 +361,6 @@ function escapeRegex(str) {
   // eslint-disable-next-line no-useless-escape
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); // need to escape regex characters
 }
-// eslint-disable-next-line no-unused-vars
 function processTemplate(str) {
   // processes a template and returns a dictionary
   // matchRegex contains the regex for matching
