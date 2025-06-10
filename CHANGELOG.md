@@ -1,5 +1,30 @@
 # Changelog
 
+# [0.10.0](https://github.com/spdx/spdx-license-diff/compare/v0.9.2...v0.10.0) (2025-06-10)
+
+
+### Bug Fixes
+
+* fix css consistency issues ([6c182a1](https://github.com/spdx/spdx-license-diff/commit/6c182a12caee13d713f7adea39104f7f97656cbd))
+* fix dark/light theme changing and full screen ([2505c73](https://github.com/spdx/spdx-license-diff/commit/2505c73ac4aa25b0d7a7c822ab245a5adbc7209d))
+* fix firefox permission checking ([813b1fb](https://github.com/spdx/spdx-license-diff/commit/813b1fb88d6ccc5b8a01adcb56978dfb9a6e414d))
+* fix options page text ([b5cec9b](https://github.com/spdx/spdx-license-diff/commit/b5cec9b5d64f78bee5e64293ed6f141325cd5dc5))
+* fix submission of new license data ([4116915](https://github.com/spdx/spdx-license-diff/commit/41169158a073e7d299fb9fd7c61eb65306ca6298))
+* fix template capturing ([34f29de](https://github.com/spdx/spdx-license-diff/commit/34f29defbee34d891966f439ffca8847404ee626))
+* replace diff-match-patch with @sanity/diff-match-patch for security and dark mode support ([42b8a0f](https://github.com/spdx/spdx-license-diff/commit/42b8a0f7b6de3d923449b3967a20137a3f4b7f50)), closes [#105](https://github.com/spdx/spdx-license-diff/issues/105)
+* selecting new text for another comparison ([389c3e4](https://github.com/spdx/spdx-license-diff/commit/389c3e432055b83001add8dee89d15f19c1633a9))
+* update to manifest v3 ([5aee828](https://github.com/spdx/spdx-license-diff/commit/5aee8288a9162c91fe071b15a1e93d1eb1710442))
+* use dom callback for highlight matching ([9406d85](https://github.com/spdx/spdx-license-diff/commit/9406d85ed90bf830905cb9747d2c062df66efe67))
+
+
+### Features
+
+* add dark and light mode support ([5ec6593](https://github.com/spdx/spdx-license-diff/commit/5ec6593bf6431e930979e685b72f3cf8e57e2cd4)), closes [#105](https://github.com/spdx/spdx-license-diff/issues/105)
+* add template variable highlighting ([916ed01](https://github.com/spdx/spdx-license-diff/commit/916ed01b93b3955bd28b8c5f81b026f866195993))
+* enhance UI with permission error handling ([0945018](https://github.com/spdx/spdx-license-diff/commit/094501813a00db3afea769b13c37bbf68e364bc6))
+* implement comprehensive permission system ([c25bbbf](https://github.com/spdx/spdx-license-diff/commit/c25bbbf2b75aebc0d9ca36d05d7b9c31221bcd49))
+* show template match capture info ([4bd3323](https://github.com/spdx/spdx-license-diff/commit/4bd3323659ea1b1dfd5e06e50a3e3e25b9832036))
+
 ## [0.9.2](https://github.com/spdx/spdx-license-diff/compare/v0.9.1...v0.9.2) (2023-07-29)
 
 
