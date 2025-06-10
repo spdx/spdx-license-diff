@@ -9,7 +9,7 @@
   /* Fallbacks for older browsers */
   background: white !important;
   color: black !important;
-  border-color: black;
+  border-color: #ccc;
   /* Then apply system colors if supported */
   background: Canvas !important;
   color: CanvasText !important;
@@ -18,6 +18,86 @@
   backdrop-filter: none !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   z-index: 2147483647 !important; /* Maximum z-index for maximum visibility */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 300px;
+  max-width: 800px;
+}
+
+/* Fullscreen styling for popup pages */
+body[data-is-popup] .selection_bubble,
+.selection_bubble[data-is-popup] {
+  position: static !important;
+  visibility: visible !important;
+  top: auto !important;
+  left: auto !important;
+  margin: 20px !important;
+  width: calc(100vw - 40px) !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: calc(100vh - 40px) !important;
+  box-sizing: border-box !important;
+}
+
+/* Better system color integration for links and buttons */
+.selection_bubble a {
+  color: LinkText !important;
+  text-decoration: underline;
+}
+
+.selection_bubble a:visited {
+  color: VisitedText !important;
+}
+
+.selection_bubble a:hover {
+  color: Highlight !important;
+  background-color: HighlightText !important;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.selection_bubble button {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border: 1px solid ButtonBorder !important;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.selection_bubble button:hover {
+  background: Highlight !important;
+  color: HighlightText !important;
+}
+
+.selection_bubble select {
+  background: Field !important;
+  color: FieldText !important;
+  border: 1px solid CanvasText !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.selection_bubble select:focus {
+  outline: 2px solid Highlight !important;
+  outline-offset: 2px;
+}
+
+.selection_bubble input {
+  background: Field !important;
+  color: FieldText !important;
+  border: 1px solid CanvasText !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.selection_bubble input:focus {
+  outline: 2px solid Highlight !important;
+  outline-offset: 2px;
 }
 progress {
   width: 100%;
@@ -37,8 +117,17 @@ progress:after {
   position: absolute;
   top: 0;
   right: 32px;
+  background: Canvas;
+  color: CanvasText;
+  border: 1px solid CanvasText;
+  /* Fallbacks for older browsers */
   background: white;
-  border: 1px solid #ccc;
+  color: black;
+  border-color: black;
+  /* Then apply system colors if supported */
+  background: Canvas;
+  color: CanvasText;
+  border-color: CanvasText;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
@@ -46,13 +135,12 @@ progress:after {
   height: 24px;
   z-index: 1000;
   opacity: 0.9;
-  transition: opacity 0.2s ease;
-  color: #333;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
 #themeToggleSelect:hover {
   opacity: 1;
-  border-color: #007bff;
+  border-color: Highlight;
 }
 
 /* Diff display styles with dark mode support */
@@ -96,20 +184,20 @@ span.diff-equal, .diff-equal {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .selection_bubble {
-    background: #2d3748 !important;
-    color: #e2e8f0 !important;
-    border-color: #4a5568 !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
   }
   
   #themeToggleSelect {
-    background: #2d3748 !important;
-    color: #e2e8f0 !important;
-    border-color: #4a5568 !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
   }
   
   #themeToggleSelect:hover {
-    border-color: #60a5fa !important;
+    border-color: Highlight !important;
   }
   
   ins.diff-insert, .diff-insert {
@@ -161,6 +249,37 @@ span.diff-equal, .diff-equal {
 
 .spdx-dark-mode #themeToggleSelect:hover {
   border-color: #60a5fa !important;
+}
+
+/* Override system colors when manually in dark mode */
+.spdx-dark-mode .selection_bubble a {
+  color: #60a5fa !important;
+}
+
+.spdx-dark-mode .selection_bubble a:visited {
+  color: #a855f7 !important;
+}
+
+.spdx-dark-mode .selection_bubble a:hover {
+  color: #ffffff !important;
+  background-color: #1e40af !important;
+}
+
+.spdx-dark-mode .selection_bubble button {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode .selection_bubble button:hover {
+  background: #1e40af !important;
+  color: #ffffff !important;
+}
+
+.spdx-dark-mode .selection_bubble select {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
 }
 
 /* Template table styles - scoped to avoid affecting diff content */

@@ -32,13 +32,13 @@ var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting 
 // Function to apply custom diff colors from storage
 function applyCustomDiffColors() {
   api.storage.local.get(['customDiffCSS'], function(result) {
+    // Remove any existing custom style element
+    const existingStyle = document.getElementById('spdx-custom-diff-colors');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    
     if (result.customDiffCSS) {
-      // Remove any existing custom style element
-      const existingStyle = document.getElementById('spdx-custom-diff-colors');
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-      
       // Create new style element with custom colors
       const styleElement = document.createElement('style');
       styleElement.id = 'spdx-custom-diff-colors';
@@ -46,6 +46,33 @@ function applyCustomDiffColors() {
       document.head.appendChild(styleElement);
       
       console.log('Applied custom diff colors');
+    } else {
+      // If no custom colors are stored, ensure default theme behavior works
+      // by creating a minimal CSS injection to force theme application
+      const bubbleDOM = document.getElementById("license_bubble");
+      if (bubbleDOM) {
+        const isDarkMode = bubbleDOM.classList.contains('spdx-dark-mode');
+        const minimalCSS = `
+          /* Force theme application even without custom colors */
+          .selection_bubble.spdx-dark-mode {
+            background: #2d3748 !important;
+            color: #e2e8f0 !important;
+            border-color: #4a5568 !important;
+          }
+          .selection_bubble:not(.spdx-dark-mode) {
+            background: Canvas !important;
+            color: CanvasText !important;
+            border-color: CanvasText !important;
+          }
+        `;
+        
+        const styleElement = document.createElement('style');
+        styleElement.id = 'spdx-custom-diff-colors';
+        styleElement.textContent = minimalCSS;
+        document.head.appendChild(styleElement);
+        
+        console.log('Applied default theme colors for mode:', isDarkMode ? 'dark' : 'light');
+      }
     }
   });
 }
@@ -149,7 +176,25 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (!diffdisplayed)
           displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
         updateBubbleText("Diffing done");
-        document.getElementById("newTabButton").style.visibility = "visible";
+        
+        // Make fullscreen button visible with error handling
+        const newTabButton = document.getElementById("newTabButton");
+        if (newTabButton) {
+          newTabButton.style.visibility = "visible";
+          console.log("Fullscreen button made visible");
+        } else {
+          console.warn("Fullscreen button not found when trying to make visible");
+          // Try to create it if it doesn't exist
+          const form = document.getElementById("license_form");
+          if (form) {
+            createNewTabButton(form, selectedLicense);
+            const retryButton = document.getElementById("newTabButton");
+            if (retryButton) {
+              retryButton.style.visibility = "visible";
+              console.log("Fullscreen button created and made visible");
+            }
+          }
+        }
       } else if (bestspdxid === spdxid) {
         console.log("Best diff %s received; we can display", bestspdxid);
         if (!diffdisplayed)
@@ -165,6 +210,31 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           ? request.selectedLicense
           : spdx[0].spdxid;
       console.log("Received newTab request", request);
+      
+      // Ensure we have a bubble for popup pages
+      if (utils.isPopupPage() && !document.getElementById("license_bubble")) {
+        createBubble();
+        // Make the bubble always visible in popup pages
+        const bubble = document.getElementById("license_bubble");
+        if (bubble) {
+          bubble.style.visibility = "visible";
+          bubble.style.position = "static";
+          bubble.style.top = "auto";
+          bubble.style.left = "auto";
+          bubble.style.margin = "10px";
+          bubble.style.maxWidth = "none";
+          bubble.style.width = "auto";
+          
+          // Apply dark mode if it was active in the original window
+          if (request.isDarkMode) {
+            bubble.classList.add('spdx-dark-mode');
+          }
+          
+          // Set document body to indicate popup mode for CSS
+          document.body.setAttribute('data-is-popup', 'true');
+        }
+      }
+      
       updateProgressBar(1, 1, false);
       addSelectFormFromArray(
         "licenses",
@@ -1033,6 +1103,11 @@ function createBubble() {
   resultText.setAttribute("id", "result_text");
   bubbleDOM.appendChild(resultText);
   console.log("CONTENT SCRIPT: Bubble created successfully");
+  
+  // Apply theme colors immediately after bubble creation
+  setTimeout(() => {
+    applyCustomDiffColors();
+  }, 0);
 }
 // Close the bubble when we click on the screen.
 document.addEventListener(
@@ -1169,19 +1244,30 @@ function toggleDiffTheme() {
     if (select) select.value = "dark";
   }
   
-  // Reapply custom colors to ensure they work with the new theme
-  applyCustomDiffColors();
+  // Force reapply custom colors to ensure they work with the new theme
+  // Even if colors aren't customized, this ensures the theme switch takes effect
+  setTimeout(() => {
+    applyCustomDiffColors();
+    // Force a repaint to ensure theme change is visible
+    bubbleDOM.style.display = 'none';
+    bubbleDOM.offsetHeight; // Trigger reflow
+    bubbleDOM.style.display = '';
+  }, 50);
   
   console.log('Theme toggled to:', isDarkMode ? 'light' : 'dark');
 }
 
 function newTab() {
   var license = selectedLicense;
+  const bubbleDOM = document.getElementById("license_bubble");
+  const isDarkMode = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+  
   api.runtime.sendMessage({
     command: "newTab",
     diffs: diffs,
     selectedLicense: license,
     spdx: spdx,
+    isDarkMode: isDarkMode, // Pass current theme state
   });
 }
 
