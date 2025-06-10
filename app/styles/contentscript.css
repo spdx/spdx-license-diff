@@ -3,8 +3,21 @@
   position: absolute;
   top: 0;
   left: 0;
-  border: 1px solid black;
-  background: inherit;
+  border: 1px solid CanvasText;
+  background: Canvas !important;
+  color: CanvasText !important;
+  /* Fallbacks for older browsers */
+  background: white !important;
+  color: black !important;
+  border-color: black;
+  /* Then apply system colors if supported */
+  background: Canvas !important;
+  color: CanvasText !important;
+  border-color: CanvasText;
+  /* Ensure solid background regardless of page settings */
+  backdrop-filter: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  z-index: 2147483647 !important; /* Maximum z-index for maximum visibility */
 }
 progress {
   width: 100%;
@@ -82,6 +95,23 @@ span.diff-equal, .diff-equal {
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
+  .selection_bubble {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  #themeToggleSelect {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+  }
+  
+  #themeToggleSelect:hover {
+    border-color: #60a5fa !important;
+  }
+  
   ins.diff-insert, .diff-insert {
     background-color: #0d4920;
     color: #7dd3fc;
@@ -113,6 +143,24 @@ span.diff-equal, .diff-equal {
 .spdx-dark-mode span.diff-equal,
 .spdx-dark-mode .diff-equal {
   color: #e5e7eb !important;
+}
+
+/* Dark mode selection bubble */
+.spdx-dark-mode .selection_bubble {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.spdx-dark-mode #themeToggleSelect {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode #themeToggleSelect:hover {
+  border-color: #60a5fa !important;
 }
 
 /* Template table styles - scoped to avoid affecting diff content */
@@ -251,4 +299,81 @@ span.diff-equal, .diff-equal {
 .spdx-dark-mode .template-info .template-table code {
   background-color: #4a5568 !important;
   color: #e2e8f0 !important;
+}
+
+/* Interactive highlighting styles for template variables */
+.diff-variable-highlight {
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 0, 0, 0.2); /* DEBUG: Add a subtle red border to see elements */
+  /* Ensure text color inherits from parent diff element for maximum readability */
+  color: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+  /* Default state - subtle or no highlighting until hover/active */
+  background-color: transparent;
+  border-color: rgba(255, 0, 0, 0.2); /* DEBUG: Red border */
+}
+
+.diff-variable-highlight:hover,
+.diff-variable-highlight.highlighted {
+  /* Active highlighting - will be overridden by custom colors */
+  background-color: rgba(255, 235, 59, 0.3);
+  border-color: rgba(255, 235, 59, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.15);
+}
+
+/* Dark mode variable highlighting via system preference */
+@media (prefers-color-scheme: dark) {
+  .diff-variable-highlight {
+    background-color: transparent;
+    border-color: rgba(255, 0, 0, 0.3); /* DEBUG: Red border for dark mode */
+  }
+  
+  .diff-variable-highlight:hover,
+  .diff-variable-highlight.highlighted {
+    background-color: rgba(255, 235, 59, 0.4);
+    border-color: rgba(255, 235, 59, 0.7);
+    box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2);
+  }
+}
+
+/* Dark mode override using spdx-dark-mode class */
+.spdx-dark-mode .diff-variable-highlight {
+  background-color: transparent !important;
+  border-color: rgba(255, 0, 0, 0.3) !important; /* DEBUG: Red border */
+}
+
+.spdx-dark-mode .diff-variable-highlight:hover,
+.spdx-dark-mode .diff-variable-highlight.highlighted {
+  background-color: rgba(255, 235, 59, 0.4) !important;
+  border-color: rgba(255, 235, 59, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Template table row highlighting */
+.template-variable-row {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.template-variable-row:hover,
+.template-variable-row.highlighted {
+  background-color: rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Dark mode template table row highlighting */
+@media (prefers-color-scheme: dark) {
+  .template-variable-row:hover,
+  .template-variable-row.highlighted {
+    background-color: rgba(255, 235, 59, 0.25) !important;
+  }
+}
+
+.spdx-dark-mode .template-variable-row:hover,
+.spdx-dark-mode .template-variable-row.highlighted {
+  background-color: rgba(255, 235, 59, 0.25) !important;
 }

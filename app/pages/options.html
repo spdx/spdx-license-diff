@@ -88,6 +88,10 @@
         <label for="lightEqualText">Unchanged Text</label>
         <input id="lightEqualText" type="color" name="lightEqualText" value="#333333" title="Text color for unchanged text in light mode">
       </div>
+      <div>
+        <label for="lightHighlightBg">Variable Highlight</label>
+        <input id="lightHighlightBg" type="color" name="lightHighlightBg" value="#ffeb3b" title="Background color for template variable highlighting in light mode">
+      </div>
     </div>
     
     <h4>Dark Mode</h4>
@@ -112,6 +116,10 @@
         <label for="darkEqualText">Unchanged Text</label>
         <input id="darkEqualText" type="color" name="darkEqualText" value="#e5e7eb" title="Text color for unchanged text in dark mode">
       </div>
+      <div>
+        <label for="darkHighlightBg">Variable Highlight</label>
+        <input id="darkHighlightBg" type="color" name="darkHighlightBg" value="#ffeb3b" title="Background color for template variable highlighting in dark mode">
+      </div>
     </div>
     
     <div>
@@ -123,13 +131,13 @@
       <div id="lightPreview">
         <strong>Light Mode:</strong><br>
         <span class="preview-insert">Sample inserted text</span> and <span class="preview-delete">sample deleted text</span><br>
-        <span class="preview-equal">Sample unchanged text</span>
+        <span class="preview-equal">Sample unchanged text with <span class="preview-highlight">highlighted variable</span></span>
       </div>
       <br>
       <div id="darkPreview" style="background-color: #1a1a1a; padding: 10px; border-radius: 3px;">
         <strong style="color: #e5e7eb;">Dark Mode:</strong><br>
         <span class="preview-insert-dark">Sample inserted text</span> and <span class="preview-delete-dark">sample deleted text</span><br>
-        <span class="preview-equal-dark">Sample unchanged text</span>
+        <span class="preview-equal-dark">Sample unchanged text with <span class="preview-highlight-dark">highlighted variable</span></span>
       </div>
     </div>
   </div>

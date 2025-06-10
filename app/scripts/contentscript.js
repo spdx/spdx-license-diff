@@ -357,6 +357,7 @@ function processLicenses(showBest, processTime = 0) {
           spdxid: license,
           license: data,
           record: i,
+          templateMatch: spdx[i].templateMatch, // Pass template match data for highlighting
         });
         console.log("Generating diff for " + license + " total " + diffsdue);
       } else {
@@ -474,15 +475,109 @@ function formatTemplateTable(templateMatch) {
     var pattern = variable.match || "";
     var capturedText = variable.capturedText || ""; // Only use capturedText, don't fall back to original/description
     
-    tableHtml += '<tr>';
+    // Add data attributes for interactive highlighting
+    tableHtml += '<tr class="template-variable-row" data-variable-name="' + _.escape(name) + '" data-variable-index="' + i + '">';
     tableHtml += '<td><code>' + _.escape(name) + '</code></td>';
-    tableHtml += '<td>' + _.escape(capturedText) + '</td>';
+    tableHtml += '<td class="captured-text-cell">' + _.escape(capturedText) + '</td>';
     tableHtml += '<td><code>' + _.escape(pattern) + '</code></td>';
     tableHtml += '</tr>';
   }
   
   tableHtml += '</tbody></table></div><hr />';
   return tableHtml;
+}
+
+// Setup interactive highlighting between template variables table and diff content
+function setupInteractiveHighlighting() {
+  console.log("=== Setting up interactive highlighting ===");
+  
+  // Get all template variable rows and diff variable highlights
+  const variableRows = document.querySelectorAll('.template-variable-row');
+  const diffHighlights = document.querySelectorAll('.diff-variable-highlight');
+  
+  console.log(`Found elements: ${variableRows.length} template rows, ${diffHighlights.length} diff highlights`);
+  
+  // Early return if no elements found
+  if (variableRows.length === 0) {
+    console.warn("No template variable rows found - highlighting setup skipped");
+    return;
+  }
+  
+  if (diffHighlights.length === 0) {
+    console.warn("No diff variable highlights found - highlighting setup skipped");
+    return;
+  }
+  
+  // Log the first few elements for debugging
+  console.log("First template row:", variableRows[0]);
+  console.log("First template row classes:", variableRows[0].className);
+  console.log("First template row data-variable-index:", variableRows[0].getAttribute('data-variable-index'));
+  
+  console.log("First diff highlight:", diffHighlights[0]);
+  console.log("First diff highlight classes:", diffHighlights[0].className);
+  console.log("First diff highlight data-variable-index:", diffHighlights[0].getAttribute('data-variable-index'));
+  
+  // Add event listeners for template table rows
+  variableRows.forEach((row, index) => {
+    const variableIndex = row.getAttribute('data-variable-index');
+    console.log(`Setting up row ${index} with variable index: ${variableIndex}`);
+    
+    row.addEventListener('mouseenter', () => {
+      console.log("=== HOVER ENTER on template row for variable", variableIndex, "===");
+      // Highlight corresponding diff spans
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      console.log(`Found ${matchingSpans.length} matching spans for variable ${variableIndex}`);
+      matchingSpans.forEach(span => {
+        console.log("Adding highlighted class to span:", span);
+        span.classList.add('highlighted');
+      });
+      row.classList.add('highlighted');
+      console.log("Added highlighted class to row");
+    });
+    
+    row.addEventListener('mouseleave', () => {
+      console.log("=== HOVER LEAVE on template row for variable", variableIndex, "===");
+      // Remove highlights
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      matchingSpans.forEach(span => span.classList.remove('highlighted'));
+      row.classList.remove('highlighted');
+    });
+  });
+  
+  // Add event listeners for diff variable highlights
+  diffHighlights.forEach((span, index) => {
+    const variableIndex = span.getAttribute('data-variable-index');
+    console.log(`Setting up diff highlight ${index} with variable index: ${variableIndex}`);
+    
+    span.addEventListener('mouseenter', () => {
+      console.log("=== HOVER ENTER on diff highlight for variable", variableIndex, "===");
+      // Highlight corresponding table row
+      const matchingRow = document.querySelector(`.template-variable-row[data-variable-index="${variableIndex}"]`);
+      if (matchingRow) {
+        console.log("Found matching row:", matchingRow);
+        matchingRow.classList.add('highlighted');
+      } else {
+        console.log("No matching row found for variable", variableIndex);
+      }
+      // Highlight all matching diff spans
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      console.log(`Found ${matchingSpans.length} matching spans for variable ${variableIndex}`);
+      matchingSpans.forEach(s => s.classList.add('highlighted'));
+    });
+    
+    span.addEventListener('mouseleave', () => {
+      console.log("=== HOVER LEAVE on diff highlight for variable", variableIndex, "===");
+      // Remove highlights
+      const matchingRow = document.querySelector(`.template-variable-row[data-variable-index="${variableIndex}"]`);
+      if (matchingRow) {
+        matchingRow.classList.remove('highlighted');
+      }
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      matchingSpans.forEach(s => s.classList.remove('highlighted'));
+    });
+  });
+  
+  console.log(`Interactive highlighting setup complete: ${variableRows.length} rows, ${diffHighlights.length} highlights`);
 }
 
 // This wraps the diff display
@@ -820,6 +915,37 @@ function updateBubbleText(text, target = "#bubble_text") {
   // Directly set innerHTML to preserve HTML structure and CSS classes
   // The XML serialization was breaking diff CSS classes
   bubbleDOMText.innerHTML = text;
+  
+  // Setup interactive highlighting if this update contains template content
+  if (text.includes('template-variable-row')) {
+    console.log("Setting up interactive highlighting after updating", target);
+    console.log("Text includes template-variable-row:", text.includes('template-variable-row'));
+    console.log("Target:", target);
+    
+    // Use a more reliable approach to wait for DOM elements to be available
+    function waitForElementsAndSetup(attempts = 0) {
+      const maxAttempts = 20; // Max 2 seconds (20 * 100ms)
+      const variableRows = document.querySelectorAll('.template-variable-row');
+      const diffHighlights = document.querySelectorAll('.diff-variable-highlight');
+      
+      console.log(`Attempt ${attempts + 1}: Found ${variableRows.length} template rows and ${diffHighlights.length} diff highlights`);
+      
+      if (variableRows.length > 0 && diffHighlights.length > 0) {
+        console.log("Both elements found, setting up highlighting");
+        setupInteractiveHighlighting();
+      } else if (attempts < maxAttempts) {
+        console.log(`Elements not ready, retrying in 100ms (attempt ${attempts + 1}/${maxAttempts})`);
+        setTimeout(() => waitForElementsAndSetup(attempts + 1), 100);
+      } else {
+        console.warn("Failed to find required elements for highlighting after maximum attempts");
+        // Try setup anyway in case some elements are available
+        setupInteractiveHighlighting();
+      }
+    }
+    
+    // Start checking immediately, then with retries
+    waitForElementsAndSetup();
+  }
 }
 
 // max will increase if > 0; value will be set if not null and >=0

@@ -109,6 +109,13 @@ input:valid + span:after {
   font-family: monospace;
 }
 
+.preview-highlight, .preview-highlight-dark {
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  border: 1px solid transparent;
+}
+
 .permission-warning #openPermissions {
   background-color: #dc3545;
 }

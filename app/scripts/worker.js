@@ -6,24 +6,73 @@ import * as fastestlevenshtein from "fastest-levenshtein";
 import dice from "fast-dice-coefficient";
 
 /**
- * Convert a diff array into a pretty HTML report with dark mode support.
+ * Convert a diff array into a pretty HTML report with dark mode support and variable highlighting.
  * @param {Array} diffs Array of diff tuples.
+ * @param {Object} templateMatch Optional template match data for variable highlighting.
+ * @param {string} selection The original selection text for variable position mapping.
  * @return {string} HTML representation.
  */
-function diff_prettyHtml(diffs) {
+function diff_prettyHtml(diffs, templateMatch, selection) {
+  console.log("=== diff_prettyHtml called ===");
+  console.log("Template match data:", templateMatch);
+  console.log("Selection length:", selection ? selection.length : "undefined");
+  
   const html = [];
   const pattern_amp = /&/g;
   const pattern_lt = /</g;
   const pattern_gt = />/g;
   const pattern_para = /\n/g;
   
+  // Build a map of variable positions if template match data is available
+  let variablePositions = [];
+  if (templateMatch && templateMatch.variables && selection) {
+    console.log("Building variable positions from", templateMatch.variables.length, "variables");
+    for (let i = 0; i < templateMatch.variables.length; i++) {
+      const variable = templateMatch.variables[i];
+      if (variable.capturedText && variable.capturedText.trim()) {
+        const capturedText = variable.capturedText.trim();
+        const position = selection.indexOf(capturedText);
+        if (position !== -1) {
+          variablePositions.push({
+            start: position,
+            end: position + capturedText.length,
+            variableName: variable.name || "Variable " + (i + 1),
+            variableIndex: i,
+            capturedText: capturedText
+          });
+          console.log(`Variable ${i}: "${capturedText}" at position ${position}-${position + capturedText.length}`);
+        } else {
+          console.log(`Variable ${i}: "${capturedText}" not found in selection`);
+        }
+      } else {
+        console.log(`Variable ${i}: no captured text`);
+      }
+    }
+    // Sort by position to handle overlaps correctly
+    variablePositions.sort((a, b) => a.start - b.start);
+    console.log("Final variable positions:", variablePositions.length);
+  } else {
+    console.log("No template match data or selection available for variable highlighting");
+  }
+  
+  let currentPosition = 0;
+  
   for (let x = 0; x < diffs.length; x++) {
     const op = diffs[x][0]; // Operation (insert, delete, equal)
     const data = diffs[x][1]; // Text of change.
-    let text = data.replace(pattern_amp, '&amp;')
-                   .replace(pattern_lt, '&lt;')
-                   .replace(pattern_gt, '&gt;')
-                   .replace(pattern_para, '&para;<br>');
+    let text;
+    
+    // For EQUAL sections, check if they contain variable text that should be highlighted
+    if (op === DIFF_EQUAL && variablePositions.length > 0) {
+      // Apply variable highlighting to the original text first, then escape HTML
+      text = wrapVariableTextInDiffWithEscaping(data, currentPosition, variablePositions);
+    } else {
+      // Normal HTML escaping for non-highlighted text
+      text = data.replace(pattern_amp, '&amp;')
+                 .replace(pattern_lt, '&lt;')
+                 .replace(pattern_gt, '&gt;')
+                 .replace(pattern_para, '&para;<br>');
+    }
     
     switch (op) {
       case DIFF_INSERT:
@@ -31,14 +80,120 @@ function diff_prettyHtml(diffs) {
         break;
       case DIFF_DELETE:
         html[x] = '<del class="diff-delete">' + text + '</del>';
+        // For DELETE sections, we don't update position since they're not in the selection
+        currentPosition -= data.length;
         break;
       case DIFF_EQUAL:
         html[x] = '<span class="diff-equal">' + text + '</span>';
         break;
     }
+    
+    // Update position counter for next iteration (only for non-DELETE operations)
+    currentPosition += data.length;
   }
   
   return '<div class="diff-content">' + html.join('') + '</div>';
+}
+
+/**
+ * Wrap variable text segments with highlighting spans and apply HTML escaping properly.
+ * @param {string} originalText The original unescaped text to process.
+ * @param {number} textStartPos The starting position of this text segment in the overall selection.
+ * @param {Array} variablePositions Array of variable position objects.
+ * @return {string} HTML-escaped text with variable spans wrapped.
+ */
+function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variablePositions) {
+  console.log(`wrapVariableTextInDiffWithEscaping called: textStartPos=${textStartPos}, originalText="${originalText.substring(0, 50).replace(/\n/g, '\\n')}..."`);
+  
+  const pattern_amp = /&/g;
+  const pattern_lt = /</g;
+  const pattern_gt = />/g;
+  const pattern_para = /\n/g;
+  
+  // Find variables that overlap with this text segment
+  let segmentVariables = [];
+  for (const varPos of variablePositions) {
+    const segmentStart = textStartPos;
+    const segmentEnd = textStartPos + originalText.length;
+    
+    // Check if this variable overlaps with the current text segment
+    if (varPos.start < segmentEnd && varPos.end > segmentStart) {
+      const relativeStart = Math.max(0, varPos.start - segmentStart);
+      const relativeEnd = Math.min(originalText.length, varPos.end - segmentStart);
+      
+      if (relativeStart < relativeEnd) {
+        segmentVariables.push({
+          ...varPos,
+          relativeStart: relativeStart,
+          relativeEnd: relativeEnd
+        });
+        console.log(`Variable ${varPos.variableIndex} ("${varPos.capturedText.replace(/\n/g, '\\n')}") overlaps at ${relativeStart}-${relativeEnd}`);
+      }
+    }
+  }
+  
+  // If no variables in this segment, just escape and return
+  if (segmentVariables.length === 0) {
+    return originalText.replace(pattern_amp, '&amp;')
+                      .replace(pattern_lt, '&lt;')
+                      .replace(pattern_gt, '&gt;')
+                      .replace(pattern_para, '&para;<br>');
+  }
+  
+  // Sort by relative position to handle them in order
+  segmentVariables.sort((a, b) => a.relativeStart - b.relativeStart);
+  
+  let result = '';
+  let lastEnd = 0;
+  
+  // Process each variable in this segment
+  for (const segVar of segmentVariables) {
+    // Add text before this variable (HTML escaped)
+    if (segVar.relativeStart > lastEnd) {
+      const beforeText = originalText.substring(lastEnd, segVar.relativeStart);
+      result += beforeText.replace(pattern_amp, '&amp;')
+                         .replace(pattern_lt, '&lt;')
+                         .replace(pattern_gt, '&gt;')
+                         .replace(pattern_para, '&para;<br>');
+    }
+    
+    // Add the variable text with highlighting span
+    const variableText = originalText.substring(segVar.relativeStart, segVar.relativeEnd);
+    const escapedVariableText = variableText.replace(pattern_amp, '&amp;')
+                                           .replace(pattern_lt, '&lt;')
+                                           .replace(pattern_gt, '&gt;')
+                                           .replace(pattern_para, '&para;<br>');
+    
+    result += '<span class="diff-variable-highlight" data-variable-name="' + 
+              escapeHtmlAttributes(segVar.variableName) + '" data-variable-index="' + segVar.variableIndex + '">' + 
+              escapedVariableText + '</span>';
+    
+    console.log(`Added highlight span for variable ${segVar.variableIndex}: "${variableText.replace(/\n/g, '\\n')}"`);
+    
+    lastEnd = segVar.relativeEnd;
+  }
+  
+  // Add any remaining text after the last variable (HTML escaped)
+  if (lastEnd < originalText.length) {
+    const afterText = originalText.substring(lastEnd);
+    result += afterText.replace(pattern_amp, '&amp;')
+                      .replace(pattern_lt, '&lt;')
+                      .replace(pattern_gt, '&gt;')
+                      .replace(pattern_para, '&para;<br>');
+  }
+  
+  return result;
+}
+
+/**
+ * Escape HTML attributes to prevent XSS attacks
+ */
+function escapeHtmlAttributes(str) {
+  return str.replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
 }
 
 var id;
@@ -81,8 +236,9 @@ self.onmessage = function (event) {
       spdxid = event.data.spdxid;
       const text = event.data.license;
       var record = event.data.record;
+      var templateMatch = event.data.templateMatch; // Get template match data
       tabId = event.data.tabId;
-      generateDiff(event.data.selection, spdxid, text, record, tabId);
+      generateDiff(event.data.selection, spdxid, text, record, tabId, templateMatch);
       break;
     }
     default:
@@ -509,7 +665,7 @@ function sortlicenses(licenses, tabId) {
   postMessage({ command: "sortdone", result: sortable, id: id, tabId: tabId });
 }
 
-function generateDiff(selection, spdxid, license, record, tabId) {
+function generateDiff(selection, spdxid, license, record, tabId, templateMatch) {
   // postMessage({"command": "progressbarmax","value": total, "stage":"Generating Diff","id":id});
   var result = {};
   var data = license;
@@ -518,7 +674,7 @@ function generateDiff(selection, spdxid, license, record, tabId) {
   var textDiff = makeDiff(data, selection); // produces diff array
   cleanupSemantic(textDiff); // semantic cleanup
   var msEnd = new Date().getTime();
-  result = { html: diff_prettyHtml(textDiff), time: msEnd - msStart };
+  result = { html: diff_prettyHtml(textDiff, templateMatch, selection), time: msEnd - msStart };
   console.log("%s %s: %s diff:%o", tabId, id, spdxid, result);
   postMessage({
     command: "diffnext",

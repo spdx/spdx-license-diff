@@ -97,14 +97,16 @@ function saveOptions() {
       insertText: document.getElementById("lightInsertText").value,
       deleteBg: document.getElementById("lightDeleteBg").value,
       deleteText: document.getElementById("lightDeleteText").value,
-      equalText: document.getElementById("lightEqualText").value
+      equalText: document.getElementById("lightEqualText").value,
+      highlightBg: document.getElementById("lightHighlightBg").value
     },
     dark: {
       insertBg: document.getElementById("darkInsertBg").value,
       insertText: document.getElementById("darkInsertText").value,
       deleteBg: document.getElementById("darkDeleteBg").value,
       deleteText: document.getElementById("darkDeleteText").value,
-      equalText: document.getElementById("darkEqualText").value
+      equalText: document.getElementById("darkEqualText").value,
+      highlightBg: document.getElementById("darkHighlightBg").value
     }
   };
 
@@ -157,11 +159,13 @@ function restoreOptions() {
     document.getElementById("lightDeleteBg").value = colors.light.deleteBg;
     document.getElementById("lightDeleteText").value = colors.light.deleteText;
     document.getElementById("lightEqualText").value = colors.light.equalText || defaultoptions.diffColors.light.equalText;
+    document.getElementById("lightHighlightBg").value = colors.light.highlightBg || defaultoptions.diffColors.light.highlightBg;
     document.getElementById("darkInsertBg").value = colors.dark.insertBg;
     document.getElementById("darkInsertText").value = colors.dark.insertText;
     document.getElementById("darkDeleteBg").value = colors.dark.deleteBg;
     document.getElementById("darkDeleteText").value = colors.dark.deleteText;
     document.getElementById("darkEqualText").value = colors.dark.equalText || defaultoptions.diffColors.dark.equalText;
+    document.getElementById("darkHighlightBg").value = colors.dark.highlightBg || defaultoptions.diffColors.dark.highlightBg;
     
     showFilters(document.getElementById("exclude"), result);
     // document.getElementById('deprecated').checked = result.options.filters.deprecated
@@ -357,6 +361,14 @@ function showUpdatePermissionError(message) {
 
 // Color management functions
 function updateDiffColors(colors) {
+  // Helper function to convert hex to rgba with opacity
+  function hexToRgba(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+
   // Inject custom CSS with the new colors
   const customCSS = `
     ins.diff-insert, .diff-insert {
@@ -371,6 +383,24 @@ function updateDiffColors(colors) {
       color: ${colors.light.equalText} !important;
     }
     
+    /* Variable highlighting for light mode */
+    .diff-variable-highlight {
+      background-color: transparent !important;
+      border-color: transparent !important;
+    }
+    
+    .diff-variable-highlight:hover,
+    .diff-variable-highlight.highlighted {
+      background-color: ${hexToRgba(colors.light.highlightBg || '#ffeb3b', 0.3)} !important;
+      border-color: ${hexToRgba(colors.light.highlightBg || '#ffeb3b', 0.6)} !important;
+      box-shadow: 0 0 0 2px ${hexToRgba(colors.light.highlightBg || '#ffeb3b', 0.15)} !important;
+    }
+    
+    .template-variable-row:hover,
+    .template-variable-row.highlighted {
+      background-color: ${hexToRgba(colors.light.highlightBg || '#ffeb3b', 0.2)} !important;
+    }
+    
     /* Dark mode via system preference */
     @media (prefers-color-scheme: dark) {
       ins.diff-insert, .diff-insert {
@@ -383,6 +413,23 @@ function updateDiffColors(colors) {
       }
       span.diff-equal, .diff-equal {
         color: ${colors.dark.equalText} !important;
+      }
+      
+      .diff-variable-highlight {
+        background-color: transparent !important;
+        border-color: transparent !important;
+      }
+      
+      .diff-variable-highlight:hover,
+      .diff-variable-highlight.highlighted {
+        background-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.4)} !important;
+        border-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.7)} !important;
+        box-shadow: 0 0 0 2px ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.2)} !important;
+      }
+      
+      .template-variable-row:hover,
+      .template-variable-row.highlighted {
+        background-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.25)} !important;
       }
     }
     
@@ -400,6 +447,23 @@ function updateDiffColors(colors) {
     .spdx-dark-mode span.diff-equal,
     .spdx-dark-mode .diff-equal {
       color: ${colors.dark.equalText} !important;
+    }
+    
+    .spdx-dark-mode .diff-variable-highlight {
+      background-color: transparent !important;
+      border-color: transparent !important;
+    }
+    
+    .spdx-dark-mode .diff-variable-highlight:hover,
+    .spdx-dark-mode .diff-variable-highlight.highlighted {
+      background-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.4)} !important;
+      border-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.7)} !important;
+      box-shadow: 0 0 0 2px ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.2)} !important;
+    }
+    
+    .spdx-dark-mode .template-variable-row:hover,
+    .spdx-dark-mode .template-variable-row.highlighted {
+      background-color: ${hexToRgba(colors.dark.highlightBg || '#ffeb3b', 0.25)} !important;
     }
     
     /* Light mode override when not in spdx-dark-mode (for cases where system is dark but user chose light) */
@@ -430,11 +494,13 @@ function resetColors() {
   document.getElementById("lightDeleteBg").value = defaultColors.light.deleteBg;
   document.getElementById("lightDeleteText").value = defaultColors.light.deleteText;
   document.getElementById("lightEqualText").value = defaultColors.light.equalText;
+  document.getElementById("lightHighlightBg").value = defaultColors.light.highlightBg;
   document.getElementById("darkInsertBg").value = defaultColors.dark.insertBg;
   document.getElementById("darkInsertText").value = defaultColors.dark.insertText;
   document.getElementById("darkDeleteBg").value = defaultColors.dark.deleteBg;
   document.getElementById("darkDeleteText").value = defaultColors.dark.deleteText;
   document.getElementById("darkEqualText").value = defaultColors.dark.equalText;
+  document.getElementById("darkHighlightBg").value = defaultColors.dark.highlightBg;
   
   // Update preview if visible
   const preview = document.getElementById("colorPreview");
@@ -449,7 +515,8 @@ function updateColorPreview() {
     insertText: document.getElementById("lightInsertText").value,
     deleteBg: document.getElementById("lightDeleteBg").value,
     deleteText: document.getElementById("lightDeleteText").value,
-    equalText: document.getElementById("lightEqualText").value
+    equalText: document.getElementById("lightEqualText").value,
+    highlightBg: document.getElementById("lightHighlightBg").value
   };
   
   const darkColors = {
@@ -457,13 +524,23 @@ function updateColorPreview() {
     insertText: document.getElementById("darkInsertText").value,
     deleteBg: document.getElementById("darkDeleteBg").value,
     deleteText: document.getElementById("darkDeleteText").value,
-    equalText: document.getElementById("darkEqualText").value
+    equalText: document.getElementById("darkEqualText").value,
+    highlightBg: document.getElementById("darkHighlightBg").value
   };
+  
+  // Helper function to convert hex to rgba
+  function hexToRgba(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
   
   // Update light mode preview
   const lightInsert = document.querySelector("#lightPreview .preview-insert");
   const lightDelete = document.querySelector("#lightPreview .preview-delete");
   const lightEqual = document.querySelector("#lightPreview .preview-equal");
+  const lightHighlight = document.querySelector("#lightPreview .preview-highlight");
   if (lightInsert) {
     lightInsert.style.backgroundColor = lightColors.insertBg;
     lightInsert.style.color = lightColors.insertText;
@@ -475,11 +552,18 @@ function updateColorPreview() {
   if (lightEqual) {
     lightEqual.style.color = lightColors.equalText;
   }
+  if (lightHighlight) {
+    lightHighlight.style.backgroundColor = hexToRgba(lightColors.highlightBg, 0.3);
+    lightHighlight.style.padding = "2px 4px";
+    lightHighlight.style.borderRadius = "3px";
+    lightHighlight.style.border = `1px solid ${hexToRgba(lightColors.highlightBg, 0.5)}`;
+  }
   
   // Update dark mode preview
   const darkInsert = document.querySelector("#darkPreview .preview-insert-dark");
   const darkDelete = document.querySelector("#darkPreview .preview-delete-dark");
   const darkEqual = document.querySelector("#darkPreview .preview-equal-dark");
+  const darkHighlight = document.querySelector("#darkPreview .preview-highlight-dark");
   if (darkInsert) {
     darkInsert.style.backgroundColor = darkColors.insertBg;
     darkInsert.style.color = darkColors.insertText;
@@ -490,6 +574,12 @@ function updateColorPreview() {
   }
   if (darkEqual) {
     darkEqual.style.color = darkColors.equalText;
+  }
+  if (darkHighlight) {
+    darkHighlight.style.backgroundColor = hexToRgba(darkColors.highlightBg, 0.3);
+    darkHighlight.style.padding = "2px 4px";
+    darkHighlight.style.borderRadius = "3px";
+    darkHighlight.style.border = `1px solid ${hexToRgba(darkColors.highlightBg, 0.5)}`;
   }
 }
 
@@ -519,8 +609,8 @@ document.getElementById("resetColors").addEventListener("click", resetColors);
 document.getElementById("previewColors").addEventListener("click", toggleColorPreview);
 
 // Add event listeners for color inputs to update preview in real-time
-["lightInsertBg", "lightInsertText", "lightDeleteBg", "lightDeleteText", "lightEqualText",
- "darkInsertBg", "darkInsertText", "darkDeleteBg", "darkDeleteText", "darkEqualText"].forEach(id => {
+["lightInsertBg", "lightInsertText", "lightDeleteBg", "lightDeleteText", "lightEqualText", "lightHighlightBg",
+ "darkInsertBg", "darkInsertText", "darkDeleteBg", "darkDeleteText", "darkEqualText", "darkHighlightBg"].forEach(id => {
   document.getElementById(id).addEventListener("input", function() {
     // Update preview if visible
     const preview = document.getElementById("colorPreview");

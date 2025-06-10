@@ -23,14 +23,16 @@ const defaultoptions = {
       insertText: "#155724",
       deleteBg: "#f8d7da",
       deleteText: "#721c24",
-      equalText: "#333333"
+      equalText: "#333333",
+      highlightBg: "#ffeb3b"
     },
     dark: {
       insertBg: "#0d4920",
       insertText: "#7dd3fc",
       deleteBg: "#5a1e1e",
       deleteText: "#fca5a5",
-      equalText: "#e5e7eb"
+      equalText: "#e5e7eb",
+      highlightBg: "#ffeb3b"
     }
   },
 };
