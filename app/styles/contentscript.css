@@ -3,8 +3,21 @@
   position: absolute;
   top: 0;
   left: 0;
-  border: 1px solid black;
-  background: inherit;
+  border: 1px solid CanvasText;
+  background: Canvas !important;
+  color: CanvasText !important;
+  /* Fallbacks for older browsers */
+  background: white !important;
+  color: black !important;
+  border-color: black;
+  /* Then apply system colors if supported */
+  background: Canvas !important;
+  color: CanvasText !important;
+  border-color: CanvasText;
+  /* Ensure solid background regardless of page settings */
+  backdrop-filter: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  z-index: 2147483647 !important; /* Maximum z-index for maximum visibility */
 }
 progress {
   width: 100%;
@@ -18,4 +31,349 @@ progress:after {
   position:absolute;
   top:0;
   right:0;
+}
+
+#themeToggleSelect {
+  position: absolute;
+  top: 0;
+  right: 32px;
+  background: white;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 24px;
+  z-index: 1000;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+  color: #333;
+}
+
+#themeToggleSelect:hover {
+  opacity: 1;
+  border-color: #007bff;
+}
+
+/* Diff display styles with dark mode support */
+.diff-content {
+  font-family: monospace !important;
+  white-space: pre-wrap !important;
+  line-height: 1.4 !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure diff content is not affected by table styles */
+.diff-content table,
+.diff-content th,
+.diff-content td {
+  font-family: monospace !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+/* Target the actual HTML elements generated */
+ins.diff-insert, .diff-insert {
+  background-color: #d4edda;
+  color: #155724;
+  text-decoration: none;
+}
+
+del.diff-delete, .diff-delete {
+  background-color: #f8d7da;
+  color: #721c24;
+  text-decoration: line-through;
+}
+
+span.diff-equal, .diff-equal {
+  color: #333333;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .selection_bubble {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  #themeToggleSelect {
+    background: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+  }
+  
+  #themeToggleSelect:hover {
+    border-color: #60a5fa !important;
+  }
+  
+  ins.diff-insert, .diff-insert {
+    background-color: #0d4920;
+    color: #7dd3fc;
+  }
+  
+  del.diff-delete, .diff-delete {
+    background-color: #5a1e1e;
+    color: #fca5a5;
+  }
+  
+  span.diff-equal, .diff-equal {
+    color: #e5e7eb;
+  }
+}
+
+/* Dark mode override styles using spdx-dark-mode class */
+.spdx-dark-mode ins.diff-insert,
+.spdx-dark-mode .diff-insert {
+  background-color: #0d4920 !important;
+  color: #7dd3fc !important;
+}
+
+.spdx-dark-mode del.diff-delete,
+.spdx-dark-mode .diff-delete {
+  background-color: #5a1e1e !important;
+  color: #fca5a5 !important;
+}
+
+.spdx-dark-mode span.diff-equal,
+.spdx-dark-mode .diff-equal {
+  color: #e5e7eb !important;
+}
+
+/* Dark mode selection bubble */
+.spdx-dark-mode .selection_bubble {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.spdx-dark-mode #themeToggleSelect {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode #themeToggleSelect:hover {
+  border-color: #60a5fa !important;
+}
+
+/* Template table styles - scoped to avoid affecting diff content */
+.template-info {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 10px 0;
+  font-family: inherit;
+}
+
+.template-info h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.template-info .template-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background-color: white;
+  font-family: inherit;
+}
+
+.template-info .template-table th {
+  background-color: #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid #dee2e6;
+  font-family: inherit;
+}
+
+.template-info .template-table td {
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
+  color: #212529;
+  vertical-align: top;
+  font-family: inherit;
+}
+
+.template-info .template-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.template-info .template-table tr:hover {
+  background-color: #e2e6ea;
+}
+
+.template-info .template-table code {
+  background-color: #f1f3f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+}
+
+/* Dark mode support for template table */
+@media (prefers-color-scheme: dark) {
+  .template-info {
+    background-color: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .template-info h4 {
+    color: #e2e8f0;
+  }
+  
+  .template-info .template-table {
+    background-color: #1a202c;
+  }
+  
+  .template-info .template-table th {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+  
+  .template-info .template-table td {
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .template-info .template-table tr:nth-child(even) {
+    background-color: #2d3748;
+  }
+  
+  .template-info .template-table tr:hover {
+    background-color: #4a5568;
+  }
+  
+  .template-info .template-table code {
+    background-color: #4a5568;
+    color: #e2e8f0;
+  }
+}
+
+/* Dark mode override styles using spdx-dark-mode class */
+.spdx-dark-mode .template-info {
+  background-color: #2d3748 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info h4 {
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .template-info .template-table {
+  background-color: #1a202c !important;
+}
+
+.spdx-dark-mode .template-info .template-table th {
+  background-color: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table td {
+  border-color: #4a5568 !important;
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:nth-child(even) {
+  background-color: #2d3748 !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:hover {
+  background-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table code {
+  background-color: #4a5568 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Interactive highlighting styles for template variables */
+.diff-variable-highlight {
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 0, 0, 0.2); /* DEBUG: Add a subtle red border to see elements */
+  /* Ensure text color inherits from parent diff element for maximum readability */
+  color: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+  /* Default state - subtle or no highlighting until hover/active */
+  background-color: transparent;
+  border-color: rgba(255, 0, 0, 0.2); /* DEBUG: Red border */
+}
+
+.diff-variable-highlight:hover,
+.diff-variable-highlight.highlighted {
+  /* Active highlighting - will be overridden by custom colors */
+  background-color: rgba(255, 235, 59, 0.3);
+  border-color: rgba(255, 235, 59, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.15);
+}
+
+/* Dark mode variable highlighting via system preference */
+@media (prefers-color-scheme: dark) {
+  .diff-variable-highlight {
+    background-color: transparent;
+    border-color: rgba(255, 0, 0, 0.3); /* DEBUG: Red border for dark mode */
+  }
+  
+  .diff-variable-highlight:hover,
+  .diff-variable-highlight.highlighted {
+    background-color: rgba(255, 235, 59, 0.4);
+    border-color: rgba(255, 235, 59, 0.7);
+    box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2);
+  }
+}
+
+/* Dark mode override using spdx-dark-mode class */
+.spdx-dark-mode .diff-variable-highlight {
+  background-color: transparent !important;
+  border-color: rgba(255, 0, 0, 0.3) !important; /* DEBUG: Red border */
+}
+
+.spdx-dark-mode .diff-variable-highlight:hover,
+.spdx-dark-mode .diff-variable-highlight.highlighted {
+  background-color: rgba(255, 235, 59, 0.4) !important;
+  border-color: rgba(255, 235, 59, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Template table row highlighting */
+.template-variable-row {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.template-variable-row:hover,
+.template-variable-row.highlighted {
+  background-color: rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Dark mode template table row highlighting */
+@media (prefers-color-scheme: dark) {
+  .template-variable-row:hover,
+  .template-variable-row.highlighted {
+    background-color: rgba(255, 235, 59, 0.25) !important;
+  }
+}
+
+.spdx-dark-mode .template-variable-row:hover,
+.spdx-dark-mode .template-variable-row.highlighted {
+  background-color: rgba(255, 235, 59, 0.25) !important;
 }

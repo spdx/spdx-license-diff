@@ -17,6 +17,24 @@ const defaultoptions = {
   filters: {
     deprecated: "isDeprecatedLicenseId",
   },
+  diffColors: {
+    light: {
+      insertBg: "#d4edda",
+      insertText: "#155724",
+      deleteBg: "#f8d7da",
+      deleteText: "#721c24",
+      equalText: "#333333",
+      highlightBg: "#ffeb3b"
+    },
+    dark: {
+      insertBg: "#0d4920",
+      insertText: "#7dd3fc",
+      deleteBg: "#5a1e1e",
+      deleteText: "#fca5a5",
+      equalText: "#e5e7eb",
+      highlightBg: "#ffeb3b"
+    }
+  },
 };
 
 const baseLicenseUrl = "https://spdx.org/licenses/";
@@ -28,6 +46,14 @@ const urls = {
 
 const newLicenseUrl = "https://tools.spdx.org/app/submit_new_license/";
 
+const readmePermissionsUrl = "https://github.com/spdx/spdx-license-diff#granting-permissions";
+
+const readmePermissionsUrls = {
+  firefox: "https://github.com/spdx/spdx-license-diff#firefox",
+  chrome: "https://github.com/spdx/spdx-license-diff#chrome-edge-opera",
+  fallback: readmePermissionsUrl
+};
+
 const spdxkey = {
   licenses: {
     id: "licenseId",
@@ -38,6 +64,7 @@ const spdxkey = {
     text: "licenseExceptionText",
   },
 };
+
 export {
   filters,
   defaultoptions,
@@ -45,4 +72,6 @@ export {
   spdxkey,
   newLicenseUrl,
   baseLicenseUrl,
+  readmePermissionsUrl,
+  readmePermissionsUrls,
 };

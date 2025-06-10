@@ -7,6 +7,14 @@
 </head>
 <body>
   <form id="options">
+<!-- Permission Warning Section -->
+<div id="permissionWarning" class="permission-warning" style="display: none;">
+  <h3>⚠️ Permission Required</h3>
+  <p>The extension needs permission to access SPDX.org to download license data.</p>
+  <div id="permissionInstructions"></div>
+  <button id="checkPermissions" type="button">Check Permissions Again</button>
+</div>
+
 <fieldset>
   <legend><a href='https://spdx.org/licenses/'>SPDX License List</a> Options</legend>
   <div>
@@ -53,6 +61,85 @@
     <fieldset id="exclude">
       <legend>Exclude</legend>
     </fieldset>
+  </div>
+</fieldset>
+<fieldset>
+  <legend>Diff Display Colors</legend>
+  <div>
+    <h4>Light Mode</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+      <div>
+        <label for="lightInsertBg">Insert Background</label>
+        <input id="lightInsertBg" type="color" name="lightInsertBg" value="#d4edda" title="Background color for inserted text in light mode">
+      </div>
+      <div>
+        <label for="lightInsertText">Insert Text</label>
+        <input id="lightInsertText" type="color" name="lightInsertText" value="#155724" title="Text color for inserted text in light mode">
+      </div>
+      <div>
+        <label for="lightDeleteBg">Delete Background</label>
+        <input id="lightDeleteBg" type="color" name="lightDeleteBg" value="#f8d7da" title="Background color for deleted text in light mode">
+      </div>
+      <div>
+        <label for="lightDeleteText">Delete Text</label>
+        <input id="lightDeleteText" type="color" name="lightDeleteText" value="#721c24" title="Text color for deleted text in light mode">
+      </div>
+      <div>
+        <label for="lightEqualText">Unchanged Text</label>
+        <input id="lightEqualText" type="color" name="lightEqualText" value="#333333" title="Text color for unchanged text in light mode">
+      </div>
+      <div>
+        <label for="lightHighlightBg">Variable Highlight</label>
+        <input id="lightHighlightBg" type="color" name="lightHighlightBg" value="#ffeb3b" title="Background color for template variable highlighting in light mode">
+      </div>
+    </div>
+    
+    <h4>Dark Mode</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+      <div>
+        <label for="darkInsertBg">Insert Background</label>
+        <input id="darkInsertBg" type="color" name="darkInsertBg" value="#0d4920" title="Background color for inserted text in dark mode">
+      </div>
+      <div>
+        <label for="darkInsertText">Insert Text</label>
+        <input id="darkInsertText" type="color" name="darkInsertText" value="#7dd3fc" title="Text color for inserted text in dark mode">
+      </div>
+      <div>
+        <label for="darkDeleteBg">Delete Background</label>
+        <input id="darkDeleteBg" type="color" name="darkDeleteBg" value="#5a1e1e" title="Background color for deleted text in dark mode">
+      </div>
+      <div>
+        <label for="darkDeleteText">Delete Text</label>
+        <input id="darkDeleteText" type="color" name="darkDeleteText" value="#fca5a5" title="Text color for deleted text in dark mode">
+      </div>
+      <div>
+        <label for="darkEqualText">Unchanged Text</label>
+        <input id="darkEqualText" type="color" name="darkEqualText" value="#e5e7eb" title="Text color for unchanged text in dark mode">
+      </div>
+      <div>
+        <label for="darkHighlightBg">Variable Highlight</label>
+        <input id="darkHighlightBg" type="color" name="darkHighlightBg" value="#ffeb3b" title="Background color for template variable highlighting in dark mode">
+      </div>
+    </div>
+    
+    <div>
+      <button id="resetColors" type="button">Reset Colors to Default</button>
+      <button id="previewColors" type="button">Preview Colors</button>
+    </div>
+    <div id="colorPreview" style="display: none; margin-top: 15px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      <h5>Color Preview:</h5>
+      <div id="lightPreview">
+        <strong>Light Mode:</strong><br>
+        <span class="preview-insert">Sample inserted text</span> and <span class="preview-delete">sample deleted text</span><br>
+        <span class="preview-equal">Sample unchanged text with <span class="preview-highlight">highlighted variable</span></span>
+      </div>
+      <br>
+      <div id="darkPreview" style="background-color: #1a1a1a; padding: 10px; border-radius: 3px;">
+        <strong style="color: #e5e7eb;">Dark Mode:</strong><br>
+        <span class="preview-insert-dark">Sample inserted text</span> and <span class="preview-delete-dark">sample deleted text</span><br>
+        <span class="preview-equal-dark">Sample unchanged text with <span class="preview-highlight-dark">highlighted variable</span></span>
+      </div>
+    </div>
   </div>
 </fieldset>
 <fieldset>
