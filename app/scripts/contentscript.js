@@ -466,17 +466,17 @@ function formatTemplateTable(templateMatch) {
   }
   
   var tableHtml = '<div class="template-info"><h4>Template Variables:</h4><table class="template-table">';
-  tableHtml += '<thead><tr><th>Variable</th><th>Matched Text</th><th>Regex Pattern</th></tr></thead><tbody>';
+  tableHtml += '<thead><tr><th>Variable</th><th>Captured Text</th><th>Regex Pattern</th></tr></thead><tbody>';
   
   for (var i = 0; i < templateMatch.variables.length; i++) {
     var variable = templateMatch.variables[i];
     var name = variable.name || "Variable " + (i + 1);
     var pattern = variable.match || "";
-    var description = variable.original || variable.description || "";
+    var capturedText = variable.capturedText || ""; // Only use capturedText, don't fall back to original/description
     
     tableHtml += '<tr>';
     tableHtml += '<td><code>' + _.escape(name) + '</code></td>';
-    tableHtml += '<td>' + _.escape(description) + '</td>';
+    tableHtml += '<td>' + _.escape(capturedText) + '</td>';
     tableHtml += '<td><code>' + _.escape(pattern) + '</code></td>';
     tableHtml += '</tr>';
   }
