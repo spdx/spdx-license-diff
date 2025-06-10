@@ -3,17 +3,10 @@
   position: absolute;
   top: 0;
   left: 0;
-  border: 1px solid CanvasText;
-  background: Canvas !important;
-  color: CanvasText !important;
-  /* Fallbacks for older browsers */
-  background: white !important;
-  color: black !important;
-  border-color: #ccc;
-  /* Then apply system colors if supported */
-  background: Canvas !important;
-  color: CanvasText !important;
-  border-color: CanvasText;
+  /* Use explicit colors that can be overridden by dark mode */
+  background: white;
+  color: black;
+  border: 1px solid #ccc;
   /* Ensure solid background regardless of page settings */
   backdrop-filter: none !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
@@ -40,27 +33,27 @@ body[data-is-popup] .selection_bubble,
   box-sizing: border-box !important;
 }
 
-/* Better system color integration for links and buttons */
+/* Better explicit color integration for links and buttons */
 .selection_bubble a {
-  color: LinkText !important;
+  color: #0066cc;
   text-decoration: underline;
 }
 
 .selection_bubble a:visited {
-  color: VisitedText !important;
+  color: #800080;
 }
 
 .selection_bubble a:hover {
-  color: Highlight !important;
-  background-color: HighlightText !important;
+  color: #ffffff;
+  background-color: #0066cc;
   padding: 2px 4px;
   border-radius: 3px;
 }
 
 .selection_bubble button {
-  background: ButtonFace !important;
-  color: ButtonText !important;
-  border: 1px solid ButtonBorder !important;
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #6c757d;
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -68,37 +61,98 @@ body[data-is-popup] .selection_bubble,
 }
 
 .selection_bubble button:hover {
-  background: Highlight !important;
-  color: HighlightText !important;
+  background: #0066cc;
+  color: #ffffff;
 }
 
 .selection_bubble select {
-  background: Field !important;
-  color: FieldText !important;
-  border: 1px solid CanvasText !important;
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
   padding: 4px 8px;
   border-radius: 4px;
   font-family: inherit;
 }
 
 .selection_bubble select:focus {
-  outline: 2px solid Highlight !important;
+  outline: 2px solid #0066cc;
   outline-offset: 2px;
 }
 
 .selection_bubble input {
-  background: Field !important;
-  color: FieldText !important;
-  border: 1px solid CanvasText !important;
+  background: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
   padding: 4px 8px;
   border-radius: 4px;
   font-family: inherit;
 }
 
 .selection_bubble input:focus {
-  outline: 2px solid Highlight !important;
+  outline: 2px solid #0066cc;
   outline-offset: 2px;
 }
+
+/* Progress bar styling */
+.selection_bubble progress {
+  width: 100%;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+.selection_bubble progress::-webkit-progress-bar {
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.selection_bubble progress::-webkit-progress-value {
+  background: #0066cc;
+  border-radius: 4px;
+}
+
+.selection_bubble progress::-moz-progress-bar {
+  background: #0066cc;
+  border-radius: 4px;
+}
+
+/* Form styling */
+.selection_bubble form {
+  margin: 10px 0;
+  padding: 0;
+}
+
+/* Label styling */
+.selection_bubble label {
+  color: #495057;
+  font-family: inherit;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+/* Checkbox styling */
+.selection_bubble input[type="checkbox"] {
+  margin-right: 4px;
+  accent-color: #0066cc;
+}
+
+/* Text content styling */
+.selection_bubble #bubble_text,
+.selection_bubble #result_text {
+  color: #495057;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* HR styling */
+.selection_bubble hr {
+  border: none;
+  border-top: 1px solid #dee2e6;
+  margin: 10px 0;
+  opacity: 0.3;
+}
+
 progress {
   width: 100%;
   text-align: center;
@@ -108,26 +162,33 @@ progress:after {
 }
 
 #newTabButton {
-  position:absolute;
-  top:0;
-  right:0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 24px;
+  padding: 2px;
+  border-radius: 4px;
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+#newTabButton:hover {
+  background: #0066cc;
+  color: #ffffff;
 }
 
 #themeToggleSelect {
   position: absolute;
   top: 0;
-  right: 32px;
-  background: Canvas;
-  color: CanvasText;
-  border: 1px solid CanvasText;
-  /* Fallbacks for older browsers */
+  right: 36px; /* Increased to avoid overlap with newTabButton (28px + 8px margin) */
+  /* Use explicit colors that can be overridden by dark mode */
   background: white;
   color: black;
-  border-color: black;
-  /* Then apply system colors if supported */
-  background: Canvas;
-  color: CanvasText;
-  border-color: CanvasText;
+  border: 1px solid #ccc;
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
@@ -140,7 +201,7 @@ progress:after {
 
 #themeToggleSelect:hover {
   opacity: 1;
-  border-color: Highlight;
+  border-color: #0066cc;
 }
 
 /* Diff display styles with dark mode support */
@@ -164,73 +225,47 @@ progress:after {
   background: transparent !important;
 }
 
-/* Target the actual HTML elements generated */
-ins.diff-insert, .diff-insert {
-  background-color: #d4edda;
-  color: #155724;
-  text-decoration: none;
-}
-
-del.diff-delete, .diff-delete {
-  background-color: #f8d7da;
-  color: #721c24;
-  text-decoration: line-through;
-}
-
-span.diff-equal, .diff-equal {
-  color: #333333;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .selection_bubble {
-    background: Canvas !important;
-    color: CanvasText !important;
-    border-color: CanvasText !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
-  }
-  
-  #themeToggleSelect {
-    background: Canvas !important;
-    color: CanvasText !important;
-    border-color: CanvasText !important;
-  }
-  
-  #themeToggleSelect:hover {
-    border-color: Highlight !important;
-  }
-  
-  ins.diff-insert, .diff-insert {
-    background-color: #0d4920;
-    color: #7dd3fc;
-  }
-  
-  del.diff-delete, .diff-delete {
-    background-color: #5a1e1e;
-    color: #fca5a5;
-  }
-  
-  span.diff-equal, .diff-equal {
-    color: #e5e7eb;
-  }
-}
+/* Dark mode support removed - we use manual .spdx-dark-mode class instead */
 
 /* Dark mode override styles using spdx-dark-mode class */
-.spdx-dark-mode ins.diff-insert,
-.spdx-dark-mode .diff-insert {
-  background-color: #0d4920 !important;
-  color: #7dd3fc !important;
+.spdx-dark-mode .template-info {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
 }
 
-.spdx-dark-mode del.diff-delete,
-.spdx-dark-mode .diff-delete {
-  background-color: #5a1e1e !important;
-  color: #fca5a5 !important;
+.spdx-dark-mode .template-info h4 {
+  color: #e2e8f0 !important;
 }
 
-.spdx-dark-mode span.diff-equal,
-.spdx-dark-mode .diff-equal {
-  color: #e5e7eb !important;
+.spdx-dark-mode .template-info .template-table {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .template-info .template-table th {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table td {
+  border-color: #4a5568 !important;
+  color: #e2e8f0 !important;
+  background: #1a202c !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:nth-child(even) {
+  background: #2d3748 !important;
+}
+
+.spdx-dark-mode .template-info .template-table tr:hover {
+  background: #4a5568 !important;
+}
+
+.spdx-dark-mode .template-info .template-table code {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
 }
 
 /* Dark mode selection bubble */
@@ -282,9 +317,62 @@ span.diff-equal, .diff-equal {
   border: 1px solid #6b7280 !important;
 }
 
+.spdx-dark-mode #newTabButton {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode #newTabButton:hover {
+  background: #1e40af !important;
+  color: #ffffff !important;
+}
+
+.spdx-dark-mode .selection_bubble progress {
+  background: #374151 !important;
+  border-color: #6b7280 !important;
+}
+
+.spdx-dark-mode .selection_bubble progress::-webkit-progress-bar {
+  background: #374151 !important;
+}
+
+.spdx-dark-mode .selection_bubble progress::-webkit-progress-value {
+  background: #60a5fa !important;
+}
+
+.spdx-dark-mode .selection_bubble progress::-moz-progress-bar {
+  background: #60a5fa !important;
+}
+
+.spdx-dark-mode .selection_bubble label {
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .selection_bubble #bubble_text,
+.spdx-dark-mode .selection_bubble #result_text {
+  color: #e2e8f0 !important;
+}
+
+.spdx-dark-mode .selection_bubble hr {
+  border-color: #6b7280 !important;
+}
+
+.spdx-dark-mode .selection_bubble input {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode .selection_bubble input:focus {
+  outline: 2px solid #60a5fa !important;
+}
+
 /* Template table styles - scoped to avoid affecting diff content */
 .template-info {
-  background-color: #f8f9fa;
+  /* Use explicit colors that can be overridden by dark mode */
+  background: #f8f9fa;
+  color: #495057;
   border: 1px solid #dee2e6;
   border-radius: 4px;
   padding: 12px;
@@ -303,18 +391,21 @@ span.diff-equal, .diff-equal {
 .template-info .template-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 8px;
   font-size: 12px;
-  background-color: white;
+  background: white;
+  color: #212529;
+  border: 1px solid #dee2e6;
   font-family: inherit;
 }
 
 .template-info .template-table th {
-  background-color: #e9ecef;
+  background: #e9ecef;
   color: #495057;
+  border: 1px solid #dee2e6;
   font-weight: 600;
   padding: 8px 10px;
   text-align: left;
-  border: 1px solid #dee2e6;
   font-family: inherit;
 }
 
@@ -322,158 +413,48 @@ span.diff-equal, .diff-equal {
   padding: 6px 10px;
   border: 1px solid #dee2e6;
   color: #212529;
+  background: white;
   vertical-align: top;
   font-family: inherit;
 }
 
 .template-info .template-table tr:nth-child(even) {
-  background-color: #f8f9fa;
+  background: rgba(128, 128, 128, 0.05);
 }
 
 .template-info .template-table tr:hover {
-  background-color: #e2e6ea;
+  background: rgba(128, 128, 128, 0.1);
 }
 
 .template-info .template-table code {
-  background-color: #f1f3f4;
+  background: #f1f3f4;
+  color: inherit;
   padding: 2px 4px;
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 11px;
 }
 
-/* Dark mode support for template table */
-@media (prefers-color-scheme: dark) {
-  .template-info {
-    background-color: #2d3748;
-    border-color: #4a5568;
-  }
-  
-  .template-info h4 {
-    color: #e2e8f0;
-  }
-  
-  .template-info .template-table {
-    background-color: #1a202c;
-  }
-  
-  .template-info .template-table th {
-    background-color: #2d3748;
-    color: #e2e8f0;
-    border-color: #4a5568;
-  }
-  
-  .template-info .template-table td {
-    border-color: #4a5568;
-    color: #e2e8f0;
-  }
-  
-  .template-info .template-table tr:nth-child(even) {
-    background-color: #2d3748;
-  }
-  
-  .template-info .template-table tr:hover {
-    background-color: #4a5568;
-  }
-  
-  .template-info .template-table code {
-    background-color: #4a5568;
-    color: #e2e8f0;
-  }
+/* Dark mode support for template table removed - we use manual .spdx-dark-mode class instead */
+
+/* Default diff colors - will be overridden by custom colors if set */
+ins.diff-insert, .diff-insert {
+  background-color: #d4edda;
+  color: #155724;
+  text-decoration: none;
 }
 
-/* Dark mode override styles using spdx-dark-mode class */
-.spdx-dark-mode .template-info {
-  background-color: #2d3748 !important;
-  border-color: #4a5568 !important;
+del.diff-delete, .diff-delete {
+  background-color: #f8d7da;
+  color: #721c24;
+  text-decoration: line-through;
 }
 
-.spdx-dark-mode .template-info h4 {
-  color: #e2e8f0 !important;
+span.diff-equal, .diff-equal {
+  color: #333333;
 }
 
-.spdx-dark-mode .template-info .template-table {
-  background-color: #1a202c !important;
-}
-
-.spdx-dark-mode .template-info .template-table th {
-  background-color: #2d3748 !important;
-  color: #e2e8f0 !important;
-  border-color: #4a5568 !important;
-}
-
-.spdx-dark-mode .template-info .template-table td {
-  border-color: #4a5568 !important;
-  color: #e2e8f0 !important;
-}
-
-.spdx-dark-mode .template-info .template-table tr:nth-child(even) {
-  background-color: #2d3748 !important;
-}
-
-.spdx-dark-mode .template-info .template-table tr:hover {
-  background-color: #4a5568 !important;
-}
-
-.spdx-dark-mode .template-info .template-table code {
-  background-color: #4a5568 !important;
-  color: #e2e8f0 !important;
-}
-
-/* Interactive highlighting styles for template variables */
-.diff-variable-highlight {
-  border-radius: 3px;
-  padding: 1px 2px;
-  margin: 0 1px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid rgba(255, 0, 0, 0.2); /* DEBUG: Add a subtle red border to see elements */
-  /* Ensure text color inherits from parent diff element for maximum readability */
-  color: inherit !important;
-  font-weight: inherit !important;
-  text-decoration: none !important;
-  /* Default state - subtle or no highlighting until hover/active */
-  background-color: transparent;
-  border-color: rgba(255, 0, 0, 0.2); /* DEBUG: Red border */
-}
-
-.diff-variable-highlight:hover,
-.diff-variable-highlight.highlighted {
-  /* Active highlighting - will be overridden by custom colors */
-  background-color: rgba(255, 235, 59, 0.3);
-  border-color: rgba(255, 235, 59, 0.6);
-  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.15);
-}
-
-/* Dark mode variable highlighting via system preference */
-@media (prefers-color-scheme: dark) {
-  .diff-variable-highlight {
-    background-color: transparent;
-    border-color: rgba(255, 0, 0, 0.3); /* DEBUG: Red border for dark mode */
-  }
-  
-  .diff-variable-highlight:hover,
-  .diff-variable-highlight.highlighted {
-    background-color: rgba(255, 235, 59, 0.4);
-    border-color: rgba(255, 235, 59, 0.7);
-    box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2);
-  }
-}
-
-/* Dark mode override using spdx-dark-mode class */
-.spdx-dark-mode .diff-variable-highlight {
-  background-color: transparent !important;
-  border-color: rgba(255, 0, 0, 0.3) !important; /* DEBUG: Red border */
-}
-
-.spdx-dark-mode .diff-variable-highlight:hover,
-.spdx-dark-mode .diff-variable-highlight.highlighted {
-  background-color: rgba(255, 235, 59, 0.4) !important;
-  border-color: rgba(255, 235, 59, 0.7) !important;
-  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2) !important;
-}
-
-/* Template table row highlighting */
+/* Default template variable highlighting */
 .template-variable-row {
   transition: background-color 0.2s ease;
   cursor: pointer;
@@ -484,15 +465,68 @@ span.diff-equal, .diff-equal {
   background-color: rgba(255, 235, 59, 0.2) !important;
 }
 
-/* Dark mode template table row highlighting */
-@media (prefers-color-scheme: dark) {
-  .template-variable-row:hover,
-  .template-variable-row.highlighted {
-    background-color: rgba(255, 235, 59, 0.25) !important;
-  }
+/* Default diff variable highlighting */
+.diff-variable-highlight {
+  border-radius: 3px;
+  padding: 1px 2px;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+}
+
+.diff-variable-highlight:hover,
+.diff-variable-highlight.highlighted {
+  background-color: rgba(255, 235, 59, 0.3) !important;
+  border-color: rgba(255, 235, 59, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.15) !important;
+}
+
+/* Manual dark mode override */
+.spdx-dark-mode ins.diff-insert,
+.spdx-dark-mode .diff-insert {
+  background-color: #0d4920 !important;
+  color: #7dd3fc !important;
+}
+
+.spdx-dark-mode del.diff-delete,
+.spdx-dark-mode .diff-delete {
+  background-color: #5a1e1e !important;
+  color: #fca5a5 !important;
+}
+
+.spdx-dark-mode span.diff-equal,
+.spdx-dark-mode .diff-equal {
+  color: #e5e7eb !important;
 }
 
 .spdx-dark-mode .template-variable-row:hover,
 .spdx-dark-mode .template-variable-row.highlighted {
   background-color: rgba(255, 235, 59, 0.25) !important;
+}
+
+.spdx-dark-mode .diff-variable-highlight:hover,
+.spdx-dark-mode .diff-variable-highlight.highlighted {
+  background-color: rgba(255, 235, 59, 0.4) !important;
+  border-color: rgba(255, 235, 59, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Dark mode override for the main bubble background */
+.spdx-dark-mode.selection_bubble,
+.spdx-dark-mode .selection_bubble {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+/* Dark mode override for theme toggle select in the bubble */
+.spdx-dark-mode #themeToggleSelect {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
+  border-color: #718096 !important;
 }

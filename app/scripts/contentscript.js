@@ -31,48 +31,24 @@ var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting 
 
 // Function to apply custom diff colors from storage
 function applyCustomDiffColors() {
+  // Remove any existing custom style elements first
+  const existingDefault = document.getElementById('spdx-custom-diff-colors');
+  const existingCustom = document.getElementById('spdx-custom-override-colors');
+  if (existingDefault) existingDefault.remove();
+  if (existingCustom) existingCustom.remove();
+  
+  // Check for custom colors and apply them as overrides to the default CSS
   api.storage.local.get(['customDiffCSS'], function(result) {
-    // Remove any existing custom style element
-    const existingStyle = document.getElementById('spdx-custom-diff-colors');
-    if (existingStyle) {
-      existingStyle.remove();
-    }
-    
     if (result.customDiffCSS) {
-      // Create new style element with custom colors
+      // Only apply custom CSS if it exists - defaults are now in contentscript.css
       const styleElement = document.createElement('style');
-      styleElement.id = 'spdx-custom-diff-colors';
+      styleElement.id = 'spdx-custom-override-colors';
       styleElement.textContent = result.customDiffCSS;
       document.head.appendChild(styleElement);
       
-      console.log('Applied custom diff colors');
+      console.log('Applied custom color overrides');
     } else {
-      // If no custom colors are stored, ensure default theme behavior works
-      // by creating a minimal CSS injection to force theme application
-      const bubbleDOM = document.getElementById("license_bubble");
-      if (bubbleDOM) {
-        const isDarkMode = bubbleDOM.classList.contains('spdx-dark-mode');
-        const minimalCSS = `
-          /* Force theme application even without custom colors */
-          .selection_bubble.spdx-dark-mode {
-            background: #2d3748 !important;
-            color: #e2e8f0 !important;
-            border-color: #4a5568 !important;
-          }
-          .selection_bubble:not(.spdx-dark-mode) {
-            background: Canvas !important;
-            color: CanvasText !important;
-            border-color: CanvasText !important;
-          }
-        `;
-        
-        const styleElement = document.createElement('style');
-        styleElement.id = 'spdx-custom-diff-colors';
-        styleElement.textContent = minimalCSS;
-        document.head.appendChild(styleElement);
-        
-        console.log('Applied default theme colors for mode:', isDarkMode ? 'dark' : 'light');
-      }
+      console.log('No custom colors found - using defaults from CSS file');
     }
   });
 }
@@ -1178,8 +1154,8 @@ function createNewTabButton(form, selectedLicense) {
 
 // Add theme toggle dropdown.
 function createThemeToggleButton(form) {
-  if (utils.isPopupPage() || $("#themeToggleSelect").length) {
-    return; // Dropdown already exists or not needed
+  if ($("#themeToggleSelect").length) {
+    return; // Dropdown already exists
   }
   
   const select = utils.createElement("select", {
@@ -1187,20 +1163,7 @@ function createThemeToggleButton(form) {
     title: "Select theme for diff display"
   });
   
-  // Apply consistent styling
-  Object.assign(select.style, {
-    position: "absolute",
-    top: "0",
-    right: "32px", // Position to the left of the full screen button
-    background: "white",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "12px",
-    height: "24px",
-    zIndex: "1000"
-  });
+  // CSS handles all styling - no inline styles needed
   
   // Create theme options
   const lightOption = utils.createElement("option", { value: "light" }, "Light");
@@ -1244,15 +1207,8 @@ function toggleDiffTheme() {
     if (select) select.value = "dark";
   }
   
-  // Force reapply custom colors to ensure they work with the new theme
-  // Even if colors aren't customized, this ensures the theme switch takes effect
-  setTimeout(() => {
-    applyCustomDiffColors();
-    // Force a repaint to ensure theme change is visible
-    bubbleDOM.style.display = 'none';
-    bubbleDOM.offsetHeight; // Trigger reflow
-    bubbleDOM.style.display = '';
-  }, 50);
+  // Apply any custom color overrides to work with the new theme
+  applyCustomDiffColors();
   
   console.log('Theme toggled to:', isDarkMode ? 'light' : 'dark');
 }

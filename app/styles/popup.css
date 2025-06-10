@@ -34,4 +34,24 @@ body {
     padding: 15px;
     border-bottom: 1px solid CanvasText;
     background: rgba(128, 128, 128, 0.05);
+    position: relative; /* Allow absolute positioning of child elements */
+}
+
+/* Popup page specific styling for theme toggle */
+body[data-is-popup] #themeToggleSelect,
+.selection_bubble[data-is-popup] #themeToggleSelect {
+    position: static !important;
+    margin-left: auto !important;
+    margin-bottom: 10px !important;
+    right: auto !important;
+    top: auto !important;
+    float: right !important;
+    width: auto !important;
+    min-width: 80px !important;
+}
+
+/* Popup page styling for new tab button - hide it since we're already in fullscreen */
+body[data-is-popup] #newTabButton,
+.selection_bubble[data-is-popup] #newTabButton {
+    display: none !important;
 }
