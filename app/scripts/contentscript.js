@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 /* eslint-disable no-empty, no-unused-vars */
+/* global MutationObserver, Node */
 
 import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
 import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
@@ -25,24 +26,29 @@ var msStart;
 var selectedfilters;
 var permissionDialogShown = false; // Flag to prevent repeated permission prompts
 var pendingSelection = null; // Store selection for later processing when permissions are granted
+var permissionsConfirmed = false; // Track if permissions have been confirmed for this session
+var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting setup attempts
 
 // Function to apply custom diff colors from storage
 function applyCustomDiffColors() {
+  // Remove any existing custom style elements first
+  const existingDefault = document.getElementById('spdx-custom-diff-colors');
+  const existingCustom = document.getElementById('spdx-custom-override-colors');
+  if (existingDefault) existingDefault.remove();
+  if (existingCustom) existingCustom.remove();
+  
+  // Check for custom colors and apply them as overrides to the default CSS
   api.storage.local.get(['customDiffCSS'], function(result) {
     if (result.customDiffCSS) {
-      // Remove any existing custom style element
-      const existingStyle = document.getElementById('spdx-custom-diff-colors');
-      if (existingStyle) {
-        existingStyle.remove();
-      }
-      
-      // Create new style element with custom colors
+      // Only apply custom CSS if it exists - defaults are now in contentscript.css
       const styleElement = document.createElement('style');
-      styleElement.id = 'spdx-custom-diff-colors';
+      styleElement.id = 'spdx-custom-override-colors';
       styleElement.textContent = result.customDiffCSS;
       document.head.appendChild(styleElement);
       
-      console.log('Applied custom diff colors');
+      console.log('Applied custom color overrides');
+    } else {
+      console.log('No custom colors found - using defaults from CSS file');
     }
   });
 }
@@ -146,7 +152,25 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (!diffdisplayed)
           displayDiff(diffs[bestspdxid].html, diffs[bestspdxid].time);
         updateBubbleText("Diffing done");
-        document.getElementById("newTabButton").style.visibility = "visible";
+        
+        // Make fullscreen button visible with error handling
+        const newTabButton = document.getElementById("newTabButton");
+        if (newTabButton) {
+          newTabButton.style.visibility = "visible";
+          console.log("Fullscreen button made visible");
+        } else {
+          console.warn("Fullscreen button not found when trying to make visible");
+          // Try to create it if it doesn't exist
+          const form = document.getElementById("license_form");
+          if (form) {
+            createNewTabButton(form, selectedLicense);
+            const retryButton = document.getElementById("newTabButton");
+            if (retryButton) {
+              retryButton.style.visibility = "visible";
+              console.log("Fullscreen button created and made visible");
+            }
+          }
+        }
       } else if (bestspdxid === spdxid) {
         console.log("Best diff %s received; we can display", bestspdxid);
         if (!diffdisplayed)
@@ -162,6 +186,31 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           ? request.selectedLicense
           : spdx[0].spdxid;
       console.log("Received newTab request", request);
+      
+      // Ensure we have a bubble for popup pages
+      if (utils.isPopupPage() && !document.getElementById("license_bubble")) {
+        createBubble();
+        // Make the bubble always visible in popup pages
+        const bubble = document.getElementById("license_bubble");
+        if (bubble) {
+          bubble.style.visibility = "visible";
+          bubble.style.position = "static";
+          bubble.style.top = "auto";
+          bubble.style.left = "auto";
+          bubble.style.margin = "10px";
+          bubble.style.maxWidth = "none";
+          bubble.style.width = "auto";
+          
+          // Apply dark mode if it was active in the original window
+          if (request.isDarkMode) {
+            bubble.classList.add('spdx-dark-mode');
+          }
+          
+          // Set document body to indicate popup mode for CSS
+          document.body.setAttribute('data-is-popup', 'true');
+        }
+      }
+      
       updateProgressBar(1, 1, false);
       addSelectFormFromArray(
         "licenses",
@@ -185,12 +234,19 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       // Reset the permission dialog flag so user can try again
       permissionDialogShown = false;
       
+      // Mark permissions as confirmed
+      permissionsConfirmed = true;
+      console.log("CONTENT SCRIPT: Permissions confirmed via delayed grant - highlighting can now proceed");
+      
       // If we have a pending selection, process it now
       if (pendingSelection) {
         console.log("CONTENT SCRIPT: Processing pending selection after permission grant");
         checkPermissionsAndProceed(pendingSelection);
         pendingSelection = null;
       }
+      
+      // Retry highlighting setup if there's template content already loaded
+      retryHighlightingSetupIfNeeded();
       break;
     default:
       return true;
@@ -237,10 +293,16 @@ async function checkPermissionsAndProceed(selection) {
         showPermissionErrorDialog("SPDX License Diff needs permission to access spdx.org to download license data. Please grant permission to continue.");
         return;
       }
+    } else {
+      console.log("CONTENT SCRIPT: Permissions already granted");
     }
     
     // If we have permissions, proceed with the normal license comparison flow
     console.log("CONTENT SCRIPT: Permissions OK - creating bubble and proceeding with license comparison");
+    
+    // Mark permissions as confirmed
+    permissionsConfirmed = true;
+    console.log("CONTENT SCRIPT: Permissions confirmed - highlighting setup can now proceed");
     
     // Create and render bubble
     console.log("CONTENT SCRIPT: Creating and rendering bubble");
@@ -435,7 +497,26 @@ function displayDiff(html, time = processTime) {
       }
     }
   }
-  updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
+  
+  const preparedDiff = prepDiff(spdxid, time, html, details);
+  
+  // Use callback approach to setup highlighting immediately after DOM injection
+  updateBubbleText(preparedDiff, "#result_text", () => {
+    // This callback runs after DOM is updated
+    console.log("=== DISPLAYDIFF CALLBACK: DOM updated, checking for highlighting setup ===");
+    if (preparedDiff.includes('template-variable-row') && preparedDiff.includes('diff-variable-highlight')) {
+      console.log("Content has both template and diff elements - setting up highlighting");
+      if (permissionsConfirmed) {
+        // Setup highlighting immediately since we know the DOM is ready
+        const success = setupInteractiveHighlightingDirect();
+        console.log("Highlighting setup result:", success);
+      } else {
+        pendingHighlightingSetup = true;
+        console.log("Permissions not confirmed - flagging for later setup");
+      }
+    }
+  });
+  
   var licenseElement = document.getElementById("licenses");
   licenseElement.addEventListener(
     "change",
@@ -446,7 +527,17 @@ function displayDiff(html, time = processTime) {
         html = diffs[spdxid].html;
         time = diffs[spdxid].time;
         details = spdx[this.options.selectedIndex].details;
-        updateBubbleText(prepDiff(spdxid, time, html, details), "#result_text");
+        
+        const newPreparedDiff = prepDiff(spdxid, time, html, details);
+        updateBubbleText(newPreparedDiff, "#result_text", () => {
+          // Setup highlighting for new selection too
+          if (newPreparedDiff.includes('template-variable-row') && newPreparedDiff.includes('diff-variable-highlight')) {
+            if (permissionsConfirmed) {
+              setupInteractiveHighlightingDirect();
+            }
+          }
+        });
+        
         createNewTabButton(
           document.getElementById("license_form"),
           selectedLicense
@@ -485,6 +576,91 @@ function formatTemplateTable(templateMatch) {
   
   tableHtml += '</tbody></table></div><hr />';
   return tableHtml;
+}
+
+// Direct interactive highlighting setup without race condition detection
+function setupInteractiveHighlightingDirect() {
+  console.log("=== Setting up interactive highlighting (DIRECT) ===");
+  
+  // Get all template variable rows and diff variable highlights
+  const variableRows = document.querySelectorAll('.template-variable-row');
+  const diffHighlights = document.querySelectorAll('.diff-variable-highlight');
+  
+  console.log(`Found elements: ${variableRows.length} template rows, ${diffHighlights.length} diff highlights`);
+  
+  // Early return if no elements found
+  if (variableRows.length === 0) {
+    console.warn("No template variable rows found - highlighting setup skipped");
+    return false;
+  }
+  
+  if (diffHighlights.length === 0) {
+    console.warn("No diff variable highlights found - highlighting setup skipped");
+    return false;
+  }
+  
+  // Add event listeners for template table rows
+  variableRows.forEach((row, index) => {
+    const variableIndex = row.getAttribute('data-variable-index');
+    console.log(`Setting up row ${index} with variable index: ${variableIndex}`);
+    
+    row.addEventListener('mouseenter', () => {
+      console.log("=== HOVER ENTER on template row for variable", variableIndex, "===");
+      // Highlight corresponding diff spans
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      console.log(`Found ${matchingSpans.length} matching spans for variable ${variableIndex}`);
+      matchingSpans.forEach(span => {
+        console.log("Adding highlighted class to span:", span);
+        span.classList.add('highlighted');
+      });
+      row.classList.add('highlighted');
+      console.log("Added highlighted class to row");
+    });
+    
+    row.addEventListener('mouseleave', () => {
+      console.log("=== HOVER LEAVE on template row for variable", variableIndex, "===");
+      // Remove highlights
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      matchingSpans.forEach(span => span.classList.remove('highlighted'));
+      row.classList.remove('highlighted');
+    });
+  });
+  
+  // Add event listeners for diff variable highlights
+  diffHighlights.forEach((span, index) => {
+    const variableIndex = span.getAttribute('data-variable-index');
+    console.log(`Setting up diff highlight ${index} with variable index: ${variableIndex}`);
+    
+    span.addEventListener('mouseenter', () => {
+      console.log("=== HOVER ENTER on diff highlight for variable", variableIndex, "===");
+      // Highlight corresponding table row
+      const matchingRow = document.querySelector(`.template-variable-row[data-variable-index="${variableIndex}"]`);
+      if (matchingRow) {
+        console.log("Found matching row:", matchingRow);
+        matchingRow.classList.add('highlighted');
+      } else {
+        console.log("No matching row found for variable", variableIndex);
+      }
+      // Highlight all matching diff spans
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      console.log(`Found ${matchingSpans.length} matching spans for variable ${variableIndex}`);
+      matchingSpans.forEach(s => s.classList.add('highlighted'));
+    });
+    
+    span.addEventListener('mouseleave', () => {
+      console.log("=== HOVER LEAVE on diff highlight for variable", variableIndex, "===");
+      // Remove highlights
+      const matchingRow = document.querySelector(`.template-variable-row[data-variable-index="${variableIndex}"]`);
+      if (matchingRow) {
+        matchingRow.classList.remove('highlighted');
+      }
+      const matchingSpans = document.querySelectorAll(`.diff-variable-highlight[data-variable-index="${variableIndex}"]`);
+      matchingSpans.forEach(s => s.classList.remove('highlighted'));
+    });
+  });
+  
+  console.log(`Interactive highlighting setup complete: ${variableRows.length} rows, ${diffHighlights.length} highlights`);
+  return true;
 }
 
 // Setup interactive highlighting between template variables table and diff content
@@ -580,6 +756,150 @@ function setupInteractiveHighlighting() {
   console.log(`Interactive highlighting setup complete: ${variableRows.length} rows, ${diffHighlights.length} highlights`);
 }
 
+// Helper function to setup highlighting with robust DOM completion waiting
+function setupHighlightingWithRetry() {
+  console.log("Starting highlighting setup with robust DOM completion detection");
+  
+  // Clear any pending setup to avoid duplicates
+  if (pendingHighlightingSetup === 'active') {
+    console.log("Highlighting setup already in progress, skipping duplicate");
+    return;
+  }
+  pendingHighlightingSetup = 'active';
+  
+  let observer;
+  let timeoutId;
+  const maxWaitTime = 5000; // Maximum 5 seconds wait
+  
+  function checkAndSetupHighlighting() {
+    const variableRows = document.querySelectorAll('.template-variable-row');
+    const diffHighlights = document.querySelectorAll('.diff-variable-highlight');
+    
+    console.log(`DOM check: Found ${variableRows.length} template rows and ${diffHighlights.length} diff highlights`);
+    
+    if (variableRows.length > 0 && diffHighlights.length > 0) {
+      console.log("All required elements found - setting up highlighting");
+      
+      // Clean up observer and timeout
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      
+      setupInteractiveHighlighting();
+      pendingHighlightingSetup = false;
+      return true;
+    } else if (variableRows.length > 0 && diffHighlights.length === 0) {
+      console.log("Found template rows but no diff highlights - will continue waiting");
+    } else if (variableRows.length === 0 && diffHighlights.length > 0) {
+      console.log("Found diff highlights but no template rows - will continue waiting");
+    } else {
+      console.log("No relevant elements found yet - will continue waiting");
+    }
+    return false;
+  }
+  
+  function setupMutationObserver() {
+    // Use MutationObserver to watch for DOM changes
+    console.log("Setting up MutationObserver to watch for DOM completion");
+    observer = new MutationObserver((mutations) => {
+      // Check if any mutations added template or diff elements
+      let shouldCheck = false;
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.classList && 
+                  (node.classList.contains('template-variable-row') || 
+                   node.classList.contains('diff-variable-highlight') ||
+                   node.querySelector && 
+                   (node.querySelector('.template-variable-row') || 
+                    node.querySelector('.diff-variable-highlight')))) {
+                shouldCheck = true;
+                break;
+              }
+            }
+          }
+          if (shouldCheck) break;
+        }
+      }
+      
+      if (shouldCheck) {
+        console.log("Relevant DOM changes detected, checking for highlighting setup");
+        checkAndSetupHighlighting();
+      }
+    });
+    
+    // Observe the entire document for changes
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    });
+    
+    // Fallback timeout to prevent infinite waiting
+    timeoutId = setTimeout(() => {
+      console.warn("Highlighting setup timed out after maximum wait time - attempting setup anyway");
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      
+      // Try one final setup attempt
+      setupInteractiveHighlighting();
+      pendingHighlightingSetup = false;
+    }, maxWaitTime);
+    
+    console.log(`MutationObserver and timeout fallback (${maxWaitTime}ms) set up for DOM completion detection`);
+  }
+  
+  // Try immediate setup first
+  if (checkAndSetupHighlighting()) {
+    return;
+  }
+  
+  // Try again after a short delay to handle immediate DOM updates
+  setTimeout(() => {
+    console.log("Immediate check failed, trying after 100ms delay");
+    if (checkAndSetupHighlighting()) {
+      return;
+    }
+    
+    // Try once more after a longer delay for slower renders
+    setTimeout(() => {
+      console.log("Second check failed, trying after 300ms delay");
+      if (checkAndSetupHighlighting()) {
+        return;
+      }
+      
+      // Now set up the MutationObserver for ongoing monitoring
+      console.log("Manual retries failed, setting up MutationObserver for ongoing monitoring");
+      setupMutationObserver();
+    }, 300);
+  }, 100);
+}
+
+// Function to retry highlighting setup if needed (called when permissions are granted)
+function retryHighlightingSetupIfNeeded() {
+  console.log("Checking if highlighting setup retry is needed");
+  console.log("Pending highlighting setup:", pendingHighlightingSetup);
+  console.log("Permissions confirmed:", permissionsConfirmed);
+  
+  if ((pendingHighlightingSetup === true || pendingHighlightingSetup === 'active') && permissionsConfirmed) {
+    console.log("Retrying highlighting setup after permission confirmation");
+    pendingHighlightingSetup = false; // Reset flag
+    const success = setupInteractiveHighlightingDirect();
+    console.log("Retry highlighting setup result:", success);
+  } else {
+    console.log("No highlighting setup retry needed");
+  }
+}
+
 // This wraps the diff display
 function prepDiff(spdxid, time, html, details) {
   var hoverInfo = "tags: ";
@@ -609,7 +929,25 @@ function prepDiff(spdxid, time, html, details) {
     }
   }
   
-  return title + timehtml + templateTable + html;
+  const result = title + timehtml + templateTable + html;
+  
+  // Setup highlighting directly in the next frame after content is injected
+  // This approach eliminates race conditions by being synchronous with the DOM update
+  if (templateTable && html && html.includes('diff-variable-highlight')) {
+    console.log("=== PREPDF: Content includes both template and diff highlights ===");
+    // Schedule highlighting setup for the next animation frame
+    // This is more reliable than the detection-based approach
+    setTimeout(() => {
+      console.log("Setting up highlighting from prepDiff");
+      if (permissionsConfirmed) {
+        setupInteractiveHighlightingDirect();
+      } else {
+        pendingHighlightingSetup = true;
+      }
+    }, 0); // Immediate execution but async
+  }
+  
+  return result;
 }
 
 // This shows available filters as checkboxes
@@ -741,6 +1079,11 @@ function createBubble() {
   resultText.setAttribute("id", "result_text");
   bubbleDOM.appendChild(resultText);
   console.log("CONTENT SCRIPT: Bubble created successfully");
+  
+  // Apply theme colors immediately after bubble creation
+  setTimeout(() => {
+    applyCustomDiffColors();
+  }, 0);
 }
 // Close the bubble when we click on the screen.
 document.addEventListener(
@@ -811,8 +1154,8 @@ function createNewTabButton(form, selectedLicense) {
 
 // Add theme toggle dropdown.
 function createThemeToggleButton(form) {
-  if (utils.isPopupPage() || $("#themeToggleSelect").length) {
-    return; // Dropdown already exists or not needed
+  if ($("#themeToggleSelect").length) {
+    return; // Dropdown already exists
   }
   
   const select = utils.createElement("select", {
@@ -820,20 +1163,7 @@ function createThemeToggleButton(form) {
     title: "Select theme for diff display"
   });
   
-  // Apply consistent styling
-  Object.assign(select.style, {
-    position: "absolute",
-    top: "0",
-    right: "32px", // Position to the left of the full screen button
-    background: "white",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "12px",
-    height: "24px",
-    zIndex: "1000"
-  });
+  // CSS handles all styling - no inline styles needed
   
   // Create theme options
   const lightOption = utils.createElement("option", { value: "light" }, "Light");
@@ -877,7 +1207,7 @@ function toggleDiffTheme() {
     if (select) select.value = "dark";
   }
   
-  // Reapply custom colors to ensure they work with the new theme
+  // Apply any custom color overrides to work with the new theme
   applyCustomDiffColors();
   
   console.log('Theme toggled to:', isDarkMode ? 'light' : 'dark');
@@ -885,11 +1215,15 @@ function toggleDiffTheme() {
 
 function newTab() {
   var license = selectedLicense;
+  const bubbleDOM = document.getElementById("license_bubble");
+  const isDarkMode = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+  
   api.runtime.sendMessage({
     command: "newTab",
     diffs: diffs,
     selectedLicense: license,
     spdx: spdx,
+    isDarkMode: isDarkMode, // Pass current theme state
   });
 }
 
@@ -910,41 +1244,44 @@ function renderBubble(mouseX, mouseY, selection) {
   );
 }
 
-function updateBubbleText(text, target = "#bubble_text") {
+function updateBubbleText(text, target = "#bubble_text", onComplete = null) {
   var bubbleDOMText = $(target)[0];
   // Directly set innerHTML to preserve HTML structure and CSS classes
   // The XML serialization was breaking diff CSS classes
   bubbleDOMText.innerHTML = text;
   
-  // Setup interactive highlighting if this update contains template content
-  if (text.includes('template-variable-row')) {
+  // Setup interactive highlighting if this update contains template content OR diff content
+  if (text.includes('template-variable-row') || text.includes('diff-variable-highlight')) {
+    console.log("=== BUBBLE TEXT UPDATE WITH INTERACTIVE CONTENT ===");
     console.log("Setting up interactive highlighting after updating", target);
     console.log("Text includes template-variable-row:", text.includes('template-variable-row'));
+    console.log("Text includes diff-variable-highlight:", text.includes('diff-variable-highlight'));
     console.log("Target:", target);
+    console.log("Permissions confirmed:", permissionsConfirmed);
+    console.log("Pending highlighting setup:", pendingHighlightingSetup);
     
-    // Use a more reliable approach to wait for DOM elements to be available
-    function waitForElementsAndSetup(attempts = 0) {
-      const maxAttempts = 20; // Max 2 seconds (20 * 100ms)
-      const variableRows = document.querySelectorAll('.template-variable-row');
-      const diffHighlights = document.querySelectorAll('.diff-variable-highlight');
+    // Only setup highlighting if permissions are confirmed
+    if (permissionsConfirmed) {
+      // Use requestAnimationFrame to ensure DOM is fully rendered, with fallback
+      const rafCallback = () => {
+        console.log("Setting up interactive highlighting via requestAnimationFrame");
+        setupInteractiveHighlightingDirect();
+        if (onComplete) onComplete();
+      };
       
-      console.log(`Attempt ${attempts + 1}: Found ${variableRows.length} template rows and ${diffHighlights.length} diff highlights`);
-      
-      if (variableRows.length > 0 && diffHighlights.length > 0) {
-        console.log("Both elements found, setting up highlighting");
-        setupInteractiveHighlighting();
-      } else if (attempts < maxAttempts) {
-        console.log(`Elements not ready, retrying in 100ms (attempt ${attempts + 1}/${maxAttempts})`);
-        setTimeout(() => waitForElementsAndSetup(attempts + 1), 100);
+      if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+        window.requestAnimationFrame(rafCallback);
       } else {
-        console.warn("Failed to find required elements for highlighting after maximum attempts");
-        // Try setup anyway in case some elements are available
-        setupInteractiveHighlighting();
+        // Fallback for environments without requestAnimationFrame
+        setTimeout(rafCallback, 16); // ~60fps
       }
+    } else {
+      console.log("Permissions not yet confirmed - highlighting setup will be deferred");
+      pendingHighlightingSetup = true;
+      if (onComplete) onComplete();
     }
-    
-    // Start checking immediately, then with retries
-    waitForElementsAndSetup();
+  } else {
+    if (onComplete) onComplete();
   }
 }
 

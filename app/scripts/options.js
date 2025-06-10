@@ -167,6 +167,13 @@ function restoreOptions() {
     document.getElementById("darkEqualText").value = colors.dark.equalText || defaultoptions.diffColors.dark.equalText;
     document.getElementById("darkHighlightBg").value = colors.dark.highlightBg || defaultoptions.diffColors.dark.highlightBg;
     
+    // If this is a fresh install (no saved options), generate default custom CSS
+    // This ensures the displayed colors match the default values shown in the options page
+    if (result.options === undefined || !result.options.diffColors) {
+      console.log('First time loading options - generating default color CSS');
+      updateDiffColors(defaultoptions.diffColors);
+    }
+    
     showFilters(document.getElementById("exclude"), result);
     // document.getElementById('deprecated').checked = result.options.filters.deprecated
   });
