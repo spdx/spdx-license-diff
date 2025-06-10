@@ -59,6 +59,7 @@ jobs:
           FIREFOX_PASSWORD: ${{ secrets.FIREFOX_PASSWORD }}
           FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
           FIREFOX_SECRET_KEY: ${{ secrets.FIREFOX_API_SECRET }}
+          FIREFOX_TOTP_SECRET: ${{ secrets.FIREFOX_TOTP_SECRET }}
       #- name: Force Build Packages
       #  run: |
       #    yarn buildall
