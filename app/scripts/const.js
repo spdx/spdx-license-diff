@@ -62,6 +62,7 @@ const spdxkey = {
     text: "licenseExceptionText",
   },
 };
+
 export {
   filters,
   defaultoptions,

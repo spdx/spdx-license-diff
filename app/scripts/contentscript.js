@@ -3,7 +3,8 @@
 /* eslint-disable no-empty, no-unused-vars */
 
 import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
-import { filters, defaultoptions, readmePermissionsUrl, readmePermissionsUrls } from "./const.js";
+import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
+import { utils } from "./utils.js";
 import $ from "jquery";
 import _ from "underscore";
 
@@ -56,29 +57,13 @@ function showPermissionErrorDialog(message) {
   
   permissionDialogShown = true;
   
-  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
-  const extensionId = api.runtime.id;
-  
-  let permissionUrl = '';
-  let browserName = '';
-  let specificReadmeUrl = '';
-  
-  if (isFirefox) {
-    // Firefox uses about:addons URL format
-    permissionUrl = `about:addons`;
-    browserName = 'Firefox';
-    specificReadmeUrl = readmePermissionsUrls.firefox;
-  } else {
-    // Chrome, Edge, Opera use chrome://extensions URL format
-    permissionUrl = `chrome://extensions/?id=${extensionId}`;
-    browserName = 'Chrome/Edge';
-    specificReadmeUrl = readmePermissionsUrls.chrome;
-  }
+  const specificReadmeUrl = utils.isFirefox() ? readmePermissionsUrls.firefox : readmePermissionsUrls.chrome;
   
   const helpfulMessage = `${message}\n\n` +
     `For detailed setup instructions, visit:\n${specificReadmeUrl}\n\n` +
     `License Diff will continue automatically once permissions are granted.\n\n` +
     `Click OK to open the setup instructions, or Cancel to dismiss this message.\n\n`;
+  
   // Show as browser alert dialog instead of in bubble
   const userWantsHelp = window.confirm(helpfulMessage);
   
@@ -95,7 +80,6 @@ function showPermissionErrorDialog(message) {
 
 // init functions
 restoreOptions();
-createBubble();
 
 // Event driven functions
 
@@ -135,7 +119,7 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       console.log("processTime: " + processTime / 1000 + "s");
       updateBubbleText("Sorting done");
       processLicenses(
-        options.showBest === 0 && rawspdx ? rawspdx.length : options.showBest,
+        utils.getBestMatchCount(options, rawspdx),
         processTime
       );
       break;
@@ -182,7 +166,7 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       addSelectFormFromArray(
         "licenses",
         spdx,
-        options.showBest === 0 && spdx ? spdx.length : options.showBest,
+        utils.getBestMatchCount(options, spdx),
         options.minpercentage
       );
       displayDiff(diffs[selectedLicense].html, diffs[selectedLicense].time);
@@ -273,7 +257,7 @@ async function checkPermissionsAndProceed(selection) {
       updateProgressBar(1, 1, false);
       updateBubbleText("Done");
       processLicenses(
-        options.showBest === 0 && spdx ? spdx.length : options.showBest,
+        utils.getBestMatchCount(options, spdx),
         processTime
       );
       return;
@@ -535,44 +519,41 @@ function prepDiff(spdxid, time, html, details) {
 
 // This shows available filters as checkboxes
 function showFilters(form) {
-  if (document.getElementById("filters")) {
+  if (document.getElementById("filters") || utils.isPopupPage()) {
     return;
   }
-  if (window.location.href.endsWith("/popup.html")) return;
-  var div = form.appendChild(document.createElement("div"));
-  div.id = "filters";
-  var label = form.appendChild(document.createElement("label"));
+  
+  var div = form.appendChild(utils.createElement("div", { id: "filters" }));
+  var label = form.appendChild(utils.createElement("label"));
   label.appendChild(document.createTextNode("Exclude: "));
+  
   for (var filter in filters) {
-    var checkbox = form.appendChild(document.createElement("input"));
-    label = checkbox.appendChild(document.createElement("label"));
-    label.htmlFor = filter;
+    var checkbox = form.appendChild(utils.createElement("input", {
+      type: "checkbox",
+      id: filter,
+      value: filters[filter]
+    }));
+    
+    checkbox.checked = options.filters[filter];
+    
+    label = checkbox.appendChild(utils.createElement("label", { htmlFor: filter }));
     form.appendChild(
       document.createTextNode(filter.charAt(0).toUpperCase() + filter.slice(1))
     );
-    checkbox.type = "checkbox";
-    checkbox.id = filter;
-    checkbox.value = filters[filter];
-    checkbox.checked = options.filters[filter];
-    checkbox.addEventListener(
-      "change",
-      function () {
-        console.log("%s changed to %s", this, this.checked);
-        if (this.checked) {
-          selectedfilters[this.id] = this.value;
-        } else {
-          delete selectedfilters[this.id];
-        }
-        diffdisplayed = false;
-        processLicenses(
-          options.showBest === 0 && spdx ? spdx.length : options.showBest,
-          processTime
-        );
-        // chrome.runtime.sendMessage({ 'command': 'resort', 'filter': selectedfilters })
-        // msStart = (new Date()).getTime() + processTime
-      },
-      false
-    );
+    
+    checkbox.addEventListener("change", function () {
+      console.log("%s changed to %s", this, this.checked);
+      if (this.checked) {
+        selectedfilters[this.id] = this.value;
+      } else {
+        delete selectedfilters[this.id];
+      }
+      diffdisplayed = false;
+      processLicenses(
+        utils.getBestMatchCount(options, spdx),
+        processTime
+      );
+    }, false);
   }
   form.appendChild(document.createElement("br"));
 }
@@ -678,10 +659,10 @@ document.addEventListener(
     ) {
     } else {
       var bubbleDOM = $("#license_bubble")[0];
-      bubbleDOM.remove();
-      createBubble();
-      // var posX = e.clientX
-      // var posY = e.clientY
+      if (bubbleDOM) {
+        bubbleDOM.remove();
+        createBubble();
+      }
     }
   },
   false
@@ -689,27 +670,28 @@ document.addEventListener(
 
 // Add new license button.
 function createNewLicenseButton(form) {
-  if ($("#newLicenseButton").length) return;
-  if (window.location.href.endsWith("/popup.html")) return;
-  var button = document.createElement("button");
-  button.innerHTML = "Submit new license";
-  button.type = "button";
-  button.id = "newLicenseButton";
-  button.title = "Submit this text as a new license to SPDX.org";
+  if ($("#newLicenseButton").length || utils.isPopupPage()) return;
+  
+  const button = utils.createButton(
+    "newLicenseButton",
+    "Submit new license",
+    "Submit this text as a new license to SPDX.org",
+    () => {
+      api.runtime.sendMessage({
+        command: "submitNewLicense",
+        selection: selection,
+        url: location.href,
+      });
+    }
+  );
+  
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
-  button.addEventListener("click", function () {
-    api.runtime.sendMessage({
-      command: "submitNewLicense",
-      selection: selection,
-      url: location.href,
-    });
-  });
 }
 
 // Add new tab button.
 function createNewTabButton(form, selectedLicense) {
-  if (window.location.href.endsWith("/popup.html")) return;
+  if (utils.isPopupPage()) return;
   if ($("#newTabButton").length) {
     document
       .getElementById("newTabButton")
@@ -717,51 +699,53 @@ function createNewTabButton(form, selectedLicense) {
     document.getElementById("newTabButton").addEventListener("click", newTab);
     return;
   }
-  var button = document.createElement("button");
-  button.innerHTML =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
-  button.type = "button";
-  button.id = "newTabButton";
-  button.title = "Open diff results in a new tab (fullscreen view)";
+  
+  const button = utils.createElement("button", {
+    type: "button",
+    id: "newTabButton",
+    title: "Open diff results in a new tab (fullscreen view)"
+  });
+  
+  button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
   button.style.visibility = "hidden";
+  button.addEventListener("click", newTab);
+  
   form.appendChild(button);
   form.appendChild(document.createElement("br"));
-  button.addEventListener("click", newTab);
 }
 
 // Add theme toggle dropdown.
 function createThemeToggleButton(form) {
-  if (window.location.href.endsWith("/popup.html")) return;
-  if ($("#themeToggleSelect").length) {
-    return; // Dropdown already exists
+  if (utils.isPopupPage() || $("#themeToggleSelect").length) {
+    return; // Dropdown already exists or not needed
   }
   
-  var select = document.createElement("select");
-  select.id = "themeToggleSelect";
-  select.title = "Select theme for diff display";
-  select.style.position = "absolute";
-  select.style.top = "0";
-  select.style.right = "32px"; // Position to the left of the full screen button
-  select.style.background = "white";
-  select.style.border = "1px solid #ccc";
-  select.style.cursor = "pointer";
-  select.style.padding = "4px 8px";
-  select.style.borderRadius = "4px";
-  select.style.fontSize = "12px";
-  select.style.height = "24px";
-  select.style.zIndex = "1000";
+  const select = utils.createElement("select", {
+    id: "themeToggleSelect",
+    title: "Select theme for diff display"
+  });
+  
+  // Apply consistent styling
+  Object.assign(select.style, {
+    position: "absolute",
+    top: "0",
+    right: "32px", // Position to the left of the full screen button
+    background: "white",
+    border: "1px solid #ccc",
+    cursor: "pointer",
+    padding: "4px 8px",
+    borderRadius: "4px",
+    fontSize: "12px",
+    height: "24px",
+    zIndex: "1000"
+  });
   
   // Create theme options
-  var lightOption = document.createElement("option");
-  lightOption.value = "light";
-  lightOption.text = "Light";
+  const lightOption = utils.createElement("option", { value: "light" }, "Light");
+  const darkOption = utils.createElement("option", { value: "dark" }, "Dark");
+  
   select.appendChild(lightOption);
-  
-  var darkOption = document.createElement("option");
-  darkOption.value = "dark";
-  darkOption.text = "Dark";
   select.appendChild(darkOption);
-  
   form.appendChild(select);
   
   // Check current theme state and set the selected option
@@ -842,15 +826,17 @@ function updateBubbleText(text, target = "#bubble_text") {
 // else incremented by absolute value for negative numbers
 function updateProgressBar(max, value, visible = true) {
   var progressbar = $("#progress_bubble")[0];
-  progressbar.style.visibility = visible ? "visible" : "hidden";
-  if (max > 0) {
-    progressbar.setAttribute("max", max);
-  }
-  if (value !== null) {
-    if (value >= 0) {
-      progressbar.value = value;
-    } else if (progressbar.value < progressbar.getAttribute("max")) {
-      progressbar.value = progressbar.value + Math.abs(value);
+  if (progressbar) {
+    progressbar.style.visibility = visible ? "visible" : "hidden";
+    if (max > 0) {
+      progressbar.setAttribute("max", max);
+    }
+    if (value !== null) {
+      if (value >= 0) {
+        progressbar.value = value;
+      } else if (progressbar.value < progressbar.getAttribute("max")) {
+        progressbar.value = progressbar.value + Math.abs(value);
+      }
     }
   }
 }

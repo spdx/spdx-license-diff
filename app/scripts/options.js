@@ -8,6 +8,7 @@
 // }
 
 import { filters, defaultoptions, readmePermissionsUrl, readmePermissionsUrls } from "./const.js";
+import { utils } from "./utils.js";
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 
@@ -37,7 +38,7 @@ async function requestSpdxPermission() {
 }
 
 function getBrowserSpecificInstructions() {
-  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+  const isFirefox = utils.isFirefox();
   const extensionId = api.runtime.id;
   
   if (isFirefox) {
@@ -326,7 +327,7 @@ function showUpdateStatus(message, type = 'info') {
 }
 
 function showUpdatePermissionError(message) {
-  const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+  const isFirefox = utils.isFirefox();
   const extensionId = api.runtime.id;
   
   let permissionUrl = '';
