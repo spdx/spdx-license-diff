@@ -37,21 +37,107 @@ body {
     position: relative; /* Allow absolute positioning of child elements */
 }
 
-/* Popup page specific styling for theme toggle */
+/* Popup page specific styling for theme toggle - enhanced specificity */
 body[data-is-popup] #themeToggleSelect,
-.selection_bubble[data-is-popup] #themeToggleSelect {
-    position: static !important;
-    margin-left: auto !important;
-    margin-bottom: 10px !important;
-    right: auto !important;
-    top: auto !important;
-    float: right !important;
+.selection_bubble[data-is-popup] #themeToggleSelect,
+body[data-is-popup] .selection_bubble #themeToggleSelect,
+body[data-is-popup] #license_form #themeToggleSelect,
+body[data-is-popup] #license_bubble #themeToggleSelect {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    margin: 0 !important;
     width: auto !important;
     min-width: 80px !important;
+    display: block !important;
+    z-index: 1002 !important;
+    /* Override any inherited positioning */
+    transform: none !important;
+    left: auto !important;
+    bottom: auto !important;
+    float: none !important;
+}
+
+/* Ensure the bubble container allows absolute positioning */
+body[data-is-popup] .selection_bubble,
+body[data-is-popup] #license_bubble {
+    position: relative !important;
 }
 
 /* Popup page styling for new tab button - hide it since we're already in fullscreen */
 body[data-is-popup] #newTabButton,
-.selection_bubble[data-is-popup] #newTabButton {
+.selection_bubble[data-is-popup] #newTabButton,
+body[data-is-popup] .selection_bubble #newTabButton,
+body[data-is-popup] #license_form #newTabButton,
+body[data-is-popup] #license_bubble #newTabButton {
     display: none !important;
+}
+
+/* Dark mode support for popup page - comprehensive coverage */
+body.spdx-dark-mode,
+body[data-is-popup].spdx-dark-mode,
+.spdx-dark-mode body[data-is-popup] {
+    background: #1a202c !important;
+    color: #e2e8f0 !important;
+}
+
+/* Dark mode for all text elements in popup */
+body.spdx-dark-mode *,
+body[data-is-popup].spdx-dark-mode *,
+.spdx-dark-mode body[data-is-popup] *,
+body.spdx-dark-mode #license_form *,
+body[data-is-popup].spdx-dark-mode #license_form *,
+.spdx-dark-mode body[data-is-popup] #license_form * {
+    color: #e2e8f0 !important;
+}
+
+/* Dark mode for form elements specifically */
+body.spdx-dark-mode #license_form,
+body[data-is-popup].spdx-dark-mode #license_form,
+.spdx-dark-mode body[data-is-popup] #license_form {
+    background: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+/* Dark mode for labels and text content */
+body.spdx-dark-mode label,
+body[data-is-popup].spdx-dark-mode label,
+.spdx-dark-mode body[data-is-popup] label,
+body.spdx-dark-mode #license_form label,
+body[data-is-popup].spdx-dark-mode #license_form label,
+.spdx-dark-mode body[data-is-popup] #license_form label {
+    color: #e2e8f0 !important;
+}
+
+/* Dark mode for paragraphs, divs, spans in popup */
+body.spdx-dark-mode p,
+body.spdx-dark-mode div,
+body.spdx-dark-mode span,
+body[data-is-popup].spdx-dark-mode p,
+body[data-is-popup].spdx-dark-mode div,
+body[data-is-popup].spdx-dark-mode span,
+.spdx-dark-mode body[data-is-popup] p,
+.spdx-dark-mode body[data-is-popup] div,
+.spdx-dark-mode body[data-is-popup] span {
+    color: #e2e8f0 !important;
+}
+
+/* Dark mode for links in popup */
+body.spdx-dark-mode a,
+body[data-is-popup].spdx-dark-mode a,
+.spdx-dark-mode body[data-is-popup] a {
+    color: #60a5fa !important;
+}
+
+body.spdx-dark-mode a:visited,
+body[data-is-popup].spdx-dark-mode a:visited,
+.spdx-dark-mode body[data-is-popup] a:visited {
+    color: #a855f7 !important;
+}
+
+body.spdx-dark-mode a:hover,
+body[data-is-popup].spdx-dark-mode a:hover,
+.spdx-dark-mode body[data-is-popup] a:hover {
+    color: #ffffff !important;
+    background-color: #1e40af !important;
 }
