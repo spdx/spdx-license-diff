@@ -43,6 +43,10 @@ jobs:
       - name: Lint
         run: |
           yarn lint
+      - name: Prepare directory structure for semantic-release-amo
+        run: |
+          mkdir -p dist/firefox
+          echo '{"manifest_version":3,"name":"temp","version":"1.0.0"}' > dist/firefox/manifest.json
       - name: Semantic Release Action
         run: |
           yarn semantic-release
