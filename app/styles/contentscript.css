@@ -18,6 +18,101 @@
   max-width: 800px;
 }
 
+/* Frameset-specific bubble styling */
+.selection_bubble.frameset-bubble {
+  /* Ensure the bubble is visible over framesets with maximum priority */
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  background: white !important;
+  border: 2px solid #007bff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  /* Explicitly remove backdrop-filter from bubble itself to prevent text blur */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  
+  /* Make it clearly visible with enhanced styling */
+  border-radius: 12px !important;
+  padding: 20px !important;
+  min-width: 350px !important;
+  max-width: min(90vw, 800px) !important;
+  max-height: min(90vh, 600px) !important;
+  
+  /* Ensure it's positioned correctly */
+  top: 20px !important;
+  left: 20px !important;
+  
+  /* Enable scrolling if content is too large */
+  overflow: auto !important;
+}
+
+/* Light backdrop overlay for framesets without interfering with bubble content */
+.selection_bubble.frameset-bubble::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 2147483646;
+  pointer-events: none;
+  /* Explicitly remove backdrop-filter to prevent text blur */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Override any inherited styles that might interfere */
+.selection_bubble.frameset-bubble {
+  /* Reset any conflicting properties */
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  
+  /* Ensure visibility */
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  
+  /* Typography and content styling */
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  
+  /* Responsive sizing */
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Special handling for frameset in parent document */
+.selection_bubble.frameset-bubble[data-parent-doc="true"] {
+  /* Additional styling for parent document bubbles */
+  border-width: 3px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Ensure frameset bubble content is properly contained */
+.selection_bubble.frameset-bubble > * {
+  position: relative !important;
+  z-index: auto !important;
+  max-width: 100% !important;
+}
+
+/* Dark mode for frameset bubbles */
+.spdx-dark-mode.selection_bubble.frameset-bubble {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+  border-color: #60a5fa !important;
+}
+
+/* Ensure frameset bubble content is properly styled */
+.selection_bubble.frameset-bubble * {
+  position: relative !important;
+  z-index: auto !important;
+  /* Ensure no backdrop-filter is applied to content */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* Fullscreen styling for popup pages */
 body[data-is-popup] .selection_bubble,
 .selection_bubble[data-is-popup] {
@@ -162,46 +257,50 @@ progress:after {
 }
 
 #newTabButton {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 28px;
-  height: 24px;
-  padding: 2px;
-  border-radius: 4px;
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #ccc;
-  cursor: pointer;
-  z-index: 1000;
+  position: absolute !important;
+  top: 2px !important;
+  right: 26px !important; /* Space for close button (20px + 6px margin) */
+  width: 24px !important;
+  height: 20px !important;
+  padding: 2px !important;
+  border-radius: 3px !important;
+  background: #f8f9fa !important;
+  color: #495057 !important;
+  border: 1px solid #ccc !important;
+  cursor: pointer !important;
+  z-index: 1001 !important;
+  font-size: 12px !important;
+  margin: 0 !important;
+  display: block !important;
 }
 
 #newTabButton:hover {
-  background: #0066cc;
-  color: #ffffff;
+  background: #0066cc !important;
+  color: #ffffff !important;
 }
 
 #themeToggleSelect {
-  position: absolute;
-  top: 0;
-  right: 36px; /* Increased to avoid overlap with newTabButton (28px + 8px margin) */
-  /* Use explicit colors that can be overridden by dark mode */
-  background: white;
-  color: black;
-  border: 1px solid #ccc;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  height: 24px;
-  z-index: 1000;
-  opacity: 0.9;
-  transition: opacity 0.2s ease, border-color 0.2s ease;
+  position: absolute !important;
+  top: 2px !important;
+  right: 56px !important; /* Space for maximize (24px) + close (20px) + margins (12px) */
+  background: white !important;
+  color: black !important;
+  border: 1px solid #ccc !important;
+  cursor: pointer !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  font-size: 11px !important;
+  height: 20px !important;
+  z-index: 1001 !important;
+  opacity: 0.9 !important;
+  transition: opacity 0.2s ease, border-color 0.2s ease !important;
+  margin: 0 !important;
+  display: block !important;
 }
 
 #themeToggleSelect:hover {
-  opacity: 1;
-  border-color: #0066cc;
+  opacity: 1 !important;
+  border-color: #0066cc !important;
 }
 
 /* Diff display styles with dark mode support */
@@ -277,9 +376,9 @@ progress:after {
 }
 
 .spdx-dark-mode #themeToggleSelect {
-  background: #2d3748 !important;
-  color: #e2e8f0 !important;
-  border-color: #4a5568 !important;
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
 }
 
 .spdx-dark-mode #themeToggleSelect:hover {
@@ -287,19 +386,6 @@ progress:after {
 }
 
 /* Override system colors when manually in dark mode */
-.spdx-dark-mode .selection_bubble a {
-  color: #60a5fa !important;
-}
-
-.spdx-dark-mode .selection_bubble a:visited {
-  color: #a855f7 !important;
-}
-
-.spdx-dark-mode .selection_bubble a:hover {
-  color: #ffffff !important;
-  background-color: #1e40af !important;
-}
-
 .spdx-dark-mode .selection_bubble button {
   background: #374151 !important;
   color: #f9fafb !important;
@@ -324,6 +410,17 @@ progress:after {
 }
 
 .spdx-dark-mode #newTabButton:hover {
+  background: #1e40af !important;
+  color: #ffffff !important;
+}
+
+.spdx-dark-mode #newLicenseButton {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode #newLicenseButton:hover {
   background: #1e40af !important;
   color: #ffffff !important;
 }
@@ -524,9 +621,187 @@ span.diff-equal, .diff-equal {
   border-color: #4a5568 !important;
 }
 
-/* Dark mode override for theme toggle select in the bubble */
-.spdx-dark-mode #themeToggleSelect {
-  background: #4a5568 !important;
+/* Close button styling for frameset bubbles */
+#closeButton {
+  position: absolute !important;
+  top: 2px !important;
+  right: 2px !important;
+  width: 20px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 3px !important;
+  background: #f8f9fa !important;
+  color: #495057 !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  z-index: 1001 !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+#closeButton:hover {
+  background: #e9ecef !important;
+  border-color: #adb5bd !important;
+}
+
+#closeButton:active {
+  background: #dee2e6 !important;
+}
+
+/* Dark mode styling for close button */
+.spdx-dark-mode #closeButton {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode #closeButton:hover {
+  background: #4b5563 !important;
+  border-color: #9ca3af !important;
+}
+
+.spdx-dark-mode #closeButton:active {
+  background: #374151 !important;
+}
+
+/* Enhanced dark mode styling for bubble text content - higher specificity */
+.spdx-dark-mode.selection_bubble,
+.spdx-dark-mode .selection_bubble {
   color: #e2e8f0 !important;
-  border-color: #718096 !important;
+}
+
+.spdx-dark-mode.selection_bubble *,
+.spdx-dark-mode .selection_bubble * {
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode for all text elements in bubble - higher specificity */
+.spdx-dark-mode.selection_bubble p,
+.spdx-dark-mode .selection_bubble p,
+.spdx-dark-mode.selection_bubble div,
+.spdx-dark-mode .selection_bubble div,
+.spdx-dark-mode.selection_bubble span,
+.spdx-dark-mode .selection_bubble span,
+.spdx-dark-mode.selection_bubble td,
+.spdx-dark-mode .selection_bubble td,
+.spdx-dark-mode.selection_bubble th,
+.spdx-dark-mode .selection_bubble th,
+.spdx-dark-mode.selection_bubble li,
+.spdx-dark-mode .selection_bubble li,
+.spdx-dark-mode.selection_bubble strong,
+.spdx-dark-mode .selection_bubble strong,
+.spdx-dark-mode.selection_bubble em,
+.spdx-dark-mode .selection_bubble em {
+  color: #e2e8f0 !important;
+}
+
+/* Additional high-specificity dark mode overrides to ensure text visibility */
+.spdx-dark-mode.selection_bubble, 
+.spdx-dark-mode.selection_bubble *, 
+.spdx-dark-mode .selection_bubble, 
+.spdx-dark-mode .selection_bubble * {
+  color: #e2e8f0 !important;
+}
+
+/* Form elements background styling in dark mode */
+.spdx-dark-mode.selection_bubble #license_form,
+.spdx-dark-mode .selection_bubble #license_form,
+.spdx-dark-mode.selection_bubble form,
+.spdx-dark-mode .selection_bubble form {
+  background: #2d3748 !important;
+}
+
+/* Select elements styling - need specific background/border colors */
+.spdx-dark-mode.selection_bubble select,
+.spdx-dark-mode .selection_bubble select {
+  background: #374151 !important;
+  color: #f9fafb !important;
+  border: 1px solid #6b7280 !important;
+}
+
+.spdx-dark-mode.selection_bubble select option,
+.spdx-dark-mode .selection_bubble select option {
+  background: #374151 !important;
+  color: #f9fafb !important;
+}
+
+/* Special handling for any text nodes that might be direct children */
+.spdx-dark-mode.selection_bubble text,
+.spdx-dark-mode .selection_bubble text {
+  fill: #e2e8f0 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Frameset bubble specific dark mode */
+.spdx-dark-mode.selection_bubble.frameset-bubble,
+.spdx-dark-mode .selection_bubble.frameset-bubble {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+  border-color: #60a5fa !important;
+}
+
+.spdx-dark-mode.selection_bubble.frameset-bubble *,
+.spdx-dark-mode .selection_bubble.frameset-bubble * {
+  color: #e2e8f0 !important;
+}
+
+/* Additional high-specificity dark mode overrides to ensure text visibility */
+.spdx-dark-mode.selection_bubble *:not(ins):not(del):not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode .selection_bubble *:not(ins):not(del):not(.diff-insert):not(.diff-delete) {
+  color: #e2e8f0 !important;
+}
+
+/* Ensure dark mode links work with maximum specificity */
+.spdx-dark-mode.selection_bubble a:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode .selection_bubble a:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode.selection_bubble .selection_bubble a:not(.diff-insert):not(.diff-delete) {
+  color: #60a5fa !important;
+  text-decoration: underline !important;
+}
+
+.spdx-dark-mode.selection_bubble a:visited:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode .selection_bubble a:visited:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode.selection_bubble .selection_bubble a:visited:not(.diff-insert):not(.diff-delete) {
+  color: #a855f7 !important;
+}
+
+.spdx-dark-mode.selection_bubble a:hover:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode .selection_bubble a:hover:not(.diff-insert):not(.diff-delete),
+.spdx-dark-mode.selection_bubble .selection_bubble a:hover:not(.diff-insert):not(.diff-delete) {
+  color: #ffffff !important;
+  background-color: #1e40af !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+}
+
+/* Ensure popup page gets dark mode styling too */
+body[data-is-popup].spdx-dark-mode,
+body[data-is-popup] .spdx-dark-mode {
+  background: #1a202c !important;
+  color: #e2e8f0 !important;
+}
+
+body[data-is-popup].spdx-dark-mode .selection_bubble,
+body[data-is-popup] .spdx-dark-mode .selection_bubble,
+body[data-is-popup].spdx-dark-mode #license_bubble,
+body[data-is-popup] .spdx-dark-mode #license_bubble {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+body[data-is-popup].spdx-dark-mode .selection_bubble *,
+body[data-is-popup] .spdx-dark-mode .selection_bubble * {
+  color: #e2e8f0 !important;
+}
+
+body[data-is-popup].spdx-dark-mode .selection_bubble a,
+body[data-is-popup] .spdx-dark-mode .selection_bubble a {
+  color: #60a5fa !important;
+}
+
+/* Force dark mode class on body for popup pages when bubble is dark */
+body[data-is-popup] .selection_bubble.spdx-dark-mode ~ * {
+  color: #e2e8f0 !important;
 }

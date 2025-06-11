@@ -5,7 +5,7 @@
 
 import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
 import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
-import { utils } from "./utils.js";
+import { utils, initializeInteractionTracking, getSelectionTextWithIframes, selectRangeCoordsWithIframes, lastInteractionContext } from "./utils.js";
 import $ from "jquery";
 import _ from "underscore";
 
@@ -87,6 +87,9 @@ function showPermissionErrorDialog(message) {
 // init functions
 restoreOptions();
 
+// Initialize interaction tracking for context-aware selection
+initializeInteractionTracking();
+
 // Event driven functions
 
 // This function responds to the UI and background.js
@@ -96,7 +99,7 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     case "clicked_browser_action":
       console.log("CONTENT SCRIPT: Processing clicked_browser_action");
       sendResponse({ status: "1" }); // send receipt confirmation
-      selection = getSelectionText();
+      selection = getSelectionTextWithIframes();
       console.log("CONTENT SCRIPT: Selection text:", selection ? `"${selection.substring(0, 50)}..."` : "NONE");
       if (selection.length > 0) {
         // Check permissions first before proceeding with bubble creation and license comparison
@@ -104,7 +107,19 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       } else {
         console.log("CONTENT SCRIPT: No selection found, showing message");
         createBubble();
-        updateBubbleText("No selection to compare; please select");
+        // Even without selection, try to position the bubble near the cursor or at a sensible location
+        var selectCoords = selectRangeCoordsWithIframes();
+        var posX = selectCoords[0];
+        var posY = selectCoords[1];
+        console.log("CONTENT SCRIPT: Bubble position (no selection):", posX, posY);
+        renderBubble(posX, posY, "");
+        
+        // Check if user was interacting with a frame that might have restricted access
+        if (lastInteractionContext.type === 'iframe' || lastInteractionContext.type === 'frame') {
+          updateBubbleText("No text selection found. If you selected text in a frame, iframe, or embedded content, it may not be accessible due to browser security restrictions. Please try selecting text in the main page area.");
+        } else {
+          updateBubbleText("No text selection found. Please select some text to compare against SPDX licenses.");
+        }
       }
       console.log("CONTENT SCRIPT: clicked_browser_action processing complete");
       break;
@@ -204,6 +219,8 @@ api.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           // Apply dark mode if it was active in the original window
           if (request.isDarkMode) {
             bubble.classList.add('spdx-dark-mode');
+            // Also add dark mode class to body for popup-specific styling
+            document.body.classList.add('spdx-dark-mode');
           }
           
           // Set document body to indicate popup mode for CSS
@@ -307,7 +324,7 @@ async function checkPermissionsAndProceed(selection) {
     // Create and render bubble
     console.log("CONTENT SCRIPT: Creating and rendering bubble");
     createBubble();
-    var selectCoords = selectRangeCoords();
+    var selectCoords = selectRangeCoordsWithIframes();
     var posX = selectCoords[0];
     var posY = selectCoords[1];
     console.log("CONTENT SCRIPT: Bubble position:", posX, posY);
@@ -1049,6 +1066,12 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
   createNewLicenseButton(form);
   createNewTabButton(form, selectedLicense);
   createThemeToggleButton(form);
+  
+  // Add close button for frameset bubbles since click dismiss might be difficult
+  const currentBubbleDOM = document.getElementById("license_bubble");
+  if (currentBubbleDOM && currentBubbleDOM.classList.contains('frameset-bubble')) {
+    createCloseButton(form);
+  }
 }
 
 // Display helper functions for modifying the DOM
@@ -1063,21 +1086,139 @@ function createBubble() {
   }
   
   console.log("CONTENT SCRIPT: Creating new bubble");
-  var bubbleDOM = document.createElement("div");
-  bubbleDOM.setAttribute("class", "selection_bubble");
-  bubbleDOM.setAttribute("id", "license_bubble");
-  document.body.appendChild(bubbleDOM);
-  var progressbar = document.createElement("progress");
+  
+  // For framesets, we need to create the bubble in the top-level document
+  // Check if we're in a frameset context
+  let targetDocument = document;
+  let targetWindow = window;
+  
+  // If we're inside a frame, try to access the top-level document
+  if (window.parent && window.parent !== window) {
+    try {
+      // Try to access the parent document (this will fail for cross-origin)
+      if (window.parent.document && window.parent.document.body) {
+        targetDocument = window.parent.document;
+        targetWindow = window.parent;
+        console.log("CONTENT SCRIPT: Creating bubble in parent document (frameset context)");
+      }
+    } catch (error) {
+      console.log("CONTENT SCRIPT: Cannot access parent document (cross-origin), creating bubble in current frame");
+      // Fall back to current document if we can't access parent
+    }
+  }
+  
+  // Check if the target document has a frameset or if body doesn't exist/is not attachable
+  const isFrameset = targetDocument.querySelector('frameset') !== null;
+  const hasNoBody = !targetDocument.body;
+  const isParentDocument = targetDocument !== document;
+  const needsSpecialHandling = isFrameset || hasNoBody;
+  let bubbleDOM;
+  
+  if (needsSpecialHandling) {
+    console.log("CONTENT SCRIPT: Detected frameset document or missing body, using alternative bubble positioning");
+    console.log("CONTENT SCRIPT: isFrameset:", isFrameset, "hasNoBody:", hasNoBody, "isParentDocument:", isParentDocument);
+    
+    // For framesets or documents without proper body, create a positioned overlay
+    bubbleDOM = targetDocument.createElement("div");
+    bubbleDOM.setAttribute("class", "selection_bubble frameset-bubble");
+    bubbleDOM.setAttribute("id", "license_bubble");
+    
+    // Add data attribute to track parent document context
+    if (isParentDocument) {
+      bubbleDOM.setAttribute("data-parent-doc", "true");
+    }
+    
+    // Use fixed positioning to overlay on top of the frameset/document
+    bubbleDOM.style.position = "fixed";
+    bubbleDOM.style.top = "20px";
+    bubbleDOM.style.left = "20px";
+    bubbleDOM.style.zIndex = "2147483647";
+    bubbleDOM.style.maxWidth = "calc(100vw - 40px)";
+    bubbleDOM.style.maxHeight = "calc(100vh - 40px)";
+    bubbleDOM.style.overflow = "auto";
+    
+    // Try to append to document.documentElement first, then body as fallback
+    let appendTarget = null;
+    if (targetDocument.documentElement) {
+      appendTarget = targetDocument.documentElement;
+      console.log("CONTENT SCRIPT: Appending to documentElement");
+    } else if (targetDocument.body) {
+      appendTarget = targetDocument.body;
+      console.log("CONTENT SCRIPT: Appending to body as fallback");
+    } else {
+      console.log("CONTENT SCRIPT: No valid append target found - this may fail");
+      appendTarget = targetDocument.documentElement || targetDocument.body;
+    }
+    
+    if (appendTarget) {
+      appendTarget.appendChild(bubbleDOM);
+    } else {
+      // Last resort: try to append to document
+      if (targetDocument.appendChild) {
+        targetDocument.appendChild(bubbleDOM);
+      } else {
+        console.error("CONTENT SCRIPT: Could not find any valid target to append bubble");
+        // Create in current document as absolute last resort
+        bubbleDOM = document.createElement("div");
+        bubbleDOM.setAttribute("class", "selection_bubble frameset-bubble");
+        bubbleDOM.setAttribute("id", "license_bubble");
+        bubbleDOM.setAttribute("data-fallback", "true");
+        document.body.appendChild(bubbleDOM);
+      }
+    }
+  } else {
+    // Normal document - use standard approach
+    bubbleDOM = targetDocument.createElement("div");
+    bubbleDOM.setAttribute("class", "selection_bubble");
+    bubbleDOM.setAttribute("id", "license_bubble");
+    targetDocument.body.appendChild(bubbleDOM);
+  }
+  
+  var progressbar = targetDocument.createElement("progress");
   progressbar.setAttribute("id", "progress_bubble");
   progressbar.setAttribute("max", 100);
   progressbar.value = 0;
   bubbleDOM.appendChild(progressbar);
-  var bubbleDOMText = document.createElement("div");
+  var bubbleDOMText = targetDocument.createElement("div");
   bubbleDOMText.setAttribute("id", "bubble_text");
   bubbleDOM.appendChild(bubbleDOMText);
-  var resultText = document.createElement("div");
+  var resultText = targetDocument.createElement("div");
   resultText.setAttribute("id", "result_text");
   bubbleDOM.appendChild(resultText);
+  
+  // Add click dismiss behavior for frameset bubbles in parent document
+  if (needsSpecialHandling && isParentDocument && targetDocument !== document) {
+    console.log("CONTENT SCRIPT: Adding click dismiss listener to parent document for frameset bubble");
+    targetDocument.addEventListener(
+      "mousedown",
+      function (e) {
+        if (
+          e.target.id === "license_bubble" ||
+          (targetDocument.querySelector && targetDocument.querySelector("#license_bubble") && 
+           targetDocument.querySelector("#license_bubble").contains(e.target)) ||
+          (typeof jQuery !== 'undefined' && jQuery(e.target).parents("#license_bubble").length)
+        ) {
+          // Clicked inside bubble - do nothing
+        } else {
+          // Clicked outside bubble - remove it
+          var bubbleDOM = targetDocument.querySelector("#license_bubble");
+          if (bubbleDOM) {
+            console.log("CONTENT SCRIPT: Removing frameset bubble due to outside click");
+            bubbleDOM.remove();
+            // Recreate bubble in current context
+            createBubble();
+          }
+        }
+      },
+      false
+    );
+  }
+  
+  // Store target document info for later use by button creation functions
+  if (needsSpecialHandling) {
+    bubbleDOM.setAttribute("data-target-document", isParentDocument ? "parent" : "current");
+  }
+  
   console.log("CONTENT SCRIPT: Bubble created successfully");
   
   // Apply theme colors immediately after bubble creation
@@ -1107,80 +1248,154 @@ document.addEventListener(
 );
 
 // Add new license button.
-function createNewLicenseButton(form) {
-  if ($("#newLicenseButton").length || utils.isPopupPage()) return;
-  
-  const button = utils.createButton(
-    "newLicenseButton",
-    "Submit new license",
-    "Submit this text as a new license to SPDX.org",
-    () => {
-      api.runtime.sendMessage({
-        command: "submitNewLicense",
-        selection: selection,
-        url: location.href,
-      });
+function createNewLicenseButton(form, targetDoc = document) {
+  // Detect if we need to use a different target document for frameset bubbles
+  const bubbleDOM = document.getElementById("license_bubble") || targetDoc.getElementById("license_bubble");
+  if (bubbleDOM && bubbleDOM.hasAttribute("data-target-document")) {
+    const targetDocType = bubbleDOM.getAttribute("data-target-document");
+    if (targetDocType === "parent" && window.parent && window.parent !== window) {
+      try {
+        if (window.parent.document) {
+          targetDoc = window.parent.document;
+        }
+      } catch (error) {
+        // Cross-origin, stick with current document
+      }
     }
-  );
+  }
+  
+  if ((targetDoc.querySelector("#newLicenseButton")) || utils.isPopupPage()) return;
+  
+  const button = targetDoc.createElement("button");
+  button.setAttribute("type", "button");
+  button.setAttribute("id", "newLicenseButton");
+  button.setAttribute("title", "Submit this text as a new license to SPDX.org");
+  button.textContent = "Submit new license";
+  button.addEventListener("click", () => {
+    api.runtime.sendMessage({
+      command: "submitNewLicense",
+      selection: selection,
+      url: location.href,
+    });
+  });
   
   form.appendChild(button);
-  form.appendChild(document.createElement("br"));
+  form.appendChild(targetDoc.createElement("br"));
 }
 
 // Add new tab button.
-function createNewTabButton(form, selectedLicense) {
-  if (utils.isPopupPage()) return;
-  if ($("#newTabButton").length) {
-    document
-      .getElementById("newTabButton")
-      .removeEventListener("click", newTab);
-    document.getElementById("newTabButton").addEventListener("click", newTab);
-    return;
+function createNewTabButton(form, selectedLicense, targetDoc = document) {
+  // Detect if we need to use a different target document for frameset bubbles
+  const bubbleDOM = document.getElementById("license_bubble") || targetDoc.getElementById("license_bubble");
+  if (bubbleDOM && bubbleDOM.hasAttribute("data-target-document")) {
+    const targetDocType = bubbleDOM.getAttribute("data-target-document");
+    if (targetDocType === "parent" && window.parent && window.parent !== window) {
+      try {
+        if (window.parent.document) {
+          targetDoc = window.parent.document;
+        }
+      } catch (error) {
+        // Cross-origin, stick with current document
+      }
+    }
   }
   
-  const button = utils.createElement("button", {
-    type: "button",
-    id: "newTabButton",
-    title: "Open diff results in a new tab (fullscreen view)"
-  });
+  if (utils.isPopupPage()) return;
+  if (targetDoc.querySelector("#newTabButton")) {
+    const existingButton = targetDoc.getElementById("newTabButton");
+    if (existingButton) {
+      existingButton.removeEventListener("click", newTab);
+      existingButton.addEventListener("click", newTab);
+      return;
+    }
+  }
+  
+  const button = targetDoc.createElement("button");
+  button.setAttribute("type", "button");
+  button.setAttribute("id", "newTabButton");
+  button.setAttribute("title", "Open diff results in a new tab (fullscreen view)");
+  
+  // Apply critical positioning styles inline to ensure they work
+  button.style.position = "absolute";
+  button.style.top = "2px";
+  button.style.right = "26px";
+  button.style.zIndex = "1001";
+  button.style.width = "24px";
+  button.style.height = "20px";
   
   button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>';
   button.style.visibility = "hidden";
   button.addEventListener("click", newTab);
   
-  form.appendChild(button);
-  form.appendChild(document.createElement("br"));
+  // Append to bubble container instead of form for title bar positioning
+  const bubble = targetDoc.getElementById("license_bubble");
+  if (bubble) {
+    bubble.appendChild(button);
+  } else {
+    form.appendChild(button);
+  }
 }
 
 // Add theme toggle dropdown.
-function createThemeToggleButton(form) {
-  if ($("#themeToggleSelect").length) {
+function createThemeToggleButton(form, targetDoc = document) {
+  // Detect if we need to use a different target document for frameset bubbles
+  const bubbleDOM = document.getElementById("license_bubble") || targetDoc.getElementById("license_bubble");
+  if (bubbleDOM && bubbleDOM.hasAttribute("data-target-document")) {
+    const targetDocType = bubbleDOM.getAttribute("data-target-document");
+    if (targetDocType === "parent" && window.parent && window.parent !== window) {
+      try {
+        if (window.parent.document) {
+          targetDoc = window.parent.document;
+        }
+      } catch (error) {
+        // Cross-origin, stick with current document
+      }
+    }
+  }
+  
+  if (targetDoc.querySelector("#themeToggleSelect")) {
     return; // Dropdown already exists
   }
   
-  const select = utils.createElement("select", {
-    id: "themeToggleSelect",
-    title: "Select theme for diff display"
-  });
+  const select = targetDoc.createElement("select");
+  select.setAttribute("id", "themeToggleSelect");
+  select.setAttribute("title", "Select theme for diff display");
   
-  // CSS handles all styling - no inline styles needed
+  // Apply critical positioning styles inline to ensure they work
+  select.style.position = "absolute";
+  select.style.top = "2px";
+  select.style.right = "56px";
+  select.style.zIndex = "1001";
+  select.style.height = "20px";
   
   // Create theme options
-  const lightOption = utils.createElement("option", { value: "light" }, "Light");
-  const darkOption = utils.createElement("option", { value: "dark" }, "Dark");
+  const lightOption = targetDoc.createElement("option");
+  lightOption.setAttribute("value", "light");
+  lightOption.textContent = "Light";
+  
+  const darkOption = targetDoc.createElement("option");
+  darkOption.setAttribute("value", "dark");
+  darkOption.textContent = "Dark";
   
   select.appendChild(lightOption);
   select.appendChild(darkOption);
-  form.appendChild(select);
+  
+  // Append to bubble container instead of form for title bar positioning
+  const bubble = targetDoc.getElementById("license_bubble");
+  if (bubble) {
+    bubble.appendChild(select);
+  } else {
+    form.appendChild(select);
+  }
   
   // Check current theme state and set the selected option
-  const bubbleDOM = document.getElementById("license_bubble");
-  const isDarkMode = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+  const bubbleForTheme = targetDoc.getElementById("license_bubble") || document.getElementById("license_bubble");
+  const isDarkMode = bubbleForTheme && bubbleForTheme.classList.contains('spdx-dark-mode');
   select.value = isDarkMode ? "dark" : "light";
   
   select.addEventListener("change", function() {
     const shouldBeDark = this.value === "dark";
-    const currentlyDark = bubbleDOM && bubbleDOM.classList.contains('spdx-dark-mode');
+    const currentlyDark = bubbleForTheme && bubbleForTheme.classList.contains('spdx-dark-mode');
     
     if (shouldBeDark !== currentlyDark) {
       toggleDiffTheme();
@@ -1201,10 +1416,18 @@ function toggleDiffTheme() {
     // Switch to light mode
     bubbleDOM.classList.remove('spdx-dark-mode');
     if (select) select.value = "light";
+    // Also update body class if in popup mode
+    if (document.body.hasAttribute('data-is-popup')) {
+      document.body.classList.remove('spdx-dark-mode');
+    }
   } else {
     // Switch to dark mode
     bubbleDOM.classList.add('spdx-dark-mode');
     if (select) select.value = "dark";
+    // Also update body class if in popup mode
+    if (document.body.hasAttribute('data-is-popup')) {
+      document.body.classList.add('spdx-dark-mode');
+    }
   }
   
   // Apply any custom color overrides to work with the new theme
@@ -1233,15 +1456,59 @@ function renderBubble(mouseX, mouseY, selection) {
   // var progressbar = $('#progress_bubble')[0]
   updateBubbleText("Processing...");
   var bubbleDOM = $("#license_bubble")[0];
-  bubbleDOM.style.top = mouseY + "px";
-  bubbleDOM.style.left = mouseX + "px";
+  
+  // Check if this is a frameset bubble with fixed positioning
+  const isFramesetBubble = bubbleDOM.classList.contains('frameset-bubble');
+  
+  if (isFramesetBubble) {
+    // For frameset bubbles, use viewport-relative positioning with bounds checking
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    
+    // Ensure coordinates are within reasonable bounds for fixed positioning
+    const finalX = Math.max(20, Math.min(mouseX, viewportWidth - 100));
+    const finalY = Math.max(20, Math.min(mouseY, viewportHeight - 100));
+    
+    bubbleDOM.style.top = finalY + "px";
+    bubbleDOM.style.left = finalX + "px";
+    console.log("CONTENT SCRIPT: Positioned frameset bubble at:", finalX, finalY);
+  } else {
+    // Standard bubble positioning for normal documents
+    // Account for scroll position to ensure accurate positioning
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    
+    // Adjust coordinates to account for scroll position
+    const adjustedX = mouseX + scrollX;
+    const adjustedY = mouseY + scrollY;
+    
+    // Ensure bubble stays within viewport bounds
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    
+    const bubbleWidth = 300; // Approximate bubble width
+    const bubbleHeight = 200; // Approximate bubble height
+    
+    const finalX = Math.max(10, Math.min(adjustedX, scrollX + viewportWidth - bubbleWidth - 10));
+    const finalY = Math.max(10, Math.min(adjustedY, scrollY + viewportHeight - bubbleHeight - 10));
+    
+    bubbleDOM.style.top = finalY + "px";
+    bubbleDOM.style.left = finalX + "px";
+    
+    console.log("CONTENT SCRIPT: Positioned normal bubble at:", finalX, finalY, "(scroll:", scrollX, scrollY, ")");
+  }
+  
   bubbleDOM.style.visibility = "visible";
-  $("html,body").animate(
-    {
-      scrollTop: $("#progress_bubble").offset().top,
-    },
-    "fast"
-  );
+  
+  // Only animate scroll for non-frameset bubbles to avoid potential issues
+  if (!isFramesetBubble) {
+    $("html,body").animate(
+      {
+        scrollTop: $("#progress_bubble").offset().top,
+      },
+      "fast"
+    );
+  }
 }
 
 function updateBubbleText(text, target = "#bubble_text", onComplete = null) {
@@ -1325,3 +1592,55 @@ restoreOptions();
 applyCustomDiffColors();
 
 console.log("Spdx-license-diff " + version + " ContentScript injected");
+
+// Add close button for frameset bubbles.
+function createCloseButton(form, targetDoc = document) {
+  // Detect if we need to use a different target document for frameset bubbles
+  const bubbleDOM = document.getElementById("license_bubble") || targetDoc.getElementById("license_bubble");
+  if (bubbleDOM && bubbleDOM.hasAttribute("data-target-document")) {
+    const targetDocType = bubbleDOM.getAttribute("data-target-document");
+    if (targetDocType === "parent" && window.parent && window.parent !== window) {
+      try {
+        if (window.parent.document) {
+          targetDoc = window.parent.document;
+        }
+      } catch (error) {
+        // Cross-origin, stick with current document
+      }
+    }
+  }
+  
+  if (targetDoc.querySelector("#closeButton")) {
+    return; // Button already exists
+  }
+  
+  const button = targetDoc.createElement("button");
+  button.setAttribute("type", "button");
+  button.setAttribute("id", "closeButton");
+  button.setAttribute("title", "Close license comparison bubble");
+  button.innerHTML = '×';
+  
+  // Apply critical positioning styles inline to ensure they work
+  button.style.position = "absolute";
+  button.style.top = "2px";
+  button.style.right = "2px";
+  button.style.zIndex = "1001";
+  button.style.width = "20px";
+  button.style.height = "20px";
+  
+  button.addEventListener("click", function() {
+    const bubbleToClose = targetDoc.getElementById("license_bubble");
+    if (bubbleToClose) {
+      console.log("CONTENT SCRIPT: Closing frameset bubble via close button");
+      bubbleToClose.remove();
+    }
+  });
+  
+  // Append to bubble container instead of form for title bar positioning
+  const bubble = targetDoc.getElementById("license_bubble");
+  if (bubble) {
+    bubble.appendChild(button);
+  } else {
+    form.appendChild(button);
+  }
+}

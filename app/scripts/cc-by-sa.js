@@ -90,4 +90,8 @@ function checkLocalFileAccess(isAllowedAccess) {
   });
 }
 
-export { selectRangeCoords, getSelectionText, checkLocalFileAccess };
+export { 
+  selectRangeCoords, 
+  getSelectionText, 
+  checkLocalFileAccess 
+};
