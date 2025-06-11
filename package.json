@@ -106,6 +106,7 @@
       [
         "@semantic-release/exec",
         {
+          "verifyConditions": "mkdir -p dist/firefox",
           "prepareCmd": "yarn buildall"
         }
       ],
