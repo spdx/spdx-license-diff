@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/spdx/spdx-license-diff/compare/v0.10.0...v0.10.1) (2025-06-11)
+
+
+### Bug Fixes
+
+* iframes/frames and darkmode ([4e72a1c](https://github.com/spdx/spdx-license-diff/commit/4e72a1c1c3636b3c725f6172b97517d2ddeca1da))
+
 # [0.10.0](https://github.com/spdx/spdx-license-diff/compare/v0.9.2...v0.10.0) (2025-06-10)
 
 
