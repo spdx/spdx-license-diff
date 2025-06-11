@@ -47,8 +47,8 @@
     "oss-attribution-generator": "^1.7.1",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.3",
+    "semantic-release-amo": "^2.0.0",
     "semantic-release-chrome": "^3.2.0",
-    "semantic-release-firefox": "^2.0.6",
     "semantic-release-replace-plugin": "^1.2.7",
     "web-ext": "^8.7.1",
     "webpack": "^5.98.0"
@@ -145,12 +145,13 @@
         }
       ],
       [
-        "semantic-release-firefox",
+        "semantic-release-amo",
         {
-          "distFolder": "dist/firefox",
-          "xpiPath": "packages/spdx-license-diff.v${nextRelease.version}.firefox.xpi",
-          "addOnSlug": "spdx-license-diff",
-          "notesToReviewer": "Please see https://github.com/spdx/spdx-license-diff/blob/master/DEVELOPERS.md for compile instructions."
+          "addonId": "spdx-license-diff",
+          "addonDirPath": "dist/firefox",
+          "approvalNotes": "Please see https://github.com/spdx/spdx-license-diff/blob/master/docs/DEVELOPMENT.md#building-from-source for compile instructions.",
+          "submitSource": true,
+          "submitReleaseNotes": true
         }
       ]
     ]

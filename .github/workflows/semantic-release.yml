@@ -55,11 +55,8 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          FIREFOX_EMAIL: ${{ secrets.FIREFOX_EMAIL }}
-          FIREFOX_PASSWORD: ${{ secrets.FIREFOX_PASSWORD }}
-          FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
-          FIREFOX_SECRET_KEY: ${{ secrets.FIREFOX_API_SECRET }}
-          FIREFOX_TOTP_SECRET: ${{ secrets.FIREFOX_TOTP_SECRET }}
+          AMO_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
       #- name: Force Build Packages
       #  run: |
       #    yarn buildall
