@@ -52,6 +52,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "*://*.spdx.org/*"
+    "*://*.spdx.org/*",
+    "https://scancode-licensedb.aboutcode.org/*"
   ]
 }

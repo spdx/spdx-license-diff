@@ -205,7 +205,7 @@ self.onmessage = function (event) {
       // 'license':spdxid,'hash':hash, 'selection': selection
       break;
     case "updatelicenselist":
-      getSPDXlist();
+      getSPDXlist(event.data.enableSpdxSource, event.data.enableScancodeSource);
       break;
     case "compare":
       var spdxid = event.data.spdxid;
@@ -245,58 +245,69 @@ self.onmessage = function (event) {
   }
 };
 // load files array with list of files to download
-async function getSPDXlist() {
-  for (const type of Object.keys(urls)) {
-    var url = urls[type];
+async function getSPDXlist(enableSpdxSource = true, enableScancodeSource = true) {
+  // Fetch SPDX and Scancode license/exception lists, then merge them
+  const typesToMerge = [
+    { spdx: 'licenses', scancode: 'scancode_licenses' },
+    { spdx: 'exceptions', scancode: 'scancode_exceptions' }
+  ];
+
+  for (const { spdx, scancode } of typesToMerge) {
     try {
-      var result = await getJSON(url);
-      var total = result[type].length;
-      var index = 0;
+      // Only fetch enabled sources
+      const fetches = [];
+      if (enableSpdxSource) fetches.push(getJSON(urls[spdx])); else fetches.push(Promise.resolve({ [spdx]: [] }));
+      if (enableScancodeSource) fetches.push(getJSON(urls[scancode])); else fetches.push(Promise.resolve({ [scancode]: [] }));
+      const [spdxResult, scancodeResult] = await Promise.all(fetches);
+      let spdxList = spdxResult[spdx] || [];
+      let scancodeList = scancodeResult[scancode] || [];
+      // Add source property
+      spdxList = spdxList.map(item => ({ ...item, source: 'SPDX' }));
+      scancodeList = scancodeList.map(item => ({ ...item, source: 'Scancode' }));
+      // Merge by id (licenseId for SPDX, key for Scancode)
+      const merged = {};
+      for (const item of spdxList) {
+        const id = item.licenseId || item.licenseExceptionId;
+        if (id) merged[id] = item;
+      }
+      for (const item of scancodeList) {
+        const id = item.key || item.license_exception_key;
+        if (id) {
+          if (merged[id]) {
+            // Merge details if needed, or keep both sources
+            merged[id].scancode = item;
+          } else {
+            merged[id] = item;
+          }
+        }
+      }
+      const mergedList = Object.values(merged);
+      const total = mergedList.length;
+      let index = 0;
       postMessage({
         command: "progressbarmax",
         value: total,
-        stage: "Updating " + type,
+        stage: `Updating merged ${spdx}`,
         id: id,
         reset: true,
       });
       postMessage({
         command: "savelicenselist",
-        value: result,
+        value: { [spdx]: mergedList },
         id: id,
-        type: type,
+        type: spdx,
       });
-      console.log(id, "Updating: ", result);
-      result[type] = result[type].map(async (item) => {
-        url = item.detailsUrl;
-        var urlRegex = new RegExp("^(?:[a-z]+:)?//", "i");
-        if (urlRegex.test(url)) {
-          url = url.replace("http:", "https:");
-        } else {
-          url = `${baseLicenseUrl}${url}`;
-        }
-        if (url.split(".").pop().toLowerCase() === "html")
-          url = url.replace(".html", ".json");
-        try {
-          return await getJSON(url);
-        } catch (err) {
-          console.log("Error in Update");
-          throw err;
-        }
-      });
-      result[type] = result[type].map(async function (item) {
-        item = await item;
-        // var md5 = require('md5-jkmyers')
-        // hash = md5(item)
+      for (const item of mergedList) {
         postMessage({
           command: "saveitem",
           data: item,
           id: id,
-          type: type,
+          type: spdx,
         });
         postMessage({
           command: "progressbarmax",
           value: total,
-          stage: "Updating " + type,
+          stage: `Updating merged ${spdx}`,
           id: id,
           reset: true,
         });
@@ -305,29 +316,24 @@ async function getSPDXlist() {
           value: index++,
           id: id,
         });
-        // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-      });
-      await Promise.all(result[type]);
-      console.log("All %s downloads completed", type);
-      postMessage({ command: "updatedone", id: id, type: type });
+      }
+      console.log(`All merged ${spdx} downloads completed`);
+      postMessage({ command: "updatedone", id: id, type: spdx });
     } catch (err) {
-      // catch any error that happened along the way
       console.log("Error: " + err.message);
-      
-      // Check if this is a permission/network error
       if (err.message.includes("Network Error") || err.message.includes("Failed to fetch") || err.message.includes("403") || err.message.includes("ERR_BLOCKED_BY_CLIENT")) {
         postMessage({
           command: "updateerror",
-          error: "Permission or network error accessing SPDX.org. Please check that you have granted permission to access spdx.org in your browser extension settings.",
+          error: `Permission or network error accessing data sources. Please check that you have granted permission to access the required URLs in your browser extension settings.`,
           id: id,
-          type: type
+          type: spdx
         });
       } else {
         postMessage({
-          command: "updateerror", 
-          error: `Failed to update ${type}: ${err.message}`,
+          command: "updateerror",
+          error: `Failed to update ${spdx}: ${err.message}`,
           id: id,
-          type: type
+          type: spdx
         });
       }
     }

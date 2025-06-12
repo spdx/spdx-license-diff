@@ -110,6 +110,10 @@ function saveOptions() {
     }
   };
 
+  var licenseDataSource = document.getElementById("licenseDataSource").value;
+  var enableSpdxSource = document.getElementById("enableSpdxSource").checked;
+  var enableScancodeSource = document.getElementById("enableScancodeSource").checked;
+
   var options = {
     updateFrequency: parseInt(updateFrequency),
     showBest: parseInt(showBest),
@@ -119,6 +123,9 @@ function saveOptions() {
     maxworkers: parseInt(maxworkers),
     filters: filters,
     diffColors: diffColors,
+    licenseDataSource: licenseDataSource,
+    enableSpdxSource: enableSpdxSource,
+    enableScancodeSource: enableScancodeSource,
   };
   api.storage.local.set({ options: options }, function () {
     // Update status to let user know options were saved.
@@ -151,6 +158,7 @@ function restoreOptions() {
     document.getElementById("diceCoefficient").value =
       result.options.diceCoefficient;
     document.getElementById("maxWorkers").value = result.options.maxworkers;
+    document.getElementById("licenseDataSource").value = result.options.licenseDataSource || "spdx";
     
     // Restore color settings
     const colors = result.options.diffColors || defaultoptions.diffColors;
@@ -173,6 +181,12 @@ function restoreOptions() {
       console.log('First time loading options - generating default color CSS');
       updateDiffColors(defaultoptions.diffColors);
     }
+    
+    // Restore SPDX and Scancode source checkbox states
+    document.getElementById("enableSpdxSource").checked =
+      result.options.enableSpdxSource !== false;
+    document.getElementById("enableScancodeSource").checked =
+      result.options.enableScancodeSource !== false;
     
     showFilters(document.getElementById("exclude"), result);
     // document.getElementById('deprecated').checked = result.options.filters.deprecated
@@ -345,10 +359,6 @@ function showUpdatePermissionError(message) {
   let instructions = '';
   
   if (isFirefox) {
-    permissionUrl = 'about:addons';
-    instructions = 'Go to about:addons → Extensions → SPDX License Diff → Permissions → Allow access to spdx.org';
-  } else {
-    permissionUrl = `chrome://extensions/?id=${extensionId}`;
     instructions = 'Go to chrome://extensions → SPDX License Diff → Details → Site access → Allow on spdx.org';
   }
   

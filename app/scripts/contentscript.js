@@ -928,7 +928,33 @@ function prepDiff(spdxid, time, html, details) {
   if (details.licenseComments) {
     hoverInfo += "&#10;comments: " + _.escape(details.licenseComments);
   }
-  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`;
+  // Determine sources and names
+  var hasSpdx = details.source === "SPDX" || !!details.licenseId;
+  var hasScancode = details.source === "Scancode" || !!details.key || (details.scancode && details.scancode.key);
+  var spdxName = details.name;
+  var scancodeName = details.scancode?.name || details.name;
+  var spdxId = details.licenseId || spdxid;
+  var scancodeId = details.scancode?.key || details.key;
+
+  var title = "";
+  if (hasSpdx && hasScancode && details.scancode) {
+    // Both sources
+    title = `<a href=\"https://spdx.org/licenses/${spdxId}.html\" target=\"_blank\" title=\"${hoverInfo}\">${spdxName} (SPDX: ${spdxId})</a> | ` +
+            `<a href=\"https://scancode-licensedb.aboutcode.org/${scancodeId}.html\" target=\"_blank\">${details.scancode.name} (Scancode: ${scancodeId})</a>`;
+  } else if (hasSpdx) {
+    // Only SPDX
+    title = `<a href=\"https://spdx.org/licenses/${spdxId}.html\" target=\"_blank\" title=\"${hoverInfo}\">${spdxName} (SPDX: ${spdxId})</a>`;
+  } else if (hasScancode) {
+    // Only Scancode
+    title = `<a href=\"https://scancode-licensedb.aboutcode.org/${scancodeId}.html\" target=\"_blank\">${scancodeName} (Scancode: ${scancodeId})</a>`;
+  } else {
+    // Fallback
+    title = `${spdxName || scancodeName || spdxid}`;
+  }
+  var sources = [];
+  if (hasSpdx) sources.push("SPDX");
+  if (hasScancode) sources.push("Scancode");
+  var sourceText = sources.length ? ` [Source: ${sources.join(", ")}]` : "";
   var timehtml =
     " processed in " + (time + processTime) / 1000 + "s<br /><hr />";
   
@@ -946,7 +972,7 @@ function prepDiff(spdxid, time, html, details) {
     }
   }
   
-  const result = title + timehtml + templateTable + html;
+  const result = title + sourceText + timehtml + templateTable + html;
   
   // Setup highlighting directly in the next frame after content is injected
   // This approach eliminates race conditions by being synchronous with the DOM update
@@ -1031,8 +1057,25 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
     var value = arr[i].spdxid;
     var percentage = arr[i].percentage;
     var dice = arr[i].dice;
+    var details = arr[i].details || {};
+    var hasSpdx = details.source === "SPDX" || !!details.licenseId;
+    var hasScancode = details.source === "Scancode" || !!details.key || (details.scancode && details.scancode.key);
+    var spdxName = details.name;
+    var scancodeName = details.scancode?.name || details.name;
+    var spdxId = details.licenseId || value;
+    var scancodeId = details.scancode?.key || details.key;
+    var label = "";
+    if (hasSpdx && hasScancode && details.scancode) {
+      label = `${spdxName} (SPDX: ${spdxId}) | ${details.scancode.name} (Scancode: ${scancodeId})`;
+    } else if (hasSpdx) {
+      label = `${spdxName} (SPDX: ${spdxId})`;
+    } else if (hasScancode) {
+      label = `${scancodeName} (Scancode: ${scancodeId})`;
+    } else {
+      label = value;
+    }
     var text =
-      value +
+      label +
       " : " +
       percentage +
       "% match (" +
@@ -1042,7 +1085,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
       ")";
     if (percentage === 100) {
       text =
-        value +
+        label +
         " : " +
         percentage +
         "% template match (" +
@@ -1051,9 +1094,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
         dice +
         ")";
     }
-
     if (Number(percentage) < Number(minimum)) {
-      // No match at all
       break;
     }
     var option = select.appendChild(document.createElement("option"));

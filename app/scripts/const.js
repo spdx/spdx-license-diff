@@ -38,10 +38,13 @@ const defaultoptions = {
 };
 
 const baseLicenseUrl = "https://spdx.org/licenses/";
+const baseScancodeUrl = "https://scancode-licensedb.aboutcode.org/";
 
 const urls = {
   licenses: `${baseLicenseUrl}licenses.json`,
   exceptions: `${baseLicenseUrl}exceptions.json`,
+  scancode_licenses: `${baseScancodeUrl}licenses-index.json`,
+  scancode_exceptions: `${baseScancodeUrl}exceptions-index.json`,
 };
 
 const newLicenseUrl = "https://tools.spdx.org/app/submit_new_license/";

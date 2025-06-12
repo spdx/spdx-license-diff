@@ -1033,7 +1033,12 @@ async function updateList(userInitiated = false) {
     if (userInitiated) {
       sendMessageToOptionsPage("update_status", "Starting license list download...", "info");
     }
-    dowork({ command: "updatelicenselist" });
+    // Get enabled sources from options
+    api.storage.local.get(["options"], function(result) {
+      const enableSpdxSource = result.options?.enableSpdxSource !== false;
+      const enableScancodeSource = result.options?.enableScancodeSource !== false;
+      dowork({ command: "updatelicenselist", enableSpdxSource, enableScancodeSource });
+    });
   }
 }
 
