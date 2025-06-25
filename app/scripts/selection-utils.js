@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com> and Sujal Bhor <bhorsujal@gmail.com>
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Gets the currently selected text from the page.
- * It intelligently checks for selections in input fields, textareas,
- * or the general document.
- * @returns {string} The selected text.
+Gets the currently selected text from the page.
+It intelligently checks for selections in input fields, textareas,
+or the general document.
+@returns {string} The selected text.
  */
 function getSelectionText() {
   const activeEl = document.activeElement;
@@ -28,10 +28,9 @@ function getSelectionText() {
 }
 
 /**
- * Calculates the screen coordinates of the current text selection.
- * Uses the standard `getBoundingClientRect` on the selection's range.
- * @returns {Array<number>} An array containing the [x, y] coordinates of the selection.
- *                          Returns a default position if no selection exists.
+Get the [x, y] screen coordinates of the current text selection.
+Returns [100, 100] if nothing is selected.
+@returns {number[]} [x, y] coordinates.
  */
 function selectRangeCoords() {
   const selection = window.getSelection();
@@ -47,7 +46,7 @@ function selectRangeCoords() {
 
   // If the selection is collapsed (e.g., just a cursor), the rect might be empty.
   // We can create a temporary element to get a valid position.
-  if (rect.x === 0 && rect.y === 0) {
+  if (rect.width === 0 && rect.height === 0) {
       const span = document.createElement("span");
       range.insertNode(span);
       rect = span.getBoundingClientRect();
@@ -58,9 +57,8 @@ function selectRangeCoords() {
 }
 
 /**
- * Guides the user to the browser's extension management page
- * to grant necessary permissions for local file access.
- * @param {boolean} isAllowedAccess - If true, the function does nothing.
+If local file access is not allowed, prompt the user to enable it in extension settings.
+@param {boolean} isAllowedAccess
  */
 function checkLocalFileAccess(isAllowedAccess) {
   if (isAllowedAccess) {
