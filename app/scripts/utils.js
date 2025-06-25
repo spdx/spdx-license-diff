@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import $ from 'jquery';
-import { selectRangeCoords as getSelectionCoords } from './cc-by-sa.js';
+import { selectRangeCoords as getSelectionCoords } from './selection-utils.js';
 
 // Utility functions to reduce code duplication
 const utils = {
