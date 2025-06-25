@@ -1,93 +1,91 @@
-// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
-// SPDX-License-Identifier: (GPL-3.0-or-later or CC-BY-SA-3.0)
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com> and Sujal Bhor <bhorsujal@gmail.com>
+// SPDX-License-Identifier: Apache-2.0
 
-import $ from "jquery";
-
-// https://stackoverflow.com/questions/2031518/javascript-selection-range-coordinates
-function selectRangeCoords() {
-  var selection = window.getSelection();
-  
-  // Check if there's a valid selection
-  if (!selection || selection.rangeCount === 0) {
-    console.log("No selection found, using default coordinates");
-    return [100, 100]; // Default position if no selection
-  }
-  
-  var range = selection.getRangeAt(0);
-  if (!range || !range.startContainer) {
-    console.log("Invalid range, using default coordinates");
-    return [100, 100];
-  }
-  
-  try {
-    var $span = $("<span/>");
-    var newRange = document.createRange();
-    
-    // Ensure we have a valid node to set the start
-    var startNode = range.startContainer;
-    if (startNode.nodeType === 3 && startNode.parentNode) { // TEXT_NODE = 3
-      newRange.setStart(startNode, 0);
-    } else if (startNode.nodeType === 1) { // ELEMENT_NODE = 1
-      newRange.setStart(startNode, 0);
-    } else {
-      console.log("Unable to create valid range, using default coordinates");
-      return [100, 100];
-    }
-    
-    newRange.insertNode($span[0]); // using 'range' here instead of newRange unselects or causes flicker on chrome/webkit
-
-    var posX = $span.offset().left;
-    var posY = $span.offset().top;
-    $span.remove();
-    return [posX, posY];
-  } catch (error) {
-    console.error("Error getting selection coordinates:", error);
-    return [100, 100]; // Fallback position
-  }
-}
-
-// https://stackoverflow.com/questions/5379120/get-the-highlighted-selected-text
+/**
+ * Gets the currently selected text from the page.
+ * It intelligently checks for selections in input fields, textareas,
+ * or the general document.
+ * @returns {string} The selected text.
+ */
 function getSelectionText() {
-  var text = "";
-  var activeEl = document.activeElement;
-  var activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
+  const activeEl = document.activeElement;
+  const activeElTagName = activeEl ? activeEl.tagName.toLowerCase() : null;
+
   if (
     (activeElTagName === "textarea" ||
       (activeElTagName === "input" &&
         /^(?:text|search|password|tel|url)$/i.test(activeEl.type))) &&
     typeof activeEl.selectionStart === "number"
   ) {
-    text = activeEl.value.slice(activeEl.selectionStart, activeEl.selectionEnd);
-  } else if (window.getSelection) {
-    text = window.getSelection().toString();
+    return activeEl.value.slice(
+      activeEl.selectionStart,
+      activeEl.selectionEnd
+    );
   }
-  return text;
+
+  const selection = window.getSelection();
+  return selection ? selection.toString() : "";
 }
 
-// https://stackoverflow.com/questions/17438354/how-can-i-enable-my-chrome-extension-in-incognito-mode/17443982#17443982
+/**
+ * Calculates the screen coordinates of the current text selection.
+ * Uses the standard `getBoundingClientRect` on the selection's range.
+ * @returns {Array<number>} An array containing the [x, y] coordinates of the selection.
+ *                          Returns a default position if no selection exists.
+ */
+function selectRangeCoords() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    // Return a default, safe position if there's no selection
+    return [100, 100];
+  }
+
+  const range = selection.getRangeAt(0).cloneRange();
+  
+  // getBoundingClientRect is the standard, modern way to get position.
+  let rect = range.getBoundingClientRect();
+
+  // If the selection is collapsed (e.g., just a cursor), the rect might be empty.
+  // We can create a temporary element to get a valid position.
+  if (rect.x === 0 && rect.y === 0) {
+      const span = document.createElement("span");
+      range.insertNode(span);
+      rect = span.getBoundingClientRect();
+      span.remove();
+  }
+
+  return [rect.left, rect.bottom];
+}
+
+/**
+ * Guides the user to the browser's extension management page
+ * to grant necessary permissions for local file access.
+ * @param {boolean} isAllowedAccess - If true, the function does nothing.
+ */
 function checkLocalFileAccess(isAllowedAccess) {
-  if (isAllowedAccess) return;
-  
-  // Use cross-browser compatible API
+  if (isAllowedAccess) {
+    return;
+  }
+
+  // Use the cross-browser `browser` or fallback to `chrome`
   const api = typeof browser !== "undefined" ? browser : chrome;
-  
-  // Use i18n message
-  const message = api.i18n.getMessage("localPermissionNeeded");
-  alert(message);
-  
-  // Cross-browser extension management URLs
-  let extensionUrl;
-  if (typeof browser !== "undefined") {
+
+  alert(
+    "To compare local files, please enable 'Allow access to file URLs' in the extension settings."
+  );
+
+  let extensionsPageUrl;
+  if (api.runtime.getURL("").startsWith("moz-extension://")) {
     // Firefox
-    extensionUrl = "about:addons";
+    extensionsPageUrl = "about:addons";
   } else {
     // Chrome, Edge, Opera
-    extensionUrl = "chrome://extensions/?id=" + api.runtime.id;
+    extensionsPageUrl = `chrome://extensions/?id=${api.runtime.id}`;
   }
-  
-  api.tabs.create({
-    url: extensionUrl,
-  });
+
+  if (extensionsPageUrl) {
+    api.tabs.create({ url: extensionsPageUrl });
+  }
 }
 
 export { 
