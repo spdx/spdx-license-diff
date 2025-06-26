@@ -3,7 +3,7 @@
 
 import _ from "underscore";
 import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
-import { checkLocalFileAccess } from "./cc-by-sa.js";
+import { checkLocalFileAccess } from "./selection-utils.js";
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 const version = api.runtime.getManifest().version;

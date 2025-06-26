@@ -3,7 +3,7 @@
 /* eslint-disable no-empty, no-unused-vars */
 /* global MutationObserver, Node */
 
-import { selectRangeCoords, getSelectionText } from "./cc-by-sa.js";
+import { selectRangeCoords, getSelectionText } from "./selection-utils.js";
 import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
 import { utils, initializeInteractionTracking, getSelectionTextWithIframes, selectRangeCoordsWithIframes, lastInteractionContext } from "./utils.js";
 import $ from "jquery";
