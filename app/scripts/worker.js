@@ -71,7 +71,7 @@ function diff_prettyHtml(diffs, templateMatch, selection) {
       text = data.replace(pattern_amp, '&amp;')
                  .replace(pattern_lt, '&lt;')
                  .replace(pattern_gt, '&gt;')
-                 .replace(pattern_para, '&para;<br>');
+                 .replace(pattern_para, '<br>');
     }
     
     switch (op) {
@@ -137,7 +137,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
     return originalText.replace(pattern_amp, '&amp;')
                       .replace(pattern_lt, '&lt;')
                       .replace(pattern_gt, '&gt;')
-                      .replace(pattern_para, '&para;<br>');
+                      .replace(pattern_para, '<br>');
   }
   
   // Sort by relative position to handle them in order
@@ -154,7 +154,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
       result += beforeText.replace(pattern_amp, '&amp;')
                          .replace(pattern_lt, '&lt;')
                          .replace(pattern_gt, '&gt;')
-                         .replace(pattern_para, '&para;<br>');
+                         .replace(pattern_para, '<br>');
     }
     
     // Add the variable text with highlighting span
@@ -162,7 +162,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
     const escapedVariableText = variableText.replace(pattern_amp, '&amp;')
                                            .replace(pattern_lt, '&lt;')
                                            .replace(pattern_gt, '&gt;')
-                                           .replace(pattern_para, '&para;<br>');
+                                           .replace(pattern_para, '<br>');
     
     result += '<span class="diff-variable-highlight" data-variable-name="' + 
               escapeHtmlAttributes(segVar.variableName) + '" data-variable-index="' + segVar.variableIndex + '">' + 
@@ -179,7 +179,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
     result += afterText.replace(pattern_amp, '&amp;')
                       .replace(pattern_lt, '&lt;')
                       .replace(pattern_gt, '&gt;')
-                      .replace(pattern_para, '&para;<br>');
+                      .replace(pattern_para, '<br>');
   }
   
   return result;
