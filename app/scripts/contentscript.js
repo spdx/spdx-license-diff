@@ -1360,12 +1360,7 @@ function createNewTabButton(form, selectedLicense, targetDoc = document) {
   
   if (utils.isPopupPage()) return;
   if (targetDoc.querySelector("#newTabButton")) {
-    const existingButton = targetDoc.getElementById("newTabButton");
-    if (existingButton) {
-      existingButton.removeEventListener("click", newTab);
-      existingButton.addEventListener("click", newTab);
-      return;
-    }
+    return;
   }
   
   const button = targetDoc.createElement("button");
