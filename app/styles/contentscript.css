@@ -805,3 +805,163 @@ body[data-is-popup] .spdx-dark-mode .selection_bubble a {
 body[data-is-popup] .selection_bubble.spdx-dark-mode ~ * {
   color: #e2e8f0 !important;
 }
+
+/* Diff Legend */
+.diff-legend {
+  font-size: 12px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+.diff-legend .legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.diff-legend .legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.diff-legend .legend-color-sample {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.diff-legend .legend-symbol {
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  margin-right: 8px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.diff-insert-legend {
+  background-color: #d4edda;
+}
+
+.diff-delete-legend {
+  background-color: #f8d7da;
+}
+
+/* Confidence indicator styles */
+.confidence-indicator {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.confidence-icon {
+  margin-right: 4px;
+}
+
+.full-match {
+  background-color: #e9f7ec;
+  color: #0c6b37;
+}
+
+.partial-match {
+  background-color: #fff9e6;
+  color: #7a5900;
+}
+
+.no-match {
+  background-color: #fde8e9;
+  color: #8c2f39;
+}
+
+/* Dropdown option colors (Note: May not render on all browsers, e.g., Firefox) */
+#licenses option.full-match {
+  background-color: #e9f7ec !important;
+  color: #0c6b37 !important;
+}
+
+#licenses option.partial-match {
+  background-color: #fff9e6 !important;
+  color: #7a5900 !important;
+}
+
+#licenses option.no-match {
+  background-color: #fde8e9 !important;
+  color: #8c2f39 !important;
+}
+
+/* Manual dark mode override */
+.spdx-dark-mode ins.diff-insert,
+.spdx-dark-mode .diff-insert {
+  background-color: #0d4920 !important;
+  color: #7dd3fc !important;
+}
+
+.spdx-dark-mode .diff-variable-highlight.highlighted {
+  background-color: rgba(255, 235, 59, 0.4) !important;
+  border-color: rgba(255, 235, 59, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.2) !important;
+}
+
+/* Dark Mode Legend */
+.spdx-dark-mode .diff-legend {
+  background-color: #374151;
+  border-color: #4a5568;
+  color: #e5e7eb;
+}
+
+.spdx-dark-mode .diff-insert-legend {
+  background-color: #0d4920;
+}
+
+.spdx-dark-mode .diff-delete-legend {
+  background-color: #5a1e1e;
+}
+
+/* Dark mode for confidence indicators */
+.spdx-dark-mode .full-match {
+  background-color: #1c3b29;
+  color: #a7f3d0;
+}
+
+.spdx-dark-mode .partial-match {
+  background-color: #423400;
+  color: #fde088;
+}
+
+.spdx-dark-mode .no-match {
+  background-color: #442024;
+  color: #fecaca;
+}
+
+/* Dark mode for dropdown options */
+.spdx-dark-mode #licenses option.full-match {
+  background-color: #1c3b29 !important;
+  color: #a7f3d0 !important;
+}
+
+.spdx-dark-mode #licenses option.partial-match {
+  background-color: #423400 !important;
+  color: #fde088 !important;
+}
+
+.spdx-dark-mode #licenses option.no-match {
+  background-color: #442024 !important;
+  color: #fecaca !important;
+}
+
+/* Dark mode override for the main bubble background */
+.spdx-dark-mode.selection_bubble,
+.spdx-dark-mode .selection_bubble {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}

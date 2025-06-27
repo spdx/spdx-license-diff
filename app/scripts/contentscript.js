@@ -505,17 +505,21 @@ function displayDiff(html, time = processTime) {
   }
   var spdxid = spdx[0].spdxid;
   var details = spdx[0].details;
+  var percentage = spdx[0].percentage;
+  var distance = spdx[0].distance;
   if (selectedLicense) {
     for (var index in spdx) {
       if (spdx[index].spdxid === selectedLicense) {
         spdxid = selectedLicense;
         details = spdx[index].details;
+        percentage = spdx[index].percentage;
+        distance = spdx[index].distance;
         break;
       }
     }
   }
   
-  const preparedDiff = prepDiff(spdxid, time, html, details);
+  const preparedDiff = prepDiff(spdxid, time, html, details, percentage, distance);
   
   // Use callback approach to setup highlighting immediately after DOM injection
   updateBubbleText(preparedDiff, "#result_text", () => {
@@ -543,9 +547,23 @@ function displayDiff(html, time = processTime) {
         spdxid = spdx[this.options.selectedIndex].spdxid;
         html = diffs[spdxid].html;
         time = diffs[spdxid].time;
-        details = spdx[this.options.selectedIndex].details;
+        for (var index in spdx) {
+          if (spdx[index].spdxid === selectedLicense) {
+            details = spdx[index].details;
+            percentage = spdx[index].percentage;
+            distance = spdx[index].distance;
+            break;
+          }
+        }
         
-        const newPreparedDiff = prepDiff(spdxid, time, html, details);
+        const newPreparedDiff = prepDiff(
+          spdxid,
+          time,
+          html,
+          details,
+          percentage,
+          distance
+        );
         updateBubbleText(newPreparedDiff, "#result_text", () => {
           // Setup highlighting for new selection too
           if (newPreparedDiff.includes('template-variable-row') && newPreparedDiff.includes('diff-variable-highlight')) {
@@ -918,7 +936,7 @@ function retryHighlightingSetupIfNeeded() {
 }
 
 // This wraps the diff display
-function prepDiff(spdxid, time, html, details) {
+function prepDiff(spdxid, time, html, details, percentage, distance) {
   var hoverInfo = "tags: ";
   for (var filter in filters) {
     if (details[filters[filter]]) {
@@ -928,10 +946,40 @@ function prepDiff(spdxid, time, html, details) {
   if (details.licenseComments) {
     hoverInfo += "&#10;comments: " + _.escape(details.licenseComments);
   }
-  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`;
+
+  let confidenceIndicator = '';
+  if (percentage !== undefined) {
+      let confidenceText = '';
+      let confidenceClass = '';
+      let icon = '';
+
+      if (percentage >= 90) {
+          confidenceText = 'Good Match';
+          confidenceClass = 'full-match';
+          icon = '✔';
+      } else if (percentage >= 30) {
+          confidenceText = 'Partial Match';
+          confidenceClass = 'partial-match';
+          icon = '⚠';
+      } else {
+          confidenceText = 'Low Match';
+          confidenceClass = 'no-match';
+          icon = '✖';
+      }
+      confidenceIndicator = `<span class="confidence-indicator ${confidenceClass}" title="Match: ${percentage}%"><span class="confidence-icon">${icon}</span> ${confidenceText}</span>`;
+  }
+
+  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>${confidenceIndicator}`;
   var timehtml =
     " processed in " + (time + processTime) / 1000 + "s<br /><hr />";
   
+  const legend = `
+    <div class="diff-legend">
+      <div class="legend-item"><span class="legend-color-sample diff-insert-legend"></span>Text in your selection but not in license</div>
+      <div class="legend-item"><span class="legend-color-sample diff-delete-legend"></span>Text in license but not in your selection</div>
+    </div>
+  `;
+
   // Find templateMatch data for this license - only show for actual template matches
   var templateTable = "";
   if (spdx) {
@@ -946,7 +994,7 @@ function prepDiff(spdxid, time, html, details) {
     }
   }
   
-  const result = title + timehtml + templateTable + html;
+  const result = title + timehtml + legend + templateTable + html;
   
   // Setup highlighting directly in the next frame after content is injected
   // This approach eliminates race conditions by being synchronous with the DOM update
@@ -1028,40 +1076,50 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
   var select = form.appendChild(document.createElement("select"));
   select.id = id;
   for (var i = 0; i < arr.length && i < number; i++) {
-    var value = arr[i].spdxid;
-    var percentage = arr[i].percentage;
-    var dice = arr[i].dice;
-    var text =
-      value +
-      " : " +
-      percentage +
-      "% match (" +
-      arr[i].distance +
-      " differences / dice-coefficient " +
-      dice +
-      ")";
-    if (percentage === 100) {
-      text =
-        value +
-        " : " +
-        percentage +
-        "% template match (" +
-        arr[i].distance +
-        " differences / dice-coefficient " +
-        dice +
-        ")";
-    }
-
-    if (Number(percentage) < Number(minimum)) {
-      // No match at all
+    var option = document.createElement("option");
+    var license = arr[i];
+    if (Number(license.percentage) < Number(minimum)) {
       break;
     }
-    var option = select.appendChild(document.createElement("option"));
-    option.value = value;
-    option.text = text;
-    if (diffs[value] === undefined) {
-      option.setAttribute("disabled", "disabled");
+    
+    let icon = '';
+    if (license.percentage >= 90) {
+        icon = '✔ ';
+    } else if (license.percentage >= 30) {
+        icon = '⚠ ';
+    } else {
+        icon = '✖ ';
     }
+
+    var text =
+      license.spdxid +
+      " : " +
+      license.percentage +
+      "% match (" +
+      license.distance +
+      " differences";
+    if (license.dice) {
+      text += " / dice-coefficient " + license.dice;
+    }
+    text += ")";
+    option.value = license.spdxid;
+    option.appendChild(document.createTextNode(icon + text));
+
+    // Add confidence class to option for styling
+    let confidenceClass = '';
+    if (license.percentage >= 90) {
+        confidenceClass = 'full-match';
+    } else if (license.percentage >= 30) {
+        confidenceClass = 'partial-match';
+    } else {
+        confidenceClass = 'no-match';
+    }
+    option.classList.add(confidenceClass);
+
+    if (diffs[license.spdxid] === undefined) {
+      option.disabled = true;
+    }
+    select.appendChild(option);
   }
   createNewLicenseButton(form);
   createNewTabButton(form, selectedLicense);
@@ -1302,12 +1360,7 @@ function createNewTabButton(form, selectedLicense, targetDoc = document) {
   
   if (utils.isPopupPage()) return;
   if (targetDoc.querySelector("#newTabButton")) {
-    const existingButton = targetDoc.getElementById("newTabButton");
-    if (existingButton) {
-      existingButton.removeEventListener("click", newTab);
-      existingButton.addEventListener("click", newTab);
-      return;
-    }
+    return;
   }
   
   const button = targetDoc.createElement("button");
