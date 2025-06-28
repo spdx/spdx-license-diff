@@ -4,7 +4,7 @@
 /* global MutationObserver, Node */
 
 import { selectRangeCoords, getSelectionText } from "./selection-utils.js";
-import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
+import { filters, defaultoptions, readmePermissionsUrls, confidenceThresholds } from "./const.js";
 import { utils, initializeInteractionTracking, getSelectionTextWithIframes, selectRangeCoordsWithIframes, lastInteractionContext } from "./utils.js";
 import $ from "jquery";
 import _ from "underscore";
@@ -921,52 +921,30 @@ function setupHighlightingWithRetry() {
 
 // Function to retry highlighting setup if needed (called when permissions are granted)
 function retryHighlightingSetupIfNeeded() {
-  console.log("Checking if highlighting setup retry is needed");
-  console.log("Pending highlighting setup:", pendingHighlightingSetup);
-  console.log("Permissions confirmed:", permissionsConfirmed);
-  
-  if ((pendingHighlightingSetup === true || pendingHighlightingSetup === 'active') && permissionsConfirmed) {
-    console.log("Retrying highlighting setup after permission confirmation");
-    pendingHighlightingSetup = false; // Reset flag
-    const success = setupInteractiveHighlightingDirect();
-    console.log("Retry highlighting setup result:", success);
-  } else {
-    console.log("No highlighting setup retry needed");
+  if (pendingHighlightingSetup) {
+    console.log("Retrying highlighting setup...");
+    pendingHighlightingSetup = false;
+    setupInteractiveHighlightingDirect();
   }
 }
 
-// This wraps the diff display
-function prepDiff(spdxid, time, html, details, percentage, distance) {
-  var hoverInfo = "tags: ";
-  for (var filter in filters) {
-    if (details[filters[filter]]) {
-      hoverInfo += filter + " ";
+function getConfidenceLevel(percentage) {
+  for (const level of confidenceThresholds) {
+    if (percentage >= level.threshold) {
+      return level;
     }
   }
-  if (details.licenseComments) {
-    hoverInfo += "&#10;comments: " + _.escape(details.licenseComments);
-  }
+  return confidenceThresholds[confidenceThresholds.length - 1]; // Default to lowest
+}
 
+// This will prepare the diff for display
+function prepDiff(spdxid, time, html, details, percentage, distance) {
+  var hoverInfo = `${details.name} is OSI approved: ${details.isOsiApproved}, FSF Libre: ${details.isFsfLibre}, Deprecated: ${details.isDeprecatedLicenseId}`;
+  
   let confidenceIndicator = '';
   if (percentage !== undefined) {
-      let confidenceText = '';
-      let confidenceClass = '';
-      let icon = '';
-
-      if (percentage >= 90) {
-          confidenceText = 'Good Match';
-          confidenceClass = 'full-match';
-          icon = '✔';
-      } else if (percentage >= 30) {
-          confidenceText = 'Partial Match';
-          confidenceClass = 'partial-match';
-          icon = '⚠';
-      } else {
-          confidenceText = 'Low Match';
-          confidenceClass = 'no-match';
-          icon = '✖';
-      }
-      confidenceIndicator = `<span class="confidence-indicator ${confidenceClass}" title="Match: ${percentage}%"><span class="confidence-icon">${icon}</span> ${confidenceText}</span>`;
+      const confidence = getConfidenceLevel(percentage);
+      confidenceIndicator = `<span class="confidence-indicator ${confidence.className}" title="Match: ${percentage}%"><span class="confidence-icon">${confidence.icon}</span> ${confidence.text}</span>`;
   }
 
   var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>${confidenceIndicator}`;
@@ -1082,14 +1060,8 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
       break;
     }
     
-    let icon = '';
-    if (license.percentage >= 90) {
-        icon = '✔ ';
-    } else if (license.percentage >= 30) {
-        icon = '⚠ ';
-    } else {
-        icon = '✖ ';
-    }
+    const confidence = getConfidenceLevel(license.percentage);
+    const icon = confidence.icon + ' ';
 
     var text =
       license.spdxid +
@@ -1106,15 +1078,7 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
     option.appendChild(document.createTextNode(icon + text));
 
     // Add confidence class to option for styling
-    let confidenceClass = '';
-    if (license.percentage >= 90) {
-        confidenceClass = 'full-match';
-    } else if (license.percentage >= 30) {
-        confidenceClass = 'partial-match';
-    } else {
-        confidenceClass = 'no-match';
-    }
-    option.classList.add(confidenceClass);
+    option.classList.add(confidence.className);
 
     if (diffs[license.spdxid] === undefined) {
       option.disabled = true;

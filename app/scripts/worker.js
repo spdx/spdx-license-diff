@@ -68,10 +68,7 @@ function diff_prettyHtml(diffs, templateMatch, selection) {
       text = wrapVariableTextInDiffWithEscaping(data, currentPosition, variablePositions);
     } else {
       // Normal HTML escaping for non-highlighted text
-      text = data.replace(pattern_amp, '&amp;')
-                 .replace(pattern_lt, '&lt;')
-                 .replace(pattern_gt, '&gt;')
-                 .replace(pattern_para, '<br>');
+      text = escapeHtml(data);
     }
     
     switch (op) {
@@ -93,6 +90,22 @@ function diff_prettyHtml(diffs, templateMatch, selection) {
   }
   
   return '<div class="diff-content">' + html.join('') + '</div>';
+}
+
+/**
+ * Escape text for HTML display by replacing special characters.
+ * @param {string} text The text to escape.
+ * @return {string} The escaped text.
+ */
+function escapeHtml(text) {
+  const pattern_amp = /&/g;
+  const pattern_lt = /</g;
+  const pattern_gt = />/g;
+  const pattern_para = /\n/g;
+  return text.replace(pattern_amp, '&amp;')
+             .replace(pattern_lt, '&lt;')
+             .replace(pattern_gt, '&gt;')
+             .replace(pattern_para, '<br>');
 }
 
 /**
@@ -134,10 +147,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
   
   // If no variables in this segment, just escape and return
   if (segmentVariables.length === 0) {
-    return originalText.replace(pattern_amp, '&amp;')
-                      .replace(pattern_lt, '&lt;')
-                      .replace(pattern_gt, '&gt;')
-                      .replace(pattern_para, '<br>');
+    return escapeHtml(originalText);
   }
   
   // Sort by relative position to handle them in order
@@ -151,18 +161,12 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
     // Add text before this variable (HTML escaped)
     if (segVar.relativeStart > lastEnd) {
       const beforeText = originalText.substring(lastEnd, segVar.relativeStart);
-      result += beforeText.replace(pattern_amp, '&amp;')
-                         .replace(pattern_lt, '&lt;')
-                         .replace(pattern_gt, '&gt;')
-                         .replace(pattern_para, '<br>');
+      result += escapeHtml(beforeText);
     }
     
     // Add the variable text with highlighting span
     const variableText = originalText.substring(segVar.relativeStart, segVar.relativeEnd);
-    const escapedVariableText = variableText.replace(pattern_amp, '&amp;')
-                                           .replace(pattern_lt, '&lt;')
-                                           .replace(pattern_gt, '&gt;')
-                                           .replace(pattern_para, '<br>');
+    const escapedVariableText = escapeHtml(variableText);
     
     result += '<span class="diff-variable-highlight" data-variable-name="' + 
               escapeHtmlAttributes(segVar.variableName) + '" data-variable-index="' + segVar.variableIndex + '">' + 
@@ -176,10 +180,7 @@ function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variable
   // Add any remaining text after the last variable (HTML escaped)
   if (lastEnd < originalText.length) {
     const afterText = originalText.substring(lastEnd);
-    result += afterText.replace(pattern_amp, '&amp;')
-                      .replace(pattern_lt, '&lt;')
-                      .replace(pattern_gt, '&gt;')
-                      .replace(pattern_para, '<br>');
+    result += escapeHtml(afterText);
   }
   
   return result;
