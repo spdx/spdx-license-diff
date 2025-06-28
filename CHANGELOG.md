@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.11.0](https://github.com/spdx/spdx-license-diff/compare/v0.10.1...v0.11.0) (2025-06-28)
+
+
+### Features
+
+* **diffview:** enhance clarity and usability ([#138](https://github.com/spdx/spdx-license-diff/issues/138)) ([7106d86](https://github.com/spdx/spdx-license-diff/commit/7106d866b8617159bb84e20e7dc054a1c2de3fc3))
+
 ## [0.10.1](https://github.com/spdx/spdx-license-diff/compare/v0.10.0...v0.10.1) (2025-06-11)
 
 
