@@ -54,6 +54,30 @@ const readmePermissionsUrls = {
   fallback: readmePermissionsUrl
 };
 
+const confidenceThresholds = [
+  {
+    level: "Good",
+    threshold: 90,
+    className: "full-match",
+    icon: "✔",
+    text: "Good Match",
+  },
+  {
+    level: "Partial",
+    threshold: 30,
+    className: "partial-match",
+    icon: "⚠",
+    text: "Partial Match",
+  },
+  {
+    level: "Low",
+    threshold: 0,
+    className: "no-match",
+    icon: "✖",
+    text: "Low Match",
+  },
+];
+
 const spdxkey = {
   licenses: {
     id: "licenseId",
@@ -74,4 +98,5 @@ export {
   baseLicenseUrl,
   readmePermissionsUrl,
   readmePermissionsUrls,
+  confidenceThresholds,
 };

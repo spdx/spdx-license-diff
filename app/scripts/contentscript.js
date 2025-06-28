@@ -4,7 +4,7 @@
 /* global MutationObserver, Node */
 
 import { selectRangeCoords, getSelectionText } from "./selection-utils.js";
-import { filters, defaultoptions, readmePermissionsUrls } from "./const.js";
+import { filters, defaultoptions, readmePermissionsUrls, confidenceThresholds } from "./const.js";
 import { utils, initializeInteractionTracking, getSelectionTextWithIframes, selectRangeCoordsWithIframes, lastInteractionContext } from "./utils.js";
 import $ from "jquery";
 import _ from "underscore";
@@ -505,17 +505,21 @@ function displayDiff(html, time = processTime) {
   }
   var spdxid = spdx[0].spdxid;
   var details = spdx[0].details;
+  var percentage = spdx[0].percentage;
+  var distance = spdx[0].distance;
   if (selectedLicense) {
     for (var index in spdx) {
       if (spdx[index].spdxid === selectedLicense) {
         spdxid = selectedLicense;
         details = spdx[index].details;
+        percentage = spdx[index].percentage;
+        distance = spdx[index].distance;
         break;
       }
     }
   }
   
-  const preparedDiff = prepDiff(spdxid, time, html, details);
+  const preparedDiff = prepDiff(spdxid, time, html, details, percentage, distance);
   
   // Use callback approach to setup highlighting immediately after DOM injection
   updateBubbleText(preparedDiff, "#result_text", () => {
@@ -543,9 +547,23 @@ function displayDiff(html, time = processTime) {
         spdxid = spdx[this.options.selectedIndex].spdxid;
         html = diffs[spdxid].html;
         time = diffs[spdxid].time;
-        details = spdx[this.options.selectedIndex].details;
+        for (var index in spdx) {
+          if (spdx[index].spdxid === selectedLicense) {
+            details = spdx[index].details;
+            percentage = spdx[index].percentage;
+            distance = spdx[index].distance;
+            break;
+          }
+        }
         
-        const newPreparedDiff = prepDiff(spdxid, time, html, details);
+        const newPreparedDiff = prepDiff(
+          spdxid,
+          time,
+          html,
+          details,
+          percentage,
+          distance
+        );
         updateBubbleText(newPreparedDiff, "#result_text", () => {
           // Setup highlighting for new selection too
           if (newPreparedDiff.includes('template-variable-row') && newPreparedDiff.includes('diff-variable-highlight')) {
@@ -903,35 +921,43 @@ function setupHighlightingWithRetry() {
 
 // Function to retry highlighting setup if needed (called when permissions are granted)
 function retryHighlightingSetupIfNeeded() {
-  console.log("Checking if highlighting setup retry is needed");
-  console.log("Pending highlighting setup:", pendingHighlightingSetup);
-  console.log("Permissions confirmed:", permissionsConfirmed);
-  
-  if ((pendingHighlightingSetup === true || pendingHighlightingSetup === 'active') && permissionsConfirmed) {
-    console.log("Retrying highlighting setup after permission confirmation");
-    pendingHighlightingSetup = false; // Reset flag
-    const success = setupInteractiveHighlightingDirect();
-    console.log("Retry highlighting setup result:", success);
-  } else {
-    console.log("No highlighting setup retry needed");
+  if (pendingHighlightingSetup) {
+    console.log("Retrying highlighting setup...");
+    pendingHighlightingSetup = false;
+    setupInteractiveHighlightingDirect();
   }
 }
 
-// This wraps the diff display
-function prepDiff(spdxid, time, html, details) {
-  var hoverInfo = "tags: ";
-  for (var filter in filters) {
-    if (details[filters[filter]]) {
-      hoverInfo += filter + " ";
+function getConfidenceLevel(percentage) {
+  for (const level of confidenceThresholds) {
+    if (percentage >= level.threshold) {
+      return level;
     }
   }
-  if (details.licenseComments) {
-    hoverInfo += "&#10;comments: " + _.escape(details.licenseComments);
+  return confidenceThresholds[confidenceThresholds.length - 1]; // Default to lowest
+}
+
+// This will prepare the diff for display
+function prepDiff(spdxid, time, html, details, percentage, distance) {
+  var hoverInfo = `${details.name} is OSI approved: ${details.isOsiApproved}, FSF Libre: ${details.isFsfLibre}, Deprecated: ${details.isDeprecatedLicenseId}`;
+  
+  let confidenceIndicator = '';
+  if (percentage !== undefined) {
+      const confidence = getConfidenceLevel(percentage);
+      confidenceIndicator = `<span class="confidence-indicator ${confidence.className}" title="Match: ${percentage}%"><span class="confidence-icon">${confidence.icon}</span> ${confidence.text}</span>`;
   }
-  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>`;
+
+  var title = `<a href="https://spdx.org/licenses/${spdxid}.html" target="_blank" title="${hoverInfo}">${details.name} (${spdxid})</a>${confidenceIndicator}`;
   var timehtml =
     " processed in " + (time + processTime) / 1000 + "s<br /><hr />";
   
+  const legend = `
+    <div class="diff-legend">
+      <div class="legend-item"><span class="legend-color-sample diff-insert-legend"></span>Text in your selection but not in license</div>
+      <div class="legend-item"><span class="legend-color-sample diff-delete-legend"></span>Text in license but not in your selection</div>
+    </div>
+  `;
+
   // Find templateMatch data for this license - only show for actual template matches
   var templateTable = "";
   if (spdx) {
@@ -946,7 +972,7 @@ function prepDiff(spdxid, time, html, details) {
     }
   }
   
-  const result = title + timehtml + templateTable + html;
+  const result = title + timehtml + legend + templateTable + html;
   
   // Setup highlighting directly in the next frame after content is injected
   // This approach eliminates race conditions by being synchronous with the DOM update
@@ -1028,40 +1054,36 @@ function addSelectFormFromArray(id, arr, number = arr.length, minimum = 0) {
   var select = form.appendChild(document.createElement("select"));
   select.id = id;
   for (var i = 0; i < arr.length && i < number; i++) {
-    var value = arr[i].spdxid;
-    var percentage = arr[i].percentage;
-    var dice = arr[i].dice;
-    var text =
-      value +
-      " : " +
-      percentage +
-      "% match (" +
-      arr[i].distance +
-      " differences / dice-coefficient " +
-      dice +
-      ")";
-    if (percentage === 100) {
-      text =
-        value +
-        " : " +
-        percentage +
-        "% template match (" +
-        arr[i].distance +
-        " differences / dice-coefficient " +
-        dice +
-        ")";
-    }
-
-    if (Number(percentage) < Number(minimum)) {
-      // No match at all
+    var option = document.createElement("option");
+    var license = arr[i];
+    if (Number(license.percentage) < Number(minimum)) {
       break;
     }
-    var option = select.appendChild(document.createElement("option"));
-    option.value = value;
-    option.text = text;
-    if (diffs[value] === undefined) {
-      option.setAttribute("disabled", "disabled");
+    
+    const confidence = getConfidenceLevel(license.percentage);
+    const icon = confidence.icon + ' ';
+
+    var text =
+      license.spdxid +
+      " : " +
+      license.percentage +
+      "% match (" +
+      license.distance +
+      " differences";
+    if (license.dice) {
+      text += " / dice-coefficient " + license.dice;
     }
+    text += ")";
+    option.value = license.spdxid;
+    option.appendChild(document.createTextNode(icon + text));
+
+    // Add confidence class to option for styling
+    option.classList.add(confidence.className);
+
+    if (diffs[license.spdxid] === undefined) {
+      option.disabled = true;
+    }
+    select.appendChild(option);
   }
   createNewLicenseButton(form);
   createNewTabButton(form, selectedLicense);
@@ -1302,12 +1324,7 @@ function createNewTabButton(form, selectedLicense, targetDoc = document) {
   
   if (utils.isPopupPage()) return;
   if (targetDoc.querySelector("#newTabButton")) {
-    const existingButton = targetDoc.getElementById("newTabButton");
-    if (existingButton) {
-      existingButton.removeEventListener("click", newTab);
-      existingButton.addEventListener("click", newTab);
-      return;
-    }
+    return;
   }
   
   const button = targetDoc.createElement("button");
