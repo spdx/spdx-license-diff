@@ -18,10 +18,6 @@ function diff_prettyHtml(diffs, templateMatch, selection) {
   console.log("Selection length:", selection ? selection.length : "undefined");
   
   const html = [];
-  const pattern_amp = /&/g;
-  const pattern_lt = /</g;
-  const pattern_gt = />/g;
-  const pattern_para = /\n/g;
   
   // Build a map of variable positions if template match data is available
   let variablePositions = [];
@@ -117,11 +113,6 @@ function escapeHtml(text) {
  */
 function wrapVariableTextInDiffWithEscaping(originalText, textStartPos, variablePositions) {
   console.log(`wrapVariableTextInDiffWithEscaping called: textStartPos=${textStartPos}, originalText="${originalText.substring(0, 50).replace(/\n/g, '\\n')}..."`);
-  
-  const pattern_amp = /&/g;
-  const pattern_lt = /</g;
-  const pattern_gt = />/g;
-  const pattern_para = /\n/g;
   
   // Find variables that overlap with this text segment
   let segmentVariables = [];
