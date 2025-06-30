@@ -28,6 +28,30 @@ var permissionDialogShown = false; // Flag to prevent repeated permission prompt
 var pendingSelection = null; // Store selection for later processing when permissions are granted
 var permissionsConfirmed = false; // Track if permissions have been confirmed for this session
 var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting setup attempts
+var currentTheme = 'system'; // 'light', 'dark', or 'system'
+
+// Function to apply the theme based on currentTheme
+function applyTheme() {
+  const bubble = document.getElementById("license_bubble");
+  if (!bubble) return;
+
+  const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let useDarkTheme = false;
+
+  if (currentTheme === 'system') {
+    useDarkTheme = isSystemDark;
+  } else {
+    useDarkTheme = currentTheme === 'dark';
+  }
+
+  bubble.classList.toggle('spdx-dark-mode', useDarkTheme);
+  
+  // Update the theme selector dropdown
+  const select = document.getElementById("themeToggleSelect");
+  if (select) {
+    select.value = currentTheme;
+  }
+}
 
 // Function to apply custom diff colors from storage
 function applyCustomDiffColors() {
@@ -1394,28 +1418,46 @@ function createThemeToggleButton(form, targetDoc = document) {
   darkOption.setAttribute("value", "dark");
   darkOption.textContent = "Dark";
   
+  const systemOption = targetDoc.createElement("option");
+  systemOption.setAttribute("value", "system");
+  systemOption.textContent = "System";
+
   select.appendChild(lightOption);
   select.appendChild(darkOption);
+  select.appendChild(systemOption);
   
+  const note = targetDoc.createElement("span");
+  note.textContent = "Saved (only for Chrome-based browsers)";
+  note.style.position = 'absolute';
+  note.style.right = '130px';
+  note.style.top = '5px';
+  note.style.fontSize = 'x-small';
+  note.style.opacity = '0.7';
+
   // Append to bubble container instead of form for title bar positioning
   const bubble = targetDoc.getElementById("license_bubble");
   if (bubble) {
     bubble.appendChild(select);
+    bubble.appendChild(note);
   } else {
     form.appendChild(select);
+    form.appendChild(note);
   }
   
   // Check current theme state and set the selected option
-  const bubbleForTheme = targetDoc.getElementById("license_bubble") || document.getElementById("license_bubble");
-  const isDarkMode = bubbleForTheme && bubbleForTheme.classList.contains('spdx-dark-mode');
-  select.value = isDarkMode ? "dark" : "light";
+  select.value = currentTheme;
+  applyTheme(); // Apply initial theme
   
   select.addEventListener("change", function() {
-    const shouldBeDark = this.value === "dark";
-    const currentlyDark = bubbleForTheme && bubbleForTheme.classList.contains('spdx-dark-mode');
-    
-    if (shouldBeDark !== currentlyDark) {
-      toggleDiffTheme();
+    currentTheme = this.value;
+    applyTheme();
+    api.storage.sync.set({ theme: currentTheme });
+  });
+
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (currentTheme === 'system') {
+      applyTheme();
     }
   });
 }
@@ -1423,34 +1465,16 @@ function createThemeToggleButton(form, targetDoc = document) {
 // Toggle between light and dark mode for diff display
 function toggleDiffTheme() {
   const bubbleDOM = document.getElementById("license_bubble");
-  const select = document.getElementById("themeToggleSelect");
   
   if (!bubbleDOM) return;
   
-  const isDarkMode = bubbleDOM.classList.contains('spdx-dark-mode');
-  
-  if (isDarkMode) {
-    // Switch to light mode
-    bubbleDOM.classList.remove('spdx-dark-mode');
-    if (select) select.value = "light";
-    // Also update body class if in popup mode
-    if (document.body.hasAttribute('data-is-popup')) {
-      document.body.classList.remove('spdx-dark-mode');
-    }
-  } else {
-    // Switch to dark mode
-    bubbleDOM.classList.add('spdx-dark-mode');
-    if (select) select.value = "dark";
-    // Also update body class if in popup mode
-    if (document.body.hasAttribute('data-is-popup')) {
-      document.body.classList.add('spdx-dark-mode');
-    }
-  }
-  
-  // Apply any custom color overrides to work with the new theme
-  applyCustomDiffColors();
-  
-  console.log('Theme toggled to:', isDarkMode ? 'light' : 'dark');
+  // This function now simply toggles the class, and `applyTheme` handles the state.
+  // It's kept for compatibility or if we need a simple toggle elsewhere.
+  const isCurrentlyDark = bubbleDOM.classList.contains('spdx-dark-mode');
+  currentTheme = isCurrentlyDark ? 'light' : 'dark';
+  applyTheme();
+  api.storage.sync.set({ theme: currentTheme });
+  console.log('Theme toggled to:', currentTheme);
 }
 
 function newTab() {
@@ -1589,11 +1613,10 @@ function updateProgressBar(max, value, visible = true) {
 }
 
 function restoreOptions() {
-  api.storage.local.get(["options"], function (result) {
-    options = result.options;
-    if (options === undefined) {
-      options = defaultoptions;
-    }
+  api.storage.sync.get(defaultoptions, function (items) {
+    options = items;
+    selectedfilters = options.selectedfilters;
+    currentTheme = items.theme || 'system';
   });
 }
 
