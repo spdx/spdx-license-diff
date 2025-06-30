@@ -1426,12 +1426,22 @@ function createThemeToggleButton(form, targetDoc = document) {
   select.appendChild(darkOption);
   select.appendChild(systemOption);
   
+  const note = targetDoc.createElement("span");
+  note.textContent = "Saved (only for Chrome-based browsers)";
+  note.style.position = 'absolute';
+  note.style.right = '130px';
+  note.style.top = '5px';
+  note.style.fontSize = 'x-small';
+  note.style.opacity = '0.7';
+
   // Append to bubble container instead of form for title bar positioning
   const bubble = targetDoc.getElementById("license_bubble");
   if (bubble) {
     bubble.appendChild(select);
+    bubble.appendChild(note);
   } else {
     form.appendChild(select);
+    form.appendChild(note);
   }
   
   // Check current theme state and set the selected option
