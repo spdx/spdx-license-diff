@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.12.0](https://github.com/spdx/spdx-license-diff/compare/v0.11.0...v0.12.0) (2025-06-30)
+
+
+### Features
+
+* **theme:** add system theme detection and persistence ([#140](https://github.com/spdx/spdx-license-diff/issues/140)) ([8dafa35](https://github.com/spdx/spdx-license-diff/commit/8dafa35750b72edc9831d60b2e9e7abc234ddf70))
+
 # [0.11.0](https://github.com/spdx/spdx-license-diff/compare/v0.10.1...v0.11.0) (2025-06-28)
 
 
