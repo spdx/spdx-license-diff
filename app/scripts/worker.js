@@ -238,91 +238,99 @@ self.onmessage = function (event) {
 };
 // load files array with list of files to download
 async function getSPDXlist() {
-  for (const type of Object.keys(urls)) {
-    var url = urls[type];
-    try {
-      var result = await getJSON(url);
-      var total = result[type].length;
-      var index = 0;
-      postMessage({
-        command: "progressbarmax",
-        value: total,
-        stage: "Updating " + type,
-        id: id,
-        reset: true,
-      });
-      postMessage({
-        command: "savelicenselist",
-        value: result,
-        id: id,
-        type: type,
-      });
-      console.log(id, "Updating: ", result);
-      result[type] = result[type].map(async (item) => {
-        url = item.detailsUrl;
-        var urlRegex = new RegExp("^(?:[a-z]+:)?//", "i");
-        if (urlRegex.test(url)) {
-          url = url.replace("http:", "https:");
+  const masterList = {};
+  let totalProgress = 0;
+  let currentProgress = 0;
+
+  try {
+    // Calculate total items for progress bar
+    for (const type of Object.keys(urls)) {
+      const result = await getJSON(urls[type]);
+      totalProgress += result[type].length;
+    }
+
+    postMessage({
+      command: "progressbarmax",
+      value: totalProgress,
+      stage: "Downloading licenses",
+      id: id,
+      reset: true,
+    });
+
+    // Process each type (licenses, exceptions)
+    for (const type of Object.keys(urls)) {
+      const url = urls[type];
+      const result = await getJSON(url);
+      
+             console.log(id, "Processing " + type + ":", result);
+       
+       const dict = {};
+       const failed = [];
+      
+      // Download individual license files with fault tolerance
+      for (const item of result[type]) {
+        let detailUrl = item.detailsUrl;
+        const urlRegex = new RegExp("^(?:[a-z]+:)?//", "i");
+        if (urlRegex.test(detailUrl)) {
+          detailUrl = detailUrl.replace("http:", "https:");
         } else {
-          url = `${baseLicenseUrl}${url}`;
+          detailUrl = `${baseLicenseUrl}${detailUrl}`;
         }
-        if (url.split(".").pop().toLowerCase() === "html")
-          url = url.replace(".html", ".json");
+        if (detailUrl.split(".").pop().toLowerCase() === "html")
+          detailUrl = detailUrl.replace(".html", ".json");
+
         try {
-          return await getJSON(url);
+          const licenseData = await getJSON(detailUrl);
+          const licenseId = licenseData[spdxkey[type].id];
+          dict[licenseId] = licenseData;
+          console.log(id, "Successfully downloaded:", licenseId);
         } catch (err) {
-          console.log("Error in Update");
-          throw err;
+          const licenseId = item[spdxkey[type].id];
+          failed.push(licenseId);
+          console.warn(id, "Failed to download " + licenseId + ":", err.message);
         }
-      });
-      result[type] = result[type].map(async function (item) {
-        item = await item;
-        // var md5 = require('md5-jkmyers')
-        // hash = md5(item)
-        postMessage({
-          command: "saveitem",
-          data: item,
-          id: id,
-          type: type,
-        });
-        postMessage({
-          command: "progressbarmax",
-          value: total,
-          stage: "Updating " + type,
-          id: id,
-          reset: true,
-        });
+
+        // Update progress
+        currentProgress++;
         postMessage({
           command: "progressbarvalue",
-          value: index++,
+          value: currentProgress,
           id: id,
-        });
-        // postMessage({"command": "store", "spdxid":spdxid, "raw":data, "hash":hash, "processed":result.data, "patterns": result.patterns});
-      });
-      await Promise.all(result[type]);
-      console.log("All %s downloads completed", type);
-      postMessage({ command: "updatedone", id: id, type: type });
-    } catch (err) {
-      // catch any error that happened along the way
-      console.log("Error: " + err.message);
-      
-      // Check if this is a permission/network error
-      if (err.message.includes("Network Error") || err.message.includes("Failed to fetch") || err.message.includes("403") || err.message.includes("ERR_BLOCKED_BY_CLIENT")) {
-        postMessage({
-          command: "updateerror",
-          error: "Permission or network error accessing SPDX.org. Please check that you have granted permission to access spdx.org in your browser extension settings.",
-          id: id,
-          type: type
-        });
-      } else {
-        postMessage({
-          command: "updateerror", 
-          error: `Failed to update ${type}: ${err.message}`,
-          id: id,
-          type: type
         });
       }
+
+      // Store type data
+      masterList[type] = {
+        licenses: result[type],
+        dict: dict,
+        licenseListVersion: result.licenseListVersion,
+        releaseDate: result.releaseDate,
+        failed: failed
+      };
+
+      console.log(id, `Completed ${type}: ${Object.keys(dict).length}/${result[type].length} successful, ${failed.length} failed`);
     }
+
+    // Send complete data atomically
+    postMessage({
+      command: "updatelistcomplete",
+      data: masterList,
+      id: id
+    });
+
+  } catch (err) {
+    console.error("Critical error during update:", err.message);
+    
+    let errorMessage = `Failed to update license list: ${err.message}`;
+    if (err.message.includes("Network Error") || err.message.includes("Failed to fetch") || err.message.includes("403") || err.message.includes("ERR_BLOCKED_BY_CLIENT")) {
+        errorMessage = "Permission or network error accessing SPDX.org. Please check that you have granted permission to access spdx.org in your browser extension settings.";
+    }
+    
+    postMessage({
+      command: "updatefailed",
+      message: errorMessage,
+      id: id
+    });
   }
 }
 

@@ -657,118 +657,7 @@ function workeronmessage(event) {
       //     }
       // });
       break;
-    case "savelicenselist":
-      type = event.data.type;
-      var externallicenselist = event.data.value;
-      var externalversion = externallicenselist.licenseListVersion;
-      var externalcount = externallicenselist[type]
-        ? Object.keys(externallicenselist[type]).length
-        : 0;
-      console.log("Trying to save list", externallicenselist);
-      getStorage("list").then(function (result) {
-        if (result.list && result.list.licenseListVersion) {
-          var storedlist = result.list;
-          var version = storedlist.licenseListVersion;
-          var count = storedlist[type]
-            ? Object.keys(storedlist[type]).length
-            : 0;
-          console.log(
-            "Existing License list version %s with %s %s",
-            version,
-            count,
-            type
-          );
-          if (version < externalversion) {
-            storedlist[type] = externallicenselist[type];
-            console.log(
-              "Newer license list version %s found with %s %s",
-              externalversion,
-              externalcount,
-              type
-            );
-            storeList(storedlist);
-            if (list[type + "dict"]) {
-              storedlist[type + "dict"] = list[type + "dict"];
-            }
-            list[type] = storedlist[type];
-          } else if (count < externalcount) {
-            storedlist[type] = externallicenselist[type];
-            console.log(
-              "New list version %s found with %s %s more than old list with %s %s",
-              externalversion,
-              externalcount,
-              type,
-              count,
-              type
-            );
-            storeList(storedlist);
-            if (list[type + "dict"]) {
-              storedlist[type + "dict"] = list[type + "dict"];
-            }
-            list[type] = storedlist[type];
-          } else {
-            // dowork({ 'command': 'populatelicenselist', 'data': list })
-            console.log(
-              "No new update found; same version %s and with %s %s",
-              externalversion,
-              externalcount,
-              type
-            );
-            if (list[type + "dict"]) {
-              storedlist[type + "dict"] = list[type + "dict"];
-            }
-            list[type] = storedlist[type];
-          }
-        } else {
-          console.log("No existing license list found; storing");
-          storeList(externallicenselist);
-          list = externallicenselist;
-        }
-        checkUpdateDone();
-      });
 
-      break;
-    case "saveitem":
-      if (updating) {
-        item = event.data;
-        type = event.data.type;
-        spdxid = item.data[spdxkey[type].id];
-        if (list[type + "dict"] === undefined) {
-          list[type + "dict"] = {};
-        }
-        list[type + "dict"][spdxid] = item.data;
-        checkUpdateDone();
-        console.log("Saving %s: %s", type, spdxid, item.data);
-        getStorage(spdxid).then(function (result) {
-          if (
-            result[spdxid] &&
-            item.data &&
-            _.isEqual(result[spdxid], item.data)
-          ) {
-            // var license = result[spdxid]
-            console.log("Ignoring existing %s %s", type, spdxid);
-          } else {
-            console.log("Saving new %s %s", type, spdxid);
-            var obj = {};
-            obj[spdxid] = item.data;
-            api.storage.local.set(obj, function () {
-              console.log("Storing", obj);
-            });
-          }
-        });
-      } else {
-        console.log(
-          "Not supposed to update but received saveitem request; ignoring",
-          event.data
-        );
-      }
-      break;
-    case "updatedone":
-      workerdone(event.data.id);
-      type = event.data.type;
-      console.log("Received worker update completion for %s", type);
-      checkUpdateDone();
-      break;
     case "updateerror": {
       workerdone(event.data.id);
       const updateType = event.data.type;
@@ -936,6 +825,7 @@ function workeronmessage(event) {
 
       updating = false;
       sendMessageToOptionsPage("update_status", `License list updated to v.${list.licenseListVersion}`, "success");
+      launchPendingCompares();
       break;
     }
     case "updatefailed": {
@@ -1421,38 +1311,7 @@ const setStorage = function (obj) {
   });
 };
 
-const checkUpdateDone = function () {
-  const types = Object.keys(urls);
-  try {
-    if (
-      types.every((type) => {
-        return (
-          list[type] &&
-          list[type + "dict"] &&
-          list[type].length === Object.keys(list[type + "dict"]).length
-        );
-      })
-    ) {
-      console.log("Update completed");
-      updating = false;
-      // Notify options page of successful update
-      sendMessageToOptionsPage("update_status", "License list updated successfully!", "success");
-      launchPendingCompares();
-    } else {
-      types.map((type) => {
-        console.log(
-          "Update in progress for %s %s/%s",
-          type,
-          list[type + "dict"] ? Object.keys(list[type + "dict"]).length : 0,
-          list[type] ? list[type].length : 0
-        );
-      });
-    }
-  } catch (err) {
-    console.log("Error in checkUpdateDone");
-    throw err;
-  }
-};
+
 
 chrome.runtime.onInstalled.addListener(function (details) {
   if (details.reason === "install") {
