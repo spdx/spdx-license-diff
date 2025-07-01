@@ -590,8 +590,6 @@ function workeronmessage(event) {
   ); // Message received so see if queue can be cleared.
   var result;
   var threadid;
-  var type;
-  var item;
   switch (event.data.command) {
     case "progressbarmax":
       var tabId =
