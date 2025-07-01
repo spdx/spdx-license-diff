@@ -901,6 +901,58 @@ function workeronmessage(event) {
         diffcount[tabId] = 0;
       }
       break;
+    case "updatelistcomplete": {
+      workerdone(event.data.id);
+      console.log("Received worker update completion. Processing new license list.");
+
+      const newMasterList = event.data.data;
+      const newList = {
+        lastupdate: Date.now(),
+        failedDownloads: [],
+      };
+
+      // Extract downloaded data and build final license list structure (in single forEach loop)
+      ['licenses', 'exceptions'].forEach(type => {
+        if (newMasterList[type]) {
+          const typeData = newMasterList[type];
+          newList[type] = typeData.licenses;
+          newList[type + 'dict'] = typeData.dict;
+
+          if (!newList.licenseListVersion) {
+            newList.licenseListVersion = typeData.licenseListVersion;
+            newList.releaseDate = typeData.releaseDate;
+          }
+
+          if (typeData.failed && typeData.failed.length > 0) {
+            newList.failedDownloads.push(...typeData.failed);
+          }
+        }
+      });
+
+      list = newList;
+      storeList(list);
+
+      console.log(`Update complete. Version: ${list.licenseListVersion}, Licenses: ${Object.keys(list.licensesdict || {}).length}, Exceptions: ${Object.keys(list.exceptionsdict || {}).length}, Failed: ${list.failedDownloads.length}`);
+
+      updating = false;
+      sendMessageToOptionsPage("update_status", `License list updated to v.${list.licenseListVersion}`, "success");
+      break;
+    }
+    case "updatefailed": {
+      workerdone(event.data.id);
+      const errorMessage = event.data.message;
+      console.error("Update failed:", errorMessage);
+      
+      // Reset updating flag
+      updating = false;
+      
+      // Send error message to options page
+      sendMessageToOptionsPage("update_permission_error", `Failed to update license list: ${errorMessage}`);
+      
+      // Optionally show a more general error to the user
+      showPermissionError();
+      break;
+    }
     default:
   }
 }

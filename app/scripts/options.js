@@ -223,6 +223,21 @@ function loadList() {
         list.licenses.length +
         " licenses";
       status.textContent = new Date(lastupdate).toLocaleString();
+
+      // Display failed downloads if any
+      const downloadStatusDiv = document.getElementById("downloadStatus");
+      if (list.failedDownloads && list.failedDownloads.length > 0) {
+        downloadStatusDiv.innerHTML = `
+          <p class="status-title"><strong>Warning:</strong> The following licenses could not be downloaded during the last update:</p>
+          <ul class="failed-list">
+            ${list.failedDownloads.map(id => `<li>${id}</li>`).join('')}
+          </ul>
+        `;
+        downloadStatusDiv.className = 'status-container status-warning';
+      } else {
+        downloadStatusDiv.innerHTML = '<p class="status-title status-success">All licenses were downloaded successfully.</p>';
+        downloadStatusDiv.className = 'status-container status-success';
+      }
     } else {
       licenseversion.textContent = "None";
       status.textContent = "Never";
