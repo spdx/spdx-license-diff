@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/spdx/spdx-license-diff/compare/v0.12.0...v0.12.1) (2025-07-02)
+
+
+### Bug Fixes
+
+* implement fault-tolerant license downloads ([#141](https://github.com/spdx/spdx-license-diff/issues/141)) ([5f634af](https://github.com/spdx/spdx-license-diff/commit/5f634afbdc4a9c2bf71db48dc78d89e3dfe44588)), closes [#52](https://github.com/spdx/spdx-license-diff/issues/52)
+
 # [0.12.0](https://github.com/spdx/spdx-license-diff/compare/v0.11.0...v0.12.0) (2025-06-30)
 
 
