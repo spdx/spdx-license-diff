@@ -211,23 +211,6 @@ function loadList() {
     var licenseversion = document.getElementById("licenseversion");
     var status = document.getElementById("updatestatus");
 
-    // FAKE DATA FOR TESTING - show fake data to test the UI
-    // result.list = {
-    //   licenseListVersion: "3.24.0-fake",
-    //   releaseDate: "2024-01-15",
-    //   lastupdate: Date.now(),
-    //   licenses: [
-    //     { licenseId: "MIT", name: "MIT License" },
-    //     { licenseId: "Apache-2.0", name: "Apache License 2.0" },
-    //     { licenseId: "GPL-3.0-only", name: "GNU General Public License v3.0 only" },
-    //     { licenseId: "BSD-3-Clause", name: "BSD 3-Clause License" },
-    //     { licenseId: "ISC", name: "ISC License" },
-    //     { licenseId: "CC-BY-4.0", name: "Creative Commons Attribution 4.0 International" },
-    //     { licenseId: "Mozilla-2.0", name: "Mozilla Public License 2.0" }
-    //   ],
-    //   failedDownloads: ["CC-BY-1.0", "WTFPL", "vxWorks"] // Show some failed downloads too
-    // };
-
     if (result.list && result.list.licenseListVersion) {
       var list = result.list;
       var lastupdate = list.lastupdate;
