@@ -210,6 +210,7 @@ function loadList() {
   api.storage.local.get(["list"], function (result) {
     var licenseversion = document.getElementById("licenseversion");
     var status = document.getElementById("updatestatus");
+
     if (result.list && result.list.licenseListVersion) {
       var list = result.list;
       var lastupdate = list.lastupdate;
@@ -223,6 +224,21 @@ function loadList() {
         list.licenses.length +
         " licenses";
       status.textContent = new Date(lastupdate).toLocaleString();
+
+      // Display failed downloads if any
+      const downloadStatusDiv = document.getElementById("downloadStatus");
+      if (list.failedDownloads && list.failedDownloads.length > 0) {
+        downloadStatusDiv.innerHTML = `
+          <p class="status-title"><strong>Warning:</strong> The following licenses could not be downloaded during the last update:</p>
+          <ul class="failed-list">
+            ${list.failedDownloads.map(id => `<li>${id}</li>`).join('')}
+          </ul>
+        `;
+        downloadStatusDiv.className = 'status-container status-warning';
+      } else {
+        downloadStatusDiv.innerHTML = '<p class="status-title status-success">All licenses were downloaded successfully.</p>';
+        downloadStatusDiv.className = 'status-container status-success';
+      }
     } else {
       licenseversion.textContent = "None";
       status.textContent = "Never";
@@ -244,12 +260,12 @@ async function updateList() {
   }
   
   showUpdateStatus("Updating license list...", "info");
-  api.storage.local.remove(["list"], function (result) {
-    api.runtime.sendMessage({
-      command: "updatelicenselist",
-      url: api.runtime.getURL(""),
-      remote: true,
-    });
+  
+  // Don't clear storage - let the background script handle it atomically
+  api.runtime.sendMessage({
+    command: "updatelicenselist",
+    url: api.runtime.getURL(""),
+    remote: true,
   });
 }
 function checkStorage() {
@@ -292,6 +308,12 @@ api.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   switch (request.command) {
     case "update_status":
       showUpdateStatus(request.message, request.type);
+      // Refresh the display when update succeeds
+      if (request.type === "success") {
+        setTimeout(() => {
+          loadList();
+        }, 500); // Small delay to ensure storage is committed
+      }
       break;
     case "update_permission_error":
       showUpdatePermissionError(request.message);
@@ -300,11 +322,11 @@ api.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 function showUpdateStatus(message, type = 'info') {
-  var status = document.getElementById("updatestatus");
+  var status = document.getElementById("tempUpdateStatus");
   if (!status) {
-    // Create status element if it doesn't exist
+    // Create temporary status element if it doesn't exist
     status = document.createElement("div");
-    status.id = "updatestatus";
+    status.id = "tempUpdateStatus";
     status.style.marginTop = "10px";
     status.style.padding = "10px";
     status.style.borderRadius = "3px";
@@ -313,6 +335,7 @@ function showUpdateStatus(message, type = 'info') {
   
   status.textContent = message;
   status.className = type; // 'info', 'success', 'error'
+  status.style.display = "block";
   
   if (type === 'success') {
     status.style.backgroundColor = '#d4edda';
