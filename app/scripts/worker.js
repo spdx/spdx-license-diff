@@ -670,11 +670,23 @@ function generateDiff(selection, spdxid, license, record, tabId, templateMatch) 
 function cleanText(str, removeNewLines = true) {
   // this will replace unicode spaces, collapse spaces and then replace newlines and trim
   if (removeNewLines) {
-    return replaceSmartQuotes(collapseSpaces(removeLineNumbers(str)))
+    return removeZeroWidthChars(
+      normalizeDashes(
+        normalizeCommas(
+          replaceSmartQuotes(collapseSpaces(removeLineNumbers(str)))
+        )
+      )
+    )
       .replace(/(\r\n|\n|\r)/gm, " ")
       .trim();
   } else {
-    return replaceSmartQuotes(collapseSpaces(removeLineNumbers(str))).trim();
+    return removeZeroWidthChars(
+      normalizeDashes(
+        normalizeCommas(
+          replaceSmartQuotes(collapseSpaces(removeLineNumbers(str)))
+        )
+      )
+    ).trim();
   }
 }
 
@@ -683,7 +695,27 @@ function collapseSpaces(str) {
 }
 
 function replaceSmartQuotes(str) {
-  return str.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+  return str
+    .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035\uFF07]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036\u301E\uFF02]/g, '"');
+}
+
+function normalizeCommas(str) {
+  return str.replace(/[\uFF0C\uFE10\uFE50]/g, ",");
+}
+
+function normalizeDashes(str) {
+  return str.replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFF0D]/g, "-");
+}
+
+function removeZeroWidthChars(str) {
+  return str
+    .replace(/\u200B/g, "")
+    .replace(/\u200C/g, "")
+    .replace(/\u200D/g, "")
+    .replace(/\u2060/g, "")
+    .replace(/\uFEFF/g, "")
+    .replace(/\u00AD/g, "");
 }
 
 function removeLineNumbers(str, percentage = 0.8) {
@@ -779,4 +811,15 @@ const getJSON = async function (url) {
   return get(url).then(JSON.parse);
 };
 
-export { cleanText, replaceSmartQuotes };
+export {
+  cleanText,
+  replaceSmartQuotes,
+  normalizeCommas,
+  normalizeDashes,
+  removeZeroWidthChars,
+  escapeHtml,
+  escapeHtmlAttributes,
+  escapeRegex,
+  processTemplate,
+  removeLineNumbers
+};
