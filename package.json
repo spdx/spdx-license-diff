@@ -59,7 +59,7 @@
     "fast-dice-coefficient": "latest",
     "fastest-levenshtein": "latest",
     "jquery": "latest",
-    "underscore": "latest"
+    "underscore": "^1.13.8"
   },
   "release": {
     "branches": [
@@ -162,5 +162,10 @@
         }
       ]
     ]
+  },
+  "resolutions": {
+    "lodash": "^4.17.23",
+    "lodash-es": "^4.17.23",
+    "jws": "^3.2.3"
   }
 }
