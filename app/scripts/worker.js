@@ -810,3 +810,5 @@ const get = function (url) {
 const getJSON = async function (url) {
   return get(url).then(JSON.parse);
 };
+
+export { cleanText, replaceSmartQuotes };
