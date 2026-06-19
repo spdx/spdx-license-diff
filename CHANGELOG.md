@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.13.0](https://github.com/spdx/spdx-license-diff/compare/v0.12.1...v0.13.0) (2026-06-19)
+
+
+### Bug Fixes
+
+* **background:** clean up closed tab states ([#151](https://github.com/spdx/spdx-license-diff/issues/151)) ([03bca43](https://github.com/spdx/spdx-license-diff/commit/03bca43aa0a861215c4f5143862e715b43c79213))
+* **background:** optimize loadList and progress ([#152](https://github.com/spdx/spdx-license-diff/issues/152)) ([b7f2621](https://github.com/spdx/spdx-license-diff/commit/b7f262103d644797417c9b7aec534890425fe4b6))
+* **content:** move system theme listener globally ([#150](https://github.com/spdx/spdx-license-diff/issues/150)) ([f333405](https://github.com/spdx/spdx-license-diff/commit/f33340577f45181f9765407250272dcc1cf4acd0))
+* **content:** resolve click-outside listener leak ([#149](https://github.com/spdx/spdx-license-diff/issues/149)) ([daa2e05](https://github.com/spdx/spdx-license-diff/commit/daa2e052d00ece484c495319e711bcd1589811b5))
+
+
+### Features
+
+* **content:** add progress bar eta display ([#154](https://github.com/spdx/spdx-license-diff/issues/154)) ([45991aa](https://github.com/spdx/spdx-license-diff/commit/45991aad4367c2421711bea085df404762dde68f))
+
 ## [0.12.1](https://github.com/spdx/spdx-license-diff/compare/v0.12.0...v0.12.1) (2025-07-02)
 
 
