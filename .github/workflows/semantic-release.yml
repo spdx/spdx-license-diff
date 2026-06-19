@@ -13,6 +13,11 @@ concurrency:
   group: semantic-release-master
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
