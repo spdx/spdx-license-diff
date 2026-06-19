@@ -6,6 +6,8 @@ on:
     - cron: '0 0 1 * *'
   workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
 
+permissions: {}
+
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
