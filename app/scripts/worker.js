@@ -811,4 +811,15 @@ const getJSON = async function (url) {
   return get(url).then(JSON.parse);
 };
 
-export { cleanText, replaceSmartQuotes, normalizeCommas, normalizeDashes, removeZeroWidthChars };
+export {
+  cleanText,
+  replaceSmartQuotes,
+  normalizeCommas,
+  normalizeDashes,
+  removeZeroWidthChars,
+  escapeHtml,
+  escapeHtmlAttributes,
+  escapeRegex,
+  processTemplate,
+  removeLineNumbers
+};
