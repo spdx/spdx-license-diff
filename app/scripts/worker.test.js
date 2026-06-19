@@ -1,0 +1,21 @@
+// SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
+// SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
+
+global.self = global;
+
+const {
+  cleanText,
+  replaceSmartQuotes
+} = require('./worker.js');
+
+describe('worker normalization helper functions', () => {
+  test('replaceSmartQuotes should normalize smart single and double quotes', () => {
+    expect(replaceSmartQuotes('“hello” and ‘world’')).toBe('"hello" and \'world\'');
+  });
+
+  test('cleanText should perform basic quotes and spaces normalization', () => {
+    const input = 'This is a test: “hello”  world';
+    const expected = 'This is a test: "hello" world';
+    expect(cleanText(input)).toBe(expected);
+  });
+});
