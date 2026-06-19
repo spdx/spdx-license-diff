@@ -1,7 +1,7 @@
 {
   "name": "spdx-license-diff",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Diff selected text against SPDX licenses",
   "license": "GPL-3.0-or-later",
   "scripts": {
@@ -12,7 +12,8 @@
     "lint": "eslint app",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "npx generate-attribution --production",
-    "test": "yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
+    "test": "jest && yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
+    "test:unit": "jest",
     "production": "([ ! -z $GITHUB_WORKFLOW ] || (yarn lint && yarn install)) && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
     "buildall": "yarn clean && yarn attribution && yarn production"
   },
@@ -45,6 +46,7 @@
     "eslint-plugin-promise": "^7.3.0",
     "github-release-notes": "^0.17.3",
     "globals": "^17.6.0",
+    "jest": "^30.4.2",
     "oss-attribution-generator": "^1.7.1",
     "prettier": "^3.8.4",
     "semantic-release": "^25.0.5",
@@ -169,5 +171,11 @@
     "jws": "^3.2.3",
     "launch-editor": "^2.14.1",
     "shell-quote": "^1.8.4"
+  },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/"
+    ]
   }
 }

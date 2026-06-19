@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.1](https://github.com/spdx/spdx-license-diff/compare/v0.13.0...v0.13.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* **background:** resolve incomplete URL substring sanitization warning ([#171](https://github.com/spdx/spdx-license-diff/issues/171)) ([8bda848](https://github.com/spdx/spdx-license-diff/commit/8bda8482bebf070a5c05faa0ccb25499f06f71b7))
+* **worker:** normalize punctuation chars ([#167](https://github.com/spdx/spdx-license-diff/issues/167)) ([d2bc86d](https://github.com/spdx/spdx-license-diff/commit/d2bc86db359f3916a97abbaf99f8b9b1016061a5))
+* **worker:** resolve CodeQL format string warnings in console logs ([#168](https://github.com/spdx/spdx-license-diff/issues/168)) ([efbcb12](https://github.com/spdx/spdx-license-diff/commit/efbcb1228178058e5f9a0fa78419c92ceae8fca8))
+
 # [0.13.0](https://github.com/spdx/spdx-license-diff/compare/v0.12.1...v0.13.0) (2026-06-19)
 
 

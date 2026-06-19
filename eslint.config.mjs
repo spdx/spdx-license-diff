@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Alan D. Tse <alandtse@gmail.com>
 // SPDX-License-Identifier: CC0-1.0
 import js from "@eslint/js";
+import globals from "globals";
 
 export default [
     js.configs.recommended,
@@ -66,5 +67,14 @@ export default [
             "no-console": "off",
             "no-empty": ["error", { "allowEmptyCatch": true }]
         },
+    },
+    {
+        files: ["**/*.test.js", "**/*.spec.js"],
+        languageOptions: {
+            globals: {
+                ...globals.jest,
+                ...globals.node
+            }
+        }
     }
 ];

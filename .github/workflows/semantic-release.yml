@@ -13,6 +13,11 @@ concurrency:
   group: semantic-release-master
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,6 +50,9 @@ jobs:
         run: |
           git config --global user.name "semantic-release"
           git config --global user.email "semantic-release@GitHub"
+      - name: Run Unit Tests
+        run: |
+          yarn test:unit
       - name: Lint
         run: |
           yarn lint
