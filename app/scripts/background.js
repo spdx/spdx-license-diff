@@ -1371,7 +1371,7 @@ if (api.permissions && api.permissions.onAdded) {
     console.log("Background: Permissions added:", permissions);
     
     // Check if SPDX.org permissions were added
-    if (permissions.origins && permissions.origins.some(origin => origin.includes('spdx.org'))) {
+    if (permissions.origins && permissions.origins.some(origin => /(?:^|[^a-z0-9.-])spdx\.org(?::|\/|$)/i.test(origin))) {
       console.log("Background: SPDX.org permissions granted, notifying content scripts");
       
       // Notify all content scripts that permissions have been granted
