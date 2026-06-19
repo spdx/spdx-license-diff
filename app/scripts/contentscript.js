@@ -39,6 +39,11 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   }
 });
 
+var progressStartTime = null;
+var progressLastTime = null;
+var progressLastVal = 0;
+var progressRateEma = null;
+
 // Function to apply the theme based on currentTheme
 function applyTheme() {
   const bubble = document.getElementById("license_bubble");
@@ -1240,11 +1245,23 @@ function createBubble() {
     targetDocument.body.appendChild(bubbleDOM);
   }
   
+  var progressContainer = targetDocument.createElement("div");
+  progressContainer.setAttribute("id", "progress_container");
+  progressContainer.setAttribute("class", "spdx-progress-container");
+  
   var progressbar = targetDocument.createElement("progress");
   progressbar.setAttribute("id", "progress_bubble");
   progressbar.setAttribute("max", 100);
   progressbar.value = 0;
-  bubbleDOM.appendChild(progressbar);
+  progressContainer.appendChild(progressbar);
+  
+  var progressText = targetDocument.createElement("div");
+  progressText.setAttribute("id", "progress_text");
+  progressText.setAttribute("class", "spdx-progress-text");
+  progressContainer.appendChild(progressText);
+  
+  bubbleDOM.appendChild(progressContainer);
+  
   var bubbleDOMText = targetDocument.createElement("div");
   bubbleDOMText.setAttribute("id", "bubble_text");
   bubbleDOM.appendChild(bubbleDOMText);
@@ -1631,17 +1648,71 @@ function updateBubbleText(text, target = "#bubble_text", onComplete = null) {
 // max will increase if > 0; value will be set if not null and >=0
 // else incremented by absolute value for negative numbers
 function updateProgressBar(max, value, visible = true) {
+  var progressContainer = $("#progress_container")[0];
   var progressbar = $("#progress_bubble")[0];
-  if (progressbar) {
-    progressbar.style.visibility = visible ? "visible" : "hidden";
+  if (progressbar && progressContainer) {
+    progressContainer.style.display = visible ? "block" : "none";
     if (max > 0) {
       progressbar.setAttribute("max", max);
+      progressStartTime = Date.now();
+      progressLastTime = progressStartTime;
+      progressLastVal = 0;
+      progressRateEma = null;
     }
     if (value !== null) {
       if (value >= 0) {
         progressbar.value = value;
       } else if (progressbar.value < progressbar.getAttribute("max")) {
         progressbar.value = progressbar.value + Math.abs(value);
+      }
+    }
+    
+    // Update ETA and human readable progress text overlay
+    const progressTextNode = $("#progress_text")[0];
+    if (progressTextNode) {
+      const maxVal = parseInt(progressbar.getAttribute("max"), 10) || 100;
+      const currentVal = progressbar.value;
+      
+      if (visible && currentVal > 0 && currentVal < maxVal && progressStartTime) {
+        const now = Date.now();
+        // Guard against division by zero (minimum elapsed time is 1ms)
+        const totalElapsed = Math.max((now - progressStartTime) / 1000, 0.001);
+        const currentProcessed = currentVal;
+        const overallRate = currentProcessed / totalElapsed;
+        
+        // Exponentially Weighted Moving Average rate to smooth out progress bar fluctuation (alpha = 0.25)
+        if (progressRateEma === null) {
+          progressRateEma = overallRate;
+        } else {
+          const alpha = 0.25;
+          const deltaT = (now - progressLastTime) / 1000;
+          if (deltaT > 0.05) { // Throttle calculation to avoid noise on quick calls
+            const deltaVal = currentVal - progressLastVal;
+            const instantRate = deltaVal / deltaT;
+            progressRateEma = alpha * instantRate + (1 - alpha) * progressRateEma;
+            progressLastTime = now;
+            progressLastVal = currentVal;
+          }
+        }
+        
+        const remaining = maxVal - currentVal;
+        // Use EMA rate only if it is a valid finite number and > 0.01; fallback to overallRate
+        const rate = (progressRateEma && isFinite(progressRateEma) && progressRateEma > 0.01) ? progressRateEma : (isFinite(overallRate) ? overallRate : 0);
+        
+        const elapsedText = totalElapsed.toFixed(1) + "s";
+        let etaText = "Calculating...";
+        if (rate > 0) {
+          const etaSeconds = remaining / rate;
+          if (isFinite(etaSeconds)) {
+            etaText = etaSeconds.toFixed(1) + "s";
+          }
+        }
+        
+        const timingInfo = rate > 0 ? "ETA: " + etaText : etaText;
+        progressTextNode.textContent = currentVal + "/" + maxVal + " (" + elapsedText + " • " + timingInfo + ")";
+        progressTextNode.style.display = "flex";
+      } else if (!visible || currentVal >= maxVal) {
+        progressTextNode.style.display = "none";
       }
     }
   }

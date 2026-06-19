@@ -342,19 +342,9 @@ function compareitem(
   type,
   maxLengthDifference = 1000,
   diceCoefficientOption = 0.9,
-  total = 0,
+  _total = 0,
   background = false
 ) {
-  if (!background) {
-    postMessage({
-      command: "progressbarmax",
-      value: total,
-      stage: "Comparing items",
-      id: id,
-      reset: true,
-      tabId: tabId,
-    });
-  }
   var result = {};
   var count2 = selection.length;
   // console.log(id, "Processing selection of " + count2 + " chars.");
@@ -633,14 +623,6 @@ function compareitem(
 }
 
 function sortlicenses(licenses, tabId) {
-  postMessage({
-    command: "progressbarmax",
-    value: Object.keys(licenses).length,
-    stage: "Sorting licenses",
-    id: id,
-    reset: true,
-    tabId: tabId,
-  });
   console.log(
     tabId,
     id,
@@ -657,7 +639,6 @@ function sortlicenses(licenses, tabId) {
       dice: licenses[license].dice,
       templateMatch: licenses[license].templateMatch,
     });
-    postMessage({ command: "next", spdxid: license, id: id, tabId: tabId });
   }
   sortable.sort(function (a, b) {
     return b.percentage - a.percentage;

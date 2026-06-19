@@ -984,6 +984,12 @@ function compareSelection(selection, tabId = activeTabId) {
     }
   }
   total = Object.keys(unsorted[tabId]).length;
+  api.tabs.sendMessage(tabId, {
+    command: "progressbarmax",
+    value: total,
+    stage: "Comparing licenses",
+    reset: true,
+  });
   for (const item in unsorted[tabId]) {
     const type = unsorted[tabId][item].type;
     const itemdict = list[type + "dict"][item];
@@ -997,12 +1003,6 @@ function compareSelection(selection, tabId = activeTabId) {
       total: total,
       tabId: tabId,
       type: type,
-    });
-    api.tabs.sendMessage(tabId, {
-      command: "progressbarmax",
-      value: total,
-      stage: "Comparing licenses",
-      reset: true,
     });
   }
 }
