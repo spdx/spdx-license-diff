@@ -29,6 +29,10 @@ var pendingSelection = null; // Store selection for later processing when permis
 var permissionsConfirmed = false; // Track if permissions have been confirmed for this session
 var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting setup attempts
 var currentTheme = 'system'; // 'light', 'dark', or 'system'
+var progressStartTime = null;
+var progressLastTime = null;
+var progressLastVal = 0;
+var progressRateEma = null;
 
 // Function to apply the theme based on currentTheme
 function applyTheme() {
@@ -1225,6 +1229,16 @@ function createBubble() {
   progressbar.setAttribute("max", 100);
   progressbar.value = 0;
   bubbleDOM.appendChild(progressbar);
+  
+  var progressText = targetDocument.createElement("div");
+  progressText.setAttribute("id", "progress_text");
+  progressText.style.fontSize = "x-small";
+  progressText.style.textAlign = "center";
+  progressText.style.margin = "2px 0 6px 0";
+  progressText.style.color = "#666";
+  progressText.style.display = "none";
+  bubbleDOM.appendChild(progressText);
+  
   var bubbleDOMText = targetDocument.createElement("div");
   bubbleDOMText.setAttribute("id", "bubble_text");
   bubbleDOM.appendChild(bubbleDOMText);
@@ -1601,12 +1615,67 @@ function updateProgressBar(max, value, visible = true) {
     progressbar.style.visibility = visible ? "visible" : "hidden";
     if (max > 0) {
       progressbar.setAttribute("max", max);
+      progressStartTime = Date.now();
+      progressLastTime = progressStartTime;
+      progressLastVal = 0;
+      progressRateEma = null;
     }
     if (value !== null) {
       if (value >= 0) {
         progressbar.value = value;
       } else if (progressbar.value < progressbar.getAttribute("max")) {
         progressbar.value = progressbar.value + Math.abs(value);
+      }
+    }
+    
+    // Update ETA and human readable progress text
+    const progressTextNode = $("#progress_text")[0];
+    if (progressTextNode) {
+      const maxVal = parseInt(progressbar.getAttribute("max"), 10) || 100;
+      const currentVal = progressbar.value;
+      
+      if (visible && currentVal > 0 && currentVal < maxVal && progressStartTime) {
+        const now = Date.now();
+        const totalElapsed = (now - progressStartTime) / 1000; // seconds
+        const currentProcessed = currentVal;
+        const overallRate = currentProcessed / totalElapsed;
+        
+        // Exponentially Weighted Moving Average rate to smooth out progress bar fluctuation (alpha = 0.25)
+        if (progressRateEma === null) {
+          progressRateEma = overallRate;
+        } else {
+          const alpha = 0.25;
+          const deltaT = (now - progressLastTime) / 1000;
+          if (deltaT > 0.05) { // Throttle calculation to avoid noise on quick calls
+            const deltaVal = currentVal - progressLastVal;
+            const instantRate = deltaVal / deltaT;
+            progressRateEma = alpha * instantRate + (1 - alpha) * progressRateEma;
+            progressLastTime = now;
+            progressLastVal = currentVal;
+          }
+        }
+        
+        const remaining = maxVal - currentVal;
+        const rate = (progressRateEma && progressRateEma > 0.01) ? progressRateEma : overallRate;
+        
+        if (rate > 0) {
+          const etaSeconds = Math.ceil(remaining / rate);
+          let etaText = "";
+          if (etaSeconds < 60) {
+            etaText = etaSeconds + "s remaining";
+          } else {
+            const mins = Math.floor(etaSeconds / 60);
+            const secs = etaSeconds % 60;
+            etaText = mins + "m " + secs + "s remaining";
+          }
+          progressTextNode.textContent = "Comparing: " + currentVal + "/" + maxVal + " (ETA: " + etaText + ")";
+          progressTextNode.style.display = "block";
+        } else {
+          progressTextNode.textContent = "Comparing: " + currentVal + "/" + maxVal;
+          progressTextNode.style.display = "block";
+        }
+      } else if (!visible || currentVal >= maxVal) {
+        progressTextNode.style.display = "none";
       }
     }
   }
