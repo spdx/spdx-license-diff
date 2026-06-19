@@ -30,6 +30,13 @@ var permissionsConfirmed = false; // Track if permissions have been confirmed fo
 var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting setup attempts
 var currentTheme = 'system'; // 'light', 'dark', or 'system'
 
+// Listen for system theme changes globally once
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (currentTheme === 'system') {
+    applyTheme();
+  }
+});
+
 // Function to apply the theme based on currentTheme
 function applyTheme() {
   const bubble = document.getElementById("license_bubble");
@@ -1452,13 +1459,6 @@ function createThemeToggleButton(form, targetDoc = document) {
     currentTheme = this.value;
     applyTheme();
     api.storage.sync.set({ theme: currentTheme });
-  });
-
-  // Listen for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (currentTheme === 'system') {
-      applyTheme();
-    }
   });
 }
 
