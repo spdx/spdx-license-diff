@@ -1,0 +1,27 @@
+name: Keep-Alive Refresh Token Heartbeat
+
+on:
+  schedule:
+    # Run at 00:00 on the 1st of every month to reset the 180-day Google inactivity timer
+    - cron: '0 0 1 * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh Google OAuth2 Token
+        run: |
+          RESPONSE=$(curl -s -X POST https://oauth2.googleapis.com/token \
+            -d client_id="${{ secrets.CHROME_CLIENT_ID }}" \
+            -d client_secret="${{ secrets.CHROME_CLIENT_SECRET }}" \
+            -d refresh_token="${{ secrets.CHROME_REFRESH_TOKEN }}" \
+            -d grant_type=refresh_token)
+          
+          # Check if the response contains an access token to verify success
+          if echo "$RESPONSE" | grep -q "access_token"; then
+            echo "Successfully refreshed Google OAuth2 token and reset the 180-day inactivity timer."
+          else
+            echo "Failed to refresh Google OAuth2 token. Response: $RESPONSE"
+            exit 1
+          fi
