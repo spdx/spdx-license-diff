@@ -39,5 +39,11 @@ jobs:
         env:
           CI: true
 
-      - name: Lint and Compile
-        run: yarn test
+      - name: Run Unit Tests
+        run: yarn test:unit
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Compile Chrome (Dry Run)
+        run: yarn build chrome
