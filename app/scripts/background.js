@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: (GPL-3.0-or-later AND Apache-2.0)
 
 import _ from "underscore";
-import { spdxkey, defaultoptions, urls, newLicenseUrl } from "./const.js";
+import { defaultoptions, urls, newLicenseUrl } from "./const.js";
 import { checkLocalFileAccess } from "./selection-utils.js";
 
 const api = typeof browser !== "undefined" ? browser : chrome;
@@ -592,39 +592,37 @@ function workeronmessage(event) {
   var threadid;
   switch (event.data.command) {
     case "progressbarmax":
-      var tabId =
-        event.data.tabId !== undefined ? event.data.tabId : activeTabId;
+      var tabId = event.data.tabId;
       if (pendingcompare) {
         // broadcast to all
         for (var i = 0; i < comparequeue.length; i++) {
           api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
-      } else if (tabId !== undefined && tabId) {
+      } else if (tabId) {
         api.tabs.sendMessage(tabId, event.data);
       }
       break;
     case "progressbarvalue":
-      tabId = event.data.tabId !== undefined ? event.data.tabId : activeTabId;
+      tabId = event.data.tabId;
       if (pendingcompare) {
         // broadcast to all
         for (i = 0; i < comparequeue.length; i++) {
           api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
-      } else if (tabId !== undefined && tabId) {
+      } else if (tabId) {
         api.tabs.sendMessage(tabId, event.data);
       }
       break;
     case "next":
-      tabId = event.data.tabId !== undefined ? event.data.tabId : activeTabId;
+      tabId = event.data.tabId;
       if (pendingcompare) {
         // broadcast to all
         for (i = 0; i < comparequeue.length; i++) {
           api.tabs.sendMessage(comparequeue[i].tabId, event.data);
         }
-      } else if (tabId !== undefined && tabId) {
+      } else if (tabId) {
         api.tabs.sendMessage(tabId, event.data);
       }
-
       break;
     case "store":
       // This path is intended to store a hash of a comparison. TODO: Complete
@@ -859,7 +857,7 @@ function loadList(userInitiated = false) {
   } else {
     pendingload = true;
     console.log("Attempting to load list from storage");
-    getStorage("list").then((result, intspdxkey = spdxkey) => {
+    getStorage("list").then((result) => {
       if (result.list && result.list.licenseListVersion) {
         list = result.list;
         lastupdate = list.lastupdate;
@@ -881,53 +879,28 @@ function loadList(userInitiated = false) {
           );
           updateList(userInitiated);
         } else {
-          for (const type of Object.keys(urls)) {
-            if (!list[type]) {
-              continue;
+          // Check if dictionaries are already loaded in result.list
+          var hasDicts = Object.keys(urls).every(type => {
+            return list[type + "dict"] && Object.keys(list[type + "dict"]).length > 0;
+          });
+          
+          if (hasDicts) {
+            console.log("License dictionaries already populated in loaded list. Skipping individual item loading.");
+            // Calculate licensesLoaded
+            licensesLoaded = 0;
+            for (const type of Object.keys(urls)) {
+              if (list[type + "dict"]) {
+                licensesLoaded += Object.keys(list[type + "dict"]).length;
+              }
             }
-            if (typeof list[type + "dict"] === "undefined") {
-              list[type + "dict"] = {};
-            }
-            for (let j = 0; j < list[type].length; j++) {
-              const line = list[type][j];
-              let item = line[intspdxkey[type].id];
-              console.log("Attempting to load %s from storage", item);
-              getStorage(item).then((result, types = Object.keys(urls)) => {
-                if (result && !_.isEmpty(result)) {
-                  item = Object.keys(result)[0];
-                  list[type + "dict"][item] = result[item];
-                  licensesLoaded++;
-                  console.log(
-                    "%s succesfully loaded from storage %s/%s (%s)",
-                    item,
-                    Object.keys(list[type + "dict"]).length,
-                    list[type].length,
-                    type
-                  );
-                } else if (updating) {
-                  console.log("%s not found in storage; update pending", item);
-                } else {
-                  console.log(
-                    "%s not found in storage; requesting update",
-                    item
-                  );
-                  updateList(userInitiated);
-                }
-                if (
-                  types.every((type) => {
-                    return (
-                      list[type] &&
-                      list[type + "dict"] &&
-                      list[type].length ===
-                        Object.keys(list[type + "dict"]).length
-                    );
-                  })
-                ) {
-                  pendingload = false;
-                  launchPendingCompares();
-                }
-              });
-            }
+            pendingload = false;
+            launchPendingCompares();
+          } else {
+            // Fallback: If for some reason dicts are not in result.list (e.g. migration from old version),
+            // trigger a list update to download and populate them correctly.
+            console.log("License dictionaries missing in loaded list; requesting update");
+            updateList(userInitiated);
+            pendingload = false;
           }
         }
       } else {
@@ -1370,6 +1343,12 @@ api.windows.onFocusChanged.addListener(handleFocusChanged);
 api.storage.onChanged.addListener(handleStorageChange);
 api.tabs.onUpdated.addListener(handleUpdated);
 api.contextMenus.onClicked.addListener(handleClick);
+api.tabs.onRemoved.addListener(function (tabId) {
+  console.log("BACKGROUND: Tab " + tabId + " removed. Cleaning up tab states.");
+  delete status[tabId];
+  delete diffcount[tabId];
+  delete workqueue[tabId];
+});
 api.runtime.onInstalled.addListener(async () => {
   // Cleanup any existing offscreen documents on install/reload (Chrome only)
   if (typeof chrome !== "undefined" && chrome.runtime.getContexts) {
