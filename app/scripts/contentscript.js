@@ -29,6 +29,8 @@ var pendingSelection = null; // Store selection for later processing when permis
 var permissionsConfirmed = false; // Track if permissions have been confirmed for this session
 var pendingHighlightingSetup = false; // Flag to prevent duplicate highlighting setup attempts
 var currentTheme = 'system'; // 'light', 'dark', or 'system'
+var framesetMousedownListener = null;
+var framesetTargetDocument = null;
 
 // Function to apply the theme based on currentTheme
 function applyTheme() {
@@ -1129,6 +1131,17 @@ function createBubble() {
   if (existingBubble) {
     console.log("CONTENT SCRIPT: Removing existing bubble before creating new one");
     existingBubble.remove();
+    
+    // Clean up frameset mousedown listener if active
+    if (framesetMousedownListener && framesetTargetDocument) {
+      try {
+        framesetTargetDocument.removeEventListener("mousedown", framesetMousedownListener, false);
+      } catch (error) {
+        console.log("Error removing old mousedown listener:", error);
+      }
+      framesetMousedownListener = null;
+      framesetTargetDocument = null;
+    }
   }
   
   console.log("CONTENT SCRIPT: Creating new bubble");
@@ -1235,29 +1248,43 @@ function createBubble() {
   // Add click dismiss behavior for frameset bubbles in parent document
   if (needsSpecialHandling && isParentDocument && targetDocument !== document) {
     console.log("CONTENT SCRIPT: Adding click dismiss listener to parent document for frameset bubble");
-    targetDocument.addEventListener(
-      "mousedown",
-      function (e) {
-        if (
-          e.target.id === "license_bubble" ||
-          (targetDocument.querySelector && targetDocument.querySelector("#license_bubble") && 
-           targetDocument.querySelector("#license_bubble").contains(e.target)) ||
-          (typeof jQuery !== 'undefined' && jQuery(e.target).parents("#license_bubble").length)
-        ) {
-          // Clicked inside bubble - do nothing
-        } else {
-          // Clicked outside bubble - remove it
-          var bubbleDOM = targetDocument.querySelector("#license_bubble");
-          if (bubbleDOM) {
-            console.log("CONTENT SCRIPT: Removing frameset bubble due to outside click");
-            bubbleDOM.remove();
-            // Recreate bubble in current context
-            createBubble();
+    
+    // Clean up any existing listener first
+    if (framesetMousedownListener && framesetTargetDocument) {
+      try {
+        framesetTargetDocument.removeEventListener("mousedown", framesetMousedownListener, false);
+      } catch (err) {}
+    }
+    
+    framesetTargetDocument = targetDocument;
+    framesetMousedownListener = function (e) {
+      if (
+        e.target.id === "license_bubble" ||
+        (targetDocument.querySelector && targetDocument.querySelector("#license_bubble") && 
+         targetDocument.querySelector("#license_bubble").contains(e.target)) ||
+        (typeof jQuery !== 'undefined' && jQuery(e.target).parents("#license_bubble").length)
+      ) {
+        // Clicked inside bubble - do nothing
+      } else {
+        // Clicked outside bubble - remove it
+        var bubbleDOM = targetDocument.querySelector("#license_bubble");
+        if (bubbleDOM) {
+          console.log("CONTENT SCRIPT: Removing frameset bubble due to outside click");
+          bubbleDOM.remove();
+          
+          // Clean up frameset listener since bubble is gone
+          if (framesetMousedownListener && framesetTargetDocument) {
+            try {
+              framesetTargetDocument.removeEventListener("mousedown", framesetMousedownListener, false);
+            } catch (err) {}
+            framesetMousedownListener = null;
+            framesetTargetDocument = null;
           }
         }
-      },
-      false
-    );
+      }
+    };
+    
+    targetDocument.addEventListener("mousedown", framesetMousedownListener, false);
   }
   
   // Store target document info for later use by button creation functions
@@ -1286,7 +1313,15 @@ document.addEventListener(
       var bubbleDOM = $("#license_bubble")[0];
       if (bubbleDOM) {
         bubbleDOM.remove();
-        createBubble();
+        
+        // Clean up frameset mousedown listener if active
+        if (framesetMousedownListener && framesetTargetDocument) {
+          try {
+            framesetTargetDocument.removeEventListener("mousedown", framesetMousedownListener, false);
+          } catch (err) {}
+          framesetMousedownListener = null;
+          framesetTargetDocument = null;
+        }
       }
     }
   },
@@ -1673,6 +1708,15 @@ function createCloseButton(form, targetDoc = document) {
     if (bubbleToClose) {
       console.log("CONTENT SCRIPT: Closing frameset bubble via close button");
       bubbleToClose.remove();
+      
+      // Clean up frameset mousedown listener if active
+      if (framesetMousedownListener && framesetTargetDocument) {
+        try {
+          framesetTargetDocument.removeEventListener("mousedown", framesetMousedownListener, false);
+        } catch (err) {}
+        framesetMousedownListener = null;
+        framesetTargetDocument = null;
+      }
     }
   });
   
