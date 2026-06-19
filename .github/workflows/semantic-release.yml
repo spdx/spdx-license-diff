@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
       #- name: install yarn
       #  run: |
       #    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
