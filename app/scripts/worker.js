@@ -262,7 +262,7 @@ async function getSPDXlist() {
       const url = urls[type];
       const result = await getJSON(url);
       
-             console.log(id, "Processing " + type + ":", result);
+             console.log("[WORKER]", id, "Processing " + type + ":", result);
        
        const dict = {};
        const failed = [];
@@ -283,11 +283,11 @@ async function getSPDXlist() {
           const licenseData = await getJSON(detailUrl);
           const licenseId = licenseData[spdxkey[type].id];
           dict[licenseId] = licenseData;
-          console.log(id, "Successfully downloaded:", licenseId);
+          console.log("[WORKER]", id, "Successfully downloaded:", licenseId);
         } catch (err) {
           const licenseId = item[spdxkey[type].id];
           failed.push(licenseId);
-          console.warn(id, "Failed to download " + licenseId + ":", err.message);
+          console.warn("[WORKER]", id, "Failed to download " + licenseId + ":", err.message);
         }
 
         // Update progress
@@ -308,7 +308,7 @@ async function getSPDXlist() {
         failed: failed
       };
 
-      console.log(id, `Completed ${type}: ${Object.keys(dict).length}/${result[type].length} successful, ${failed.length} failed`);
+      console.log("[WORKER]", id, `Completed ${type}: ${Object.keys(dict).length}/${result[type].length} successful, ${failed.length} failed`);
     }
 
     // Send complete data atomically
@@ -369,11 +369,11 @@ function compareitem(
     if (matchResult) {
       distance = 0;
       percentage = 100;
-      console.log(tabId, id, spdxid + " - Template Match");
+      console.log("[WORKER]", tabId, id, spdxid + " - Template Match");
       
       // Template-structure-based parsing approach
-      console.log(tabId, id, spdxid + " - Template matched, parsing using template structure to identify separators");
-      console.log(tabId, id, spdxid + " - Original template:", templateData.substring(0, 100) + "...");
+      console.log("[WORKER]", tabId, id, spdxid + " - Template matched, parsing using template structure to identify separators");
+      console.log("[WORKER]", tabId, id, spdxid + " - Original template:", templateData.substring(0, 100) + "...");
       
       // Parse template to identify variable blocks and non-template separators
       // First, preprocess the template to remove optional section markers
@@ -383,7 +383,7 @@ function compareitem(
       var optionalRegex = /<<beginOptional>>([\s\S]*?)<<endOptional>>/g;
       var processedTemplate = templateText.replace(optionalRegex, "$1");
       
-      console.log(tabId, id, spdxid + " - Processed template (optional markers removed):", processedTemplate.substring(0, 100) + "...");
+      console.log("[WORKER]", tabId, id, spdxid + " - Processed template (optional markers removed):", processedTemplate.substring(0, 100) + "...");
       
       templateText = processedTemplate;
       var varPattern = /<<var;[^>]+>>/g;
@@ -391,7 +391,7 @@ function compareitem(
       var lastIndex = 0;
       var match;
       
-      console.log(tabId, id, spdxid + " - STEP 1: Parsing template structure");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 1: Parsing template structure");
       
       // Find all variables and the text between them
       while ((match = varPattern.exec(templateText)) != null) {
@@ -400,16 +400,16 @@ function compareitem(
           var nonTemplateText = templateText.substring(lastIndex, match.index);
           if (nonTemplateText.trim()) {
             templateParts.push({ type: 'separator', text: nonTemplateText });
-            console.log(tabId, id, spdxid + " - Found separator: '" + nonTemplateText.substring(0, 30).replace(/\n/g, "\\n") + "...'");
+            console.log("[WORKER]", tabId, id, spdxid + " - Found separator: '" + nonTemplateText.substring(0, 30).replace(/\n/g, "\\n") + "...'");
           } else {
-            console.log(tabId, id, spdxid + " - Skipped whitespace-only separator: '" + nonTemplateText.replace(/\n/g, "\\n") + "'");
+            console.log("[WORKER]", tabId, id, spdxid + " - Skipped whitespace-only separator: '" + nonTemplateText.replace(/\n/g, "\\n") + "'");
           }
         }
         
         // Add this variable
         var currentVariableIndex = templateParts.filter(p => p.type === 'variable').length;
         templateParts.push({ type: 'variable', text: match[0], index: currentVariableIndex });
-        console.log(tabId, id, spdxid + " - Found variable " + currentVariableIndex + ": " + match[0].substring(0, 50) + "...");
+        console.log("[WORKER]", tabId, id, spdxid + " - Found variable " + currentVariableIndex + ": " + match[0].substring(0, 50) + "...");
         lastIndex = match.index + match[0].length;
       }
       
@@ -418,22 +418,22 @@ function compareitem(
         var finalRemainingText = templateText.substring(lastIndex);
         if (finalRemainingText.trim()) {
           templateParts.push({ type: 'separator', text: finalRemainingText });
-          console.log(tabId, id, spdxid + " - Found final separator: '" + finalRemainingText.substring(0, 30).replace(/\n/g, "\\n") + "...'");
+          console.log("[WORKER]", tabId, id, spdxid + " - Found final separator: '" + finalRemainingText.substring(0, 30).replace(/\n/g, "\\n") + "...'");
         }
       }
       
-      console.log(tabId, id, spdxid + " - STEP 1 COMPLETE: Template structure parsed into " + templateParts.length + " parts");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 1 COMPLETE: Template structure parsed into " + templateParts.length + " parts");
       for (var i = 0; i < templateParts.length; i++) {
         var structurePart = templateParts[i];
         if (structurePart.type === 'variable') {
-          console.log(tabId, id, spdxid + " - Part " + i + ": VARIABLE (index " + structurePart.index + ")");
+          console.log("[WORKER]", tabId, id, spdxid + " - Part " + i + ": VARIABLE (index " + structurePart.index + ")");
         } else {
-          console.log(tabId, id, spdxid + " - Part " + i + ": SEPARATOR '" + structurePart.text.substring(0, 20).replace(/\n/g, "\\n") + "...'");
+          console.log("[WORKER]", tabId, id, spdxid + " - Part " + i + ": SEPARATOR '" + structurePart.text.substring(0, 20).replace(/\n/g, "\\n") + "...'");
         }
       }
       
-      console.log(tabId, id, spdxid + " - STEP 2: Splitting selection using separators");
-      console.log(tabId, id, spdxid + " - Original selection:", cleanText(selection).substring(0, 100) + "...");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 2: Splitting selection using separators");
+      console.log("[WORKER]", tabId, id, spdxid + " - Original selection:", cleanText(selection).substring(0, 100) + "...");
       
       // Split selection using non-template text as separators
       var selectionParts = [cleanText(selection)];
@@ -445,7 +445,7 @@ function compareitem(
           var currentSelection = selectionParts[currentSelectionIndex];
           var separatorText = cleanText(separatorPart.text);
           
-          console.log(tabId, id, spdxid + " - Looking for separator: '" + separatorText.substring(0, 30) + "...' in selection part " + currentSelectionIndex);
+          console.log("[WORKER]", tabId, id, spdxid + " - Looking for separator: '" + separatorText.substring(0, 30) + "...' in selection part " + currentSelectionIndex);
           
           // Find this separator in the current selection part
           var separatorIndex = currentSelection.indexOf(separatorText.substring(0, Math.min(50, separatorText.length)));
@@ -458,21 +458,21 @@ function compareitem(
             selectionParts.push(afterSeparator);
             currentSelectionIndex++;
             
-            console.log(tabId, id, spdxid + " - Split selection at separator: '" + separatorText.substring(0, 30) + "...'");
-            console.log(tabId, id, spdxid + " - Before separator: '" + beforeSeparator.substring(0, 50) + "...'");
-            console.log(tabId, id, spdxid + " - After separator: '" + afterSeparator.substring(0, 50) + "...'");
+            console.log("[WORKER]", tabId, id, spdxid + " - Split selection at separator: '" + separatorText.substring(0, 30) + "...'");
+            console.log("[WORKER]", tabId, id, spdxid + " - Before separator: '" + beforeSeparator.substring(0, 50) + "...'");
+            console.log("[WORKER]", tabId, id, spdxid + " - After separator: '" + afterSeparator.substring(0, 50) + "...'");
           } else {
-            console.log(tabId, id, spdxid + " - Separator not found in current selection part");
+            console.log("[WORKER]", tabId, id, spdxid + " - Separator not found in current selection part");
           }
         }
       }
       
-      console.log(tabId, id, spdxid + " - STEP 2 COMPLETE: Selection split into " + selectionParts.length + " parts");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 2 COMPLETE: Selection split into " + selectionParts.length + " parts");
       for (var j = 0; j < selectionParts.length; j++) {
-        console.log(tabId, id, spdxid + " - Selection part " + j + ": '" + selectionParts[j].substring(0, 50) + "...'");
+        console.log("[WORKER]", tabId, id, spdxid + " - Selection part " + j + ": '" + selectionParts[j].substring(0, 50) + "...'");
       }
       
-      console.log(tabId, id, spdxid + " - STEP 3: Sequential variable matching");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 3: Sequential variable matching");
       
       // Now apply sequential variable matching to each selection part that should contain variables
       var variableIndex = 0;
@@ -488,56 +488,56 @@ function compareitem(
             var variable = templateMatch.variables[variableIndex];
             
             if (variable && variable.match && selectionPart.length > 0) {
-              console.log(tabId, id, spdxid + " - Processing variable '" + (variable.name || "unnamed") + "' in selection part " + partIndex);
-              console.log(tabId, id, spdxid + " - Variable pattern: '" + variable.match.substring(0, 30) + "...'");
-              console.log(tabId, id, spdxid + " - Selection text: '" + selectionPart.substring(0, 50) + "...'");
+              console.log("[WORKER]", tabId, id, spdxid + " - Processing variable '" + (variable.name || "unnamed") + "' in selection part " + partIndex);
+              console.log("[WORKER]", tabId, id, spdxid + " - Variable pattern: '" + variable.match.substring(0, 30) + "...'");
+              console.log("[WORKER]", tabId, id, spdxid + " - Selection text: '" + selectionPart.substring(0, 50) + "...'");
               
               // Apply the variable pattern to the beginning of this selection part
               var variableRegex = new RegExp("^(" + variable.match + ")", "i");
               var variableMatch = selectionPart.match(variableRegex);
               
               if (variableMatch) {
-                console.log(tabId, id, spdxid + " - Found " + (variableMatch.length - 1) + " capture groups");
+                console.log("[WORKER]", tabId, id, spdxid + " - Found " + (variableMatch.length - 1) + " capture groups");
                 
                 // Find the longest match from multiple capture groups
                 var longestMatch = "";
                 for (var groupIdx = 1; groupIdx < variableMatch.length; groupIdx++) {
                   if (variableMatch[groupIdx] && variableMatch[groupIdx].length > longestMatch.length) {
                     longestMatch = variableMatch[groupIdx];
-                    console.log(tabId, id, spdxid + " - Group " + groupIdx + ": '" + variableMatch[groupIdx] + "' (length: " + variableMatch[groupIdx].length + ")");
+                    console.log("[WORKER]", tabId, id, spdxid + " - Group " + groupIdx + ": '" + variableMatch[groupIdx] + "' (length: " + variableMatch[groupIdx].length + ")");
                   }
                 }
                 
                 var capturedText = longestMatch || variableMatch[0];
                 variable.capturedText = capturedText.trim();
                 
-                console.log(tabId, id, spdxid + " - Variable '" + (variable.name || "unnamed") + "' captured: '" + capturedText + "'");
+                console.log("[WORKER]", tabId, id, spdxid + " - Variable '" + (variable.name || "unnamed") + "' captured: '" + capturedText + "'");
                 
                 // Remove captured text from this selection part for next variable in same part
                 var capturedRemainingText = selectionPart.substring(variableMatch[0].length).trim();
                 selectionParts[partIndex] = capturedRemainingText;
-                console.log(tabId, id, spdxid + " - Remaining text after capture: '" + capturedRemainingText.substring(0, 50) + "...'");
+                console.log("[WORKER]", tabId, id, spdxid + " - Remaining text after capture: '" + capturedRemainingText.substring(0, 50) + "...'");
               } else {
-                console.log(tabId, id, spdxid + " - Variable '" + (variable.name || "unnamed") + "' no match found");
+                console.log("[WORKER]", tabId, id, spdxid + " - Variable '" + (variable.name || "unnamed") + "' no match found");
               }
             } else {
-              console.log(tabId, id, spdxid + " - Skipping variable '" + (variable ? variable.name || "unnamed" : "undefined") + "' - empty selection part");
+              console.log("[WORKER]", tabId, id, spdxid + " - Skipping variable '" + (variable ? variable.name || "unnamed" : "undefined") + "' - empty selection part");
             }
             
             variableIndex++;
           }
         } else if (templatePart.type === 'separator') {
-          console.log(tabId, id, spdxid + " - Moving to next selection part after separator");
+          console.log("[WORKER]", tabId, id, spdxid + " - Moving to next selection part after separator");
           // Move to the next selection part after separator
           partIndex++;
         }
       }
       
-      console.log(tabId, id, spdxid + " - STEP 3 COMPLETE: Variable matching finished");
-      console.log(tabId, id, spdxid + " - Final captured variables:");
+      console.log("[WORKER]", tabId, id, spdxid + " - STEP 3 COMPLETE: Variable matching finished");
+      console.log("[WORKER]", tabId, id, spdxid + " - Final captured variables:");
       for (var varIdx = 0; varIdx < templateMatch.variables.length; varIdx++) {
         var finalVar = templateMatch.variables[varIdx];
-        console.log(tabId, id, spdxid + " - " + (finalVar.name || "unnamed") + ": '" + (finalVar.capturedText || "[not captured]") + "'");
+        console.log("[WORKER]", tabId, id, spdxid + " - " + (finalVar.name || "unnamed") + ": '" + (finalVar.capturedText || "[not captured]") + "'");
       }
     }
   }
@@ -555,6 +555,7 @@ function compareitem(
       );
       percentage = (((maxLength - distance) / maxLength) * 100).toFixed(1);
       console.log(
+        "[WORKER]",
         tabId,
         id,
         spdxid +
@@ -582,6 +583,7 @@ function compareitem(
     };
   } else {
     console.log(
+      "[WORKER]",
       tabId,
       id,
       spdxid +
