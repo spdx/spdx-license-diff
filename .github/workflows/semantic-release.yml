@@ -9,6 +9,10 @@ on:
       - ".github/workflows/**"
       - "package.json"
 
+concurrency:
+  group: semantic-release-master
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
