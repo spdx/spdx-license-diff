@@ -1672,7 +1672,8 @@ function updateProgressBar(max, value, visible = true) {
           }
         }
         
-        progressTextNode.textContent = "Comparing: " + currentVal + "/" + maxVal + " (Elapsed: " + elapsedText + " | ETA: " + etaText + ")";
+        const timingInfo = rate > 0 ? "ETA: " + etaText : etaText;
+        progressTextNode.textContent = currentVal + "/" + maxVal + " (" + elapsedText + " • " + timingInfo + ")";
         progressTextNode.style.display = "flex";
       } else if (!visible || currentVal >= maxVal) {
         progressTextNode.style.display = "none";
