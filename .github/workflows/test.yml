@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['>=20.8.1 <21.0.0']
+        node-version: ['22.x']
 
     steps:
       - uses: actions/checkout@v4
