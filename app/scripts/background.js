@@ -1370,6 +1370,12 @@ api.windows.onFocusChanged.addListener(handleFocusChanged);
 api.storage.onChanged.addListener(handleStorageChange);
 api.tabs.onUpdated.addListener(handleUpdated);
 api.contextMenus.onClicked.addListener(handleClick);
+api.tabs.onRemoved.addListener(function (tabId) {
+  console.log("BACKGROUND: Tab " + tabId + " removed. Cleaning up tab states.");
+  delete status[tabId];
+  delete diffcount[tabId];
+  delete workqueue[tabId];
+});
 api.runtime.onInstalled.addListener(async () => {
   // Cleanup any existing offscreen documents on install/reload (Chrome only)
   if (typeof chrome !== "undefined" && chrome.runtime.getContexts) {
