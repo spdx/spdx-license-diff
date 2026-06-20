@@ -9,7 +9,7 @@
     "dev": "webextension-toolbox dev",
     "build": "webextension-toolbox build",
     "firefox": "web-ext run -s dist/firefox --bc -u https://www.apache.org/licenses/LICENSE-2.0 -u https://www.gnu.org/licenses/gpl-3.0.en.html",
-    "lint": "eslint app",
+    "lint": "eslint app test",
     "changelog": "gren c --generate --override -B -t all",
     "attribution": "npx generate-attribution --production",
     "test": "jest && yarn lint && yarn install && yarn build chrome && yarn build firefox && yarn build opera && yarn build edge",
@@ -170,7 +170,9 @@
     "lodash-es": "^4.17.23",
     "jws": "^3.2.3",
     "launch-editor": "^2.14.1",
-    "shell-quote": "^1.8.4"
+    "shell-quote": "^1.8.4",
+    "tough-cookie": "^4.1.4",
+    "punycode": "^2.3.1"
   },
   "jest": {
     "testPathIgnorePatterns": [
