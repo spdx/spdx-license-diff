@@ -14,7 +14,7 @@ const {
   escapeRegex,
   processTemplate,
   removeLineNumbers
-} = require('./worker.js');
+} = require('../app/scripts/worker.js');
 
 describe('worker normalization helper functions', () => {
   test('normalizeCommas should convert full-width, vertical, and small commas to standard commas', () => {
