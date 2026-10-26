@@ -169,7 +169,7 @@
     "lodash": "^4.17.23",
     "lodash-es": "^4.17.23",
     "jws": "^3.2.3",
-    "launch-editor": "^2.14.1",
+    "launch-editor": "^2.14.2",
     "shell-quote": "^1.8.4",
     "tough-cookie": "^4.1.4",
     "punycode": "^2.3.1"
